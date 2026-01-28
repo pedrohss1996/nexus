@@ -1,0 +1,71 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Unidade - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="max-w-3xl mx-auto space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex text-sm text-gray-600">
+    <a href="/unidades" class="hover:text-teal-600">Unidades</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900"><%= unidade ? 'Editar' : 'Nova' %></span>
+  </nav>
+
+  <!-- Formulário -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">
+      <%= unidade ? 'Editar Unidade' : 'Nova Unidade' %>
+    </h1>
+
+    <form method="POST" action="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="space-y-6">
+      <!-- Nome -->
+      <div>
+        <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
+          Nome da Unidade <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="nome" 
+          name="nome" 
+          value="<%= unidade ? unidade.nome : '' %>" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          placeholder="Ex: Hospital São Lucas, Clínica Ortopédica..."
+        >
+      </div>
+
+      <!-- Tipo -->
+      <div>
+        <label for="cd_tipo" class="block text-sm font-medium text-gray-700 mb-2">
+          Tipo <span class="text-red-500">*</span>
+        </label>
+        <select 
+          id="cd_tipo" 
+          name="cd_tipo" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+        >
+          <option value="">Selecione o tipo</option>
+          <option value="1" <%= unidade && unidade.cd_tipo == 1 ? 'selected' : '' %>>Hospital</option>
+          <option value="2" <%= unidade && unidade.cd_tipo == 2 ? 'selected' : '' %>>Clínica</option>
+          <option value="3" <%= unidade && unidade.cd_tipo == 3 ? 'selected' : '' %>>Departamento</option>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">
+          Escolha o tipo que melhor descreve esta unidade
+        </p>
+      </div>
+
+      <!-- Botões -->
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+        <a href="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
+          Cancelar
+        </a>
+        <button 
+          type="submit" 
+          class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md font-medium text-sm"
+        >
+          <%= unidade ? 'Salvar Alterações' : 'Criar Unidade' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

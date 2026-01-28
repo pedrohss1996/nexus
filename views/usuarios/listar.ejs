@@ -1,0 +1,253 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Usuários - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="space-y-6">
+  <!-- Cabeçalho -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Usuários</h1>
+      <p class="text-sm text-gray-600 mt-1">Gerencie os usuários do sistema</p>
+    </div>
+    <% if (user.perfil === 'admin') { %>
+      <a href="/cadastros/usuarios/novo" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-6 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Novo Usuário
+      </a>
+    <% } %>
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div class="flex items-center">
+        <div class="p-3 bg-blue-100 rounded-lg">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm text-gray-600">Total</p>
+          <p class="text-2xl font-bold text-gray-900"><%= estatisticas.total %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div class="flex items-center">
+        <div class="p-3 bg-green-100 rounded-lg">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm text-gray-600">Ativos</p>
+          <p class="text-2xl font-bold text-gray-900"><%= estatisticas.ativos %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div class="flex items-center">
+        <div class="p-3 bg-red-100 rounded-lg">
+          <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm text-gray-600">Admins</p>
+          <p class="text-2xl font-bold text-gray-900"><%= estatisticas.admins %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div class="flex items-center">
+        <div class="p-3 bg-purple-100 rounded-lg">
+          <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm text-gray-600">Gestores</p>
+          <p class="text-2xl font-bold text-gray-900"><%= estatisticas.gestores %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <form method="GET" action="/cadastros/usuarios" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Perfil</label>
+        <select name="perfil" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+          <option value="">Todos os perfis</option>
+          <option value="admin" <%= filtros.perfil === 'admin' ? 'selected' : '' %>>Admin</option>
+          <option value="gestor" <%= filtros.perfil === 'gestor' ? 'selected' : '' %>>Gestor</option>
+          <option value="usuario" <%= filtros.perfil === 'usuario' ? 'selected' : '' %>>Usuário</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+        <select name="ativo" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+          <option value="">Todos</option>
+          <option value="true" <%= filtros.ativo === true ? 'selected' : '' %>>Ativos</option>
+          <option value="false" <%= filtros.ativo === false ? 'selected' : '' %>>Inativos</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome ou email..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      </div>
+      <div class="flex items-end space-x-2">
+        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium">
+          Filtrar
+        </button>
+        <a href="/cadastros/usuarios" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
+          Limpar
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lista de Usuários -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <% if (usuarios.length === 0) { %>
+      <div class="text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nenhum usuário encontrado</h3>
+        <p class="text-gray-600">Não há usuários cadastrados com os filtros selecionados.</p>
+      </div>
+    <% } else { %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastrado em</th>
+              <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% usuarios.forEach(usuario => { %>
+              <tr class="<%= !usuario.ativo ? 'bg-gray-50 opacity-60' : '' %>">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      <%= usuario.nome.charAt(0).toUpperCase() %>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900"><%= usuario.nome %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><%= usuario.email %></td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= usuario.perfil === 'admin' ? 'bg-red-100 text-red-800' : usuario.perfil === 'gestor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= usuario.perfil %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <% if (usuario.ativo) { %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Ativo
+                    </span>
+                  <% } else { %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                      Inativo
+                    </span>
+                  <% } %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <%= new Date(usuario.criado_em).toLocaleDateString('pt-BR') %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <div class="flex items-center justify-center space-x-2">
+                    <a href="/cadastros/usuarios/<%= usuario.id %>" class="text-teal-600 hover:text-teal-900" title="Ver detalhes">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                    </a>
+                    <% if (user.perfil === 'admin') { %>
+                      <a href="/cadastros/usuarios/<%= usuario.id %>/editar" class="text-blue-600 hover:text-blue-900" title="Editar">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                      </a>
+                      <% if (usuario.ativo) { %>
+                        <button onclick="desativarUsuario(<%= usuario.id %>)" class="text-red-600 hover:text-red-900" title="Desativar">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                          </svg>
+                        </button>
+                      <% } else { %>
+                        <button onclick="reativarUsuario(<%= usuario.id %>)" class="text-green-600 hover:text-green-900" title="Reativar">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                        </button>
+                      <% } %>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<% if (user.perfil === 'admin') { %>
+<script>
+async function desativarUsuario(id) {
+  if (!confirm('Deseja realmente desativar este usuário?')) return;
+  
+  try {
+    const response = await fetch(`/cadastros/usuarios/${id}`, {
+      method: 'DELETE'
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.message || 'Erro ao desativar usuário');
+    }
+  } catch (error) {
+    alert('Erro ao desativar usuário');
+  }
+}
+
+async function reativarUsuario(id) {
+  if (!confirm('Deseja realmente reativar este usuário?')) return;
+  
+  try {
+    const response = await fetch(`/cadastros/usuarios/${id}/reativar`, {
+      method: 'PATCH'
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.message || 'Erro ao reativar usuário');
+    }
+  } catch (error) {
+    alert('Erro ao reativar usuário');
+  }
+}
+</script>
+<% } %>
+
+<%- include('../partials/footer') %>

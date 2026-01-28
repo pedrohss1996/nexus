@@ -1,0 +1,31 @@
+# DataFlow - Project Rules & Context
+
+## 1. Language & Communication
+- **Chat Language:** ALWAYS respond in **Portuguese (PT-BR)**.
+- **Code Comments:** Write comments in **Portuguese (PT-BR)**.
+- **Code Naming:** KEEP variables, functions, and DB columns in **Portuguese (PT-BR)** (standard), when mapping legacy Tasy/Oracle columns (often in PT-BR or specific acronyms).
+- **Tone:** Senior Fullstack Developer. Direct, technical, solution-oriented.
+
+## 2. Tech Stack (Strict)
+- **Language:** JavaScript (ES6+ features: async/await, arrow functions, destructuring).
+- **Backend:** Node.js + Express.
+- **Frontend:** EJS (Server Side Rendering) + TailwindCSS + JavaScript Vanilla (DOM manipulation).
+- **Database:** - **PostgreSQL** (Data Flow) **SQL RAW**
+- **Real-time:** Socket.io (Events usage).
+- **Auth:** JWT + Express Sessions.
+
+## 3. Coding Standards & Patterns
+- **Query Builder:** ALWAYS use **SQL Raw** syntax for queries. Avoid writing raw SQL strings
+- **Frontend Logic:** - Do NOT use React/Vue/Angular patterns. 
+  - Use EJS tags `<%= %>` for output and `<% %>` for control flow.
+  - For client-side interactivity, write clean Vanilla JS inside `<script>` tags or separate `.js` files in `/public`.
+- **Styling:** Use TailwindCSS utility classes directly in EJS files.
+- **Security:** Use `Helmet` headers. Sanitize inputs before database queries. Handle CORS properly.
+
+## 4. Hospital/SaaS Context (DataCare)
+- **Data Privacy:** PII/PHI protection is mandatory.
+- **Dev Tools:** Use `concurrently` to run Tailwind CLI watch mode and Nodemon.
+
+## 5. Specific Rules
+- **Formatting:** Use semicolons; 2 spaces indentation.
+- **Error Handling:** Centralized error handler middleware in Express.

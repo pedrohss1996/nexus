@@ -1,0 +1,112 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Unidades - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="space-y-6">
+  <!-- Cabeçalho -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Unidades</h1>
+      <p class="text-sm text-gray-600 mt-1">Gerencie as unidades hospitalares e departamentos</p>
+    </div>
+    <% if (user.perfil === 'admin') { %>
+      <a href="/unidades/novo" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-6 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nova Unidade
+      </a>
+    <% } %>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <form method="GET" action="/unidades" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+        <select name="cd_tipo" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+          <option value="">Todos os tipos</option>
+          <option value="1" <%= filtros.cd_tipo == 1 ? 'selected' : '' %>>Hospital</option>
+          <option value="2" <%= filtros.cd_tipo == 2 ? 'selected' : '' %>>Clínica</option>
+          <option value="3" <%= filtros.cd_tipo == 3 ? 'selected' : '' %>>Departamento</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      </div>
+      <div class="flex items-end space-x-2">
+        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium">
+          Filtrar
+        </button>
+        <a href="/unidades" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
+          Limpar
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lista de Unidades -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% if (unidades.length === 0) { %>
+      <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nenhuma unidade encontrada</h3>
+        <p class="text-gray-600 mb-4">Não há unidades cadastradas com os filtros selecionados.</p>
+        <% if (user.perfil === 'admin') { %>
+          <a href="/unidades/novo" class="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium">
+            Criar primeira unidade
+            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <% unidades.forEach(unidade => { %>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <% if (unidade.cd_tipo == 1) { %>
+                    <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                  <% } else if (unidade.cd_tipo == 2) { %>
+                    <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  <% } else { %>
+                    <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                  <% } %>
+                  <span class="text-xs font-semibold text-gray-500 uppercase">
+                    <%= unidade.cd_tipo == 1 ? 'Hospital' : unidade.cd_tipo == 2 ? 'Clínica' : 'Departamento' %>
+                  </span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                  <a href="/unidades/<%= unidade.id %>" class="hover:text-teal-600 transition-colors">
+                    <%= unidade.nome %>
+                  </a>
+                </h3>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+              <a href="/unidades/<%= unidade.id %>" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center">
+                Ver detalhes
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

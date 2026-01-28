@@ -1,0 +1,103 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Alterar Senha - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="max-w-2xl mx-auto space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex text-sm text-gray-600">
+    <a href="/cadastros/usuarios" class="hover:text-teal-600">Usuários</a>
+    <span class="mx-2">/</span>
+    <a href="/cadastros/usuarios/<%= usuario.id %>" class="hover:text-teal-600"><%= usuario.nome %></a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900">Alterar Senha</span>
+  </nav>
+
+  <!-- Formulário -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="flex items-center mb-6">
+      <div class="p-3 bg-blue-100 rounded-lg mr-4">
+        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Alterar Senha</h1>
+        <p class="text-sm text-gray-600 mt-1">Defina uma nova senha para <%= usuario.nome %></p>
+      </div>
+    </div>
+
+    <% if (erro) { %>
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center">
+        <svg class="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-red-800 font-medium"><%= erro %></p>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/cadastros/usuarios/<%= usuario.id %>/alterar-senha" class="space-y-6">
+      <!-- Nova Senha -->
+      <div>
+        <label for="nova_senha" class="block text-sm font-medium text-gray-700 mb-2">
+          Nova Senha <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="password" 
+          id="nova_senha" 
+          name="nova_senha" 
+          required
+          minlength="6"
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          placeholder="Mínimo 6 caracteres"
+        >
+        <p class="text-xs text-gray-500 mt-1">A senha deve ter no mínimo 6 caracteres</p>
+      </div>
+
+      <!-- Confirmar Nova Senha -->
+      <div>
+        <label for="confirmar_senha" class="block text-sm font-medium text-gray-700 mb-2">
+          Confirmar Nova Senha <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="password" 
+          id="confirmar_senha" 
+          name="confirmar_senha" 
+          required
+          minlength="6"
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          placeholder="Repita a nova senha"
+        >
+      </div>
+
+      <!-- Alerta de segurança -->
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div class="flex">
+          <svg class="w-5 h-5 text-amber-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <div class="text-sm text-amber-800">
+            <p class="font-medium mb-1">Importante:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>O usuário precisará usar a nova senha no próximo login</li>
+              <li>Certifique-se de comunicar a nova senha ao usuário de forma segura</li>
+              <li>Recomende que o usuário altere a senha após o primeiro acesso</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões -->
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+        <a href="/cadastros/usuarios/<%= usuario.id %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
+          Cancelar
+        </a>
+        <button 
+          type="submit" 
+          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm hover:shadow-md font-medium text-sm"
+        >
+          Alterar Senha
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title><%= typeof title !== 'undefined' ? title : 'DataFlow' %></title>
+  <link href="/css/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+  <% if (typeof user !== 'undefined' && user) { %>
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <h1 class="text-2xl font-bold text-primary-600">DataFlow</h1>
+          </div>
+
+          <!-- Hospital Selector -->
+          <div class="flex items-center space-x-4">
+            <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500">
+              <option>Hospital São Lucas</option>
+            </select>
+          </div>
+
+          <!-- User Menu -->
+          <div class="flex items-center space-x-4">
+            <!-- Notificações -->
+            <div class="relative">
+              <button class="p-2 text-gray-600 hover:text-gray-900 relative">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+              </button>
+            </div>
+
+            <!-- Configurações -->
+            <button class="p-2 text-gray-600 hover:text-gray-900">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </button>
+
+            <!-- Perfil -->
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
+                <%= user.nome.charAt(0).toUpperCase() %>
+              </div>
+              <span class="text-sm font-medium text-gray-700"><%= user.nome %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex space-x-1">
+          <a href="/dashboard" class="px-4 py-3 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-600">
+            Dashboard
+          </a>
+          <a href="/processos" class="px-4 py-3 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-600">
+            Processos
+          </a>
+          <a href="/documentos" class="px-4 py-3 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-600">
+            Documentos
+          </a>
+          <a href="/fornecedores" class="px-4 py-3 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-600">
+            Fornecedores
+          </a>
+          <a href="/processos/novo" class="ml-auto bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+            + Iniciar Processo
+          </a>
+        </div>
+      </div>
+    </nav>
+  <% } %>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <%- typeof content !== 'undefined' ? content : '' %>
+  </main>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Conectar ao Socket.io se houver token
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    if (token) {
+      const socket = io({
+        auth: { token: token }
+      });
+
+      socket.on('connect', () => {
+        console.log('Conectado ao Socket.io');
+      });
+
+      socket.on('processo:notificacao', (data) => {
+        console.log('Notificação de processo:', data);
+        // Implementar notificações visuais
+      });
+
+      socket.on('processo:alerta', (data) => {
+        console.log('Alerta de processo:', data);
+        // Implementar alertas visuais
+      });
+    }
+  </script>
+</body>
+</html>

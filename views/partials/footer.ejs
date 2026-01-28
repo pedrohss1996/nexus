@@ -1,0 +1,29 @@
+  </main>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Conectar ao Socket.io se houver token
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    if (token) {
+      const socket = io({
+        auth: { token: token }
+      });
+
+      socket.on('connect', () => {
+        console.log('Conectado ao Socket.io');
+      });
+
+      socket.on('processo:notificacao', (data) => {
+        console.log('Notificação de processo:', data);
+        // Implementar notificações visuais
+      });
+
+      socket.on('processo:alerta', (data) => {
+        console.log('Alerta de processo:', data);
+        // Implementar alertas visuais
+      });
+    }
+  </script>
+</body>
+</html>

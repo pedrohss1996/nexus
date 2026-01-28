@@ -1,0 +1,156 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Adicionar Membro - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="max-w-2xl mx-auto space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex text-sm text-gray-600">
+    <a href="/grupos" class="hover:text-teal-600">Grupos</a>
+    <span class="mx-2">/</span>
+    <a href="/grupos/<%= grupo.id %>" class="hover:text-teal-600"><%= grupo.nome %></a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900">Adicionar Membro</span>
+  </nav>
+
+  <!-- Formulário -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="flex items-center mb-6">
+      <div class="p-3 bg-teal-100 rounded-lg mr-4">
+        <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Adicionar Membro ao Grupo</h1>
+        <p class="text-sm text-gray-600 mt-1">Grupo: <%= grupo.nome %></p>
+      </div>
+    </div>
+
+    <% if (erro) { %>
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center">
+        <svg class="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-red-800 font-medium"><%= erro %></p>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/grupos/<%= grupo.id %>/membros" class="space-y-6">
+      <!-- Usuário -->
+      <div>
+        <label for="usuario_id" class="block text-sm font-medium text-gray-700 mb-2">
+          Usuário <span class="text-red-500">*</span>
+        </label>
+        <select 
+          id="usuario_id" 
+          name="usuario_id" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+        >
+          <option value="">Selecione um usuário</option>
+          <% usuarios.forEach(usuario => { %>
+            <option value="<%= usuario.id %>">
+              <%= usuario.nome %> (<%= usuario.email %>) - <%= usuario.perfil %>
+            </option>
+          <% }); %>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Selecione o usuário que deseja adicionar ao grupo</p>
+      </div>
+
+      <!-- Unidade -->
+      <div>
+        <label for="unidade_id" class="block text-sm font-medium text-gray-700 mb-2">
+          Unidade <span class="text-red-500">*</span>
+        </label>
+        <select 
+          id="unidade_id" 
+          name="unidade_id" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+        >
+          <option value="">Selecione uma unidade</option>
+          <% unidades.forEach(unidade => { %>
+            <option value="<%= unidade.id %>" <%= grupo.unidade_id == unidade.id ? 'selected' : '' %>>
+              <%= unidade.nome %>
+              <% if (unidade.cd_tipo == 1) { %>
+                (Hospital)
+              <% } else if (unidade.cd_tipo == 2) { %>
+                (Clínica)
+              <% } else if (unidade.cd_tipo == 3) { %>
+                (Departamento)
+              <% } %>
+            </option>
+          <% }); %>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">
+          O usuário será vinculado ao grupo <strong><%= grupo.nome %></strong> nesta unidade específica
+        </p>
+      </div>
+
+      <!-- Função -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-3">
+          Função no Grupo <span class="text-red-500">*</span>
+        </label>
+        <div class="space-y-3">
+          <label class="flex items-start p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+            <input 
+              type="radio" 
+              name="is_lider" 
+              value="false" 
+              checked
+              class="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500"
+            >
+            <div class="ml-3">
+              <span class="block text-sm font-medium text-gray-900">Membro</span>
+              <span class="block text-xs text-gray-500">Participante regular do grupo</span>
+            </div>
+          </label>
+          
+          <label class="flex items-start p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+            <input 
+              type="radio" 
+              name="is_lider" 
+              value="true"
+              class="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500"
+            >
+            <div class="ml-3">
+              <span class="block text-sm font-medium text-gray-900">Líder</span>
+              <span class="block text-xs text-gray-500">Coordenador/responsável pelo grupo</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Exemplo Visual -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+          <svg class="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div class="text-sm text-blue-800">
+            <p class="font-medium mb-1">Como funciona:</p>
+            <p class="mb-2">Um usuário pode estar no mesmo grupo em diferentes unidades com funções diferentes.</p>
+            <p class="text-xs">
+              <strong>Exemplo:</strong> João pode ser <strong>Líder</strong> do grupo "TI" no <strong>Hospital São Lucas</strong> 
+              e <strong>Membro</strong> do grupo "TI" na <strong>Clínica Ortopédica</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões -->
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+        <a href="/grupos/<%= grupo.id %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
+          Cancelar
+        </a>
+        <button 
+          type="submit" 
+          class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md font-medium text-sm"
+        >
+          Adicionar Membro
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

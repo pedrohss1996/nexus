@@ -1,0 +1,52 @@
+{
+  "name": "dataflow",
+  "version": "1.0.0",
+  "description": "Sistema de gerenciamento de documentos e processos hospitalares",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:css\"",
+    "dev:server": "nodemon server.js",
+    "dev:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --watch",
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify",
+    "migrate": "node scripts/run-migration.js",
+    "seed": "node scripts/seed.js",
+    "seed:marlon": "node scripts/seed-usuario-marlon.js",
+    "generate-secrets": "node scripts/generate-secrets.js",
+    "test:db": "node scripts/test-connection.js",
+    "fix:constraint": "node scripts/fix-usuarios-grupos-constraint.js",
+    "check:usuarios-grupos": "node scripts/check-usuarios-grupos-structure.js"
+  },
+  "keywords": [
+    "documentos",
+    "processos",
+    "hospital",
+    "gestao"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.11.3",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
+    "tailwindcss": "^3.4.1"
+  }
+}

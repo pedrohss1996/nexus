@@ -1,0 +1,94 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Grupo - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="max-w-3xl mx-auto space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex text-sm text-gray-600">
+    <a href="/grupos" class="hover:text-teal-600">Grupos</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900"><%= grupo ? 'Editar' : 'Novo' %></span>
+  </nav>
+
+  <!-- Formulário -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">
+      <%= grupo ? 'Editar Grupo' : 'Novo Grupo' %>
+    </h1>
+
+    <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="space-y-6">
+      <!-- Nome -->
+      <div>
+        <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
+          Nome do Grupo <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="nome" 
+          name="nome" 
+          value="<%= grupo ? grupo.nome : '' %>" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          placeholder="Ex: Administração, Farmácia, TI..."
+        >
+      </div>
+
+      <!-- Descrição -->
+      <div>
+        <label for="descricao" class="block text-sm font-medium text-gray-700 mb-2">
+          Descrição
+        </label>
+        <textarea 
+          id="descricao" 
+          name="descricao" 
+          rows="4"
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          placeholder="Descreva o propósito e responsabilidades deste grupo..."
+        ><%= grupo ? (grupo.descricao || '') : '' %></textarea>
+      </div>
+
+      <!-- Unidade -->
+      <div>
+        <label for="unidade_id" class="block text-sm font-medium text-gray-700 mb-2">
+          Unidade <span class="text-red-500">*</span>
+        </label>
+        <select 
+          id="unidade_id" 
+          name="unidade_id" 
+          required
+          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+        >
+          <option value="">Selecione uma unidade</option>
+          <% unidades.forEach(unidade => { %>
+            <option 
+              value="<%= unidade.id %>" 
+              <%= grupo && grupo.unidade_id == unidade.id ? 'selected' : '' %>
+            >
+              <%= unidade.nome %> 
+              <% if (unidade.cd_tipo == 1) { %>
+                (Hospital)
+              <% } else if (unidade.cd_tipo == 2) { %>
+                (Clínica)
+              <% } else if (unidade.cd_tipo == 3) { %>
+                (Departamento)
+              <% } %>
+            </option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- Botões -->
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+        <a href="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
+          Cancelar
+        </a>
+        <button 
+          type="submit" 
+          class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md font-medium text-sm"
+        >
+          <%= grupo ? 'Salvar Alterações' : 'Criar Grupo' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
