@@ -1,0 +1,152 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8">
+  <!-- Cabeçalho -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+          </svg>
+          Protocolo Eletrônico
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Gerencie todos os protocolos e documentos oficiais</p>
+      </div>
+      <a href="/protocolo/novo" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Novo Protocolo
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <input type="text" placeholder="Buscar por número..." class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white">
+      </div>
+      <div>
+        <select class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white">
+          <option value="">Todos os status</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="em_tramite">Em Trâmite</option>
+          <option value="arquivado">Arquivado</option>
+        </select>
+      </div>
+      <div>
+        <select class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white">
+          <option value="">Todas as prioridades</option>
+          <option value="baixa">Baixa</option>
+          <option value="normal">Normal</option>
+          <option value="alta">Alta</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div>
+        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+          Filtrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Protocolos -->
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-gray-50 dark:bg-slate-700">
+        <tr>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Protocolo</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Assunto</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Interessado</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Prioridade</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Data</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
+        <% if (protocolos.length === 0) { %>
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+              <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <p class="text-lg font-medium">Nenhum protocolo encontrado</p>
+              <p class="text-sm mt-2">Clique em "Novo Protocolo" para criar o primeiro</p>
+            </td>
+          </tr>
+        <% } else { %>
+          <% protocolos.forEach(protocolo => { %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+              <td class="px-6 py-4">
+                <div class="flex items-center">
+                  <div class="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white"><%= protocolo.numero_protocolo %></p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400"><%= protocolo.tipo_documento %></p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <p class="text-sm text-gray-900 dark:text-white"><%= protocolo.assunto.substring(0, 60) %><%= protocolo.assunto.length > 60 ? '...' : '' %></p>
+              </td>
+              <td class="px-6 py-4">
+                <p class="text-sm text-gray-900 dark:text-white"><%= protocolo.interessado || '-' %></p>
+              </td>
+              <td class="px-6 py-4">
+                <% if (protocolo.prioridade === 'urgente') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Urgente</span>
+                <% } else if (protocolo.prioridade === 'alta') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Alta</span>
+                <% } else if (protocolo.prioridade === 'normal') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Normal</span>
+                <% } else { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">Baixa</span>
+                <% } %>
+              </td>
+              <td class="px-6 py-4">
+                <% if (protocolo.status === 'aguardando') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Aguardando</span>
+                <% } else if (protocolo.status === 'em_tramite') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Em Trâmite</span>
+                <% } else if (protocolo.status === 'arquivado') { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Arquivado</span>
+                <% } else { %>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">Cancelado</span>
+                <% } %>
+              </td>
+              <td class="px-6 py-4">
+                <p class="text-sm text-gray-900 dark:text-white"><%= new Date(protocolo.criado_em).toLocaleDateString('pt-BR') %></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(protocolo.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) %></p>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <a href="/protocolo/<%= protocolo.id %>" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="Visualizar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                  </a>
+                  <a href="/tramitacao/protocolo/<%= protocolo.id %>/tramitar" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300" title="Tramitar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

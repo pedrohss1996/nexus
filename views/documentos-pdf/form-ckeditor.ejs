@@ -1,0 +1,348 @@
+<%- include('../partials/header') %>
+
+<!-- CKEditor 5 - Classic Build -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/translations/pt-br.js"></script>
+
+<style>
+  /* Remover padding do main e usar tela inteira */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Estilo do CKEditor */
+  .ck-editor__editable {
+    height: calc(100vh - 360px) !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Variáveis destacadas */
+  .variavel {
+    background-color: #f3e8ff;
+    color: #9333ea;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+</style>
+
+<div class="w-full">
+  <!-- Cabeçalho -->
+  <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-2">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Voltar para Templates
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <%= template ? 'Editar Template' : 'Novo Template' %>
+        </h1>
+      </div>
+      <div class="flex gap-3">
+        <button 
+          type="button"
+          id="btnInserirImagem"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Inserir Imagem
+        </button>
+        <button 
+          type="button"
+          id="btnInserirVariavel"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+          </svg>
+          Inserir Variável
+        </button>
+        <input type="file" id="inputImagem" accept="image/*" style="display: none;">
+        <a 
+          href="/documentos-pdf"
+          class="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
+        >
+          Cancelar
+        </a>
+        <button 
+          type="submit"
+          form="formTemplate"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <%= template ? 'Atualizar' : 'Criar Template' %>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <form action="<%= action %>" method="POST" id="formTemplate">
+    <!-- Informações Básicas - Barra superior -->
+    <div class="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Nome -->
+        <div>
+          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Nome do Template *
+          </label>
+          <input 
+            type="text" 
+            id="nome" 
+            name="nome" 
+            required
+            value="<%= template ? template.nome : '' %>"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="Ex: Comunicação de Abono"
+          >
+        </div>
+
+        <!-- Tipo de Documento -->
+        <div>
+          <label for="tipo_documento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Tipo de Documento *
+          </label>
+          <select 
+            id="tipo_documento" 
+            name="tipo_documento" 
+            required
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+          >
+            <option value="">Selecione...</option>
+            <option value="termo" <%= template && template.tipo_documento === 'termo' ? 'selected' : '' %>>Termo</option>
+            <option value="oficio" <%= template && template.tipo_documento === 'oficio' ? 'selected' : '' %>>Ofício</option>
+            <option value="declaracao" <%= template && template.tipo_documento === 'declaracao' ? 'selected' : '' %>>Declaração</option>
+            <option value="contrato" <%= template && template.tipo_documento === 'contrato' ? 'selected' : '' %>>Contrato</option>
+            <option value="relatorio" <%= template && template.tipo_documento === 'relatorio' ? 'selected' : '' %>>Relatório</option>
+            <option value="comunicacao" <%= template && template.tipo_documento === 'comunicacao' ? 'selected' : '' %>>Comunicação</option>
+            <option value="atestado" <%= template && template.tipo_documento === 'atestado' ? 'selected' : '' %>>Atestado</option>
+            <option value="solicitacao" <%= template && template.tipo_documento === 'solicitacao' ? 'selected' : '' %>>Solicitação</option>
+            <option value="parecer" <%= template && template.tipo_documento === 'parecer' ? 'selected' : '' %>>Parecer</option>
+            <option value="outro" <%= template && template.tipo_documento === 'outro' ? 'selected' : '' %>>Outro</option>
+          </select>
+        </div>
+
+        <!-- Descrição -->
+        <div>
+          <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Descrição
+          </label>
+          <input 
+            type="text" 
+            id="descricao" 
+            name="descricao" 
+            value="<%= template ? template.descricao : '' %>"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="Breve descrição"
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor e Preview - Lado a lado -->
+    <div class="grid grid-cols-2 gap-0" style="height: calc(100vh - 240px);">
+      <!-- Editor CKEditor -->
+      <div class="bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 px-6 py-6 overflow-hidden">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Editor</h3>
+        <textarea id="editor" name="conteudo_html"><%= template ? template.conteudo_html : '' %></textarea>
+      </div>
+
+      <!-- Preview -->
+      <div class="bg-gray-50 dark:bg-slate-900 px-6 py-6 overflow-y-auto">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview do PDF</h3>
+        <div class="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-inner min-h-full">
+          <div id="preview" class="prose dark:prose-invert max-w-none">
+            <!-- Preview será atualizado aqui -->
+          </div>
+        </div>
+        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          <strong>Variáveis detectadas:</strong>
+          <span id="variaveisDetectadas" class="text-purple-600 dark:text-purple-400 font-medium">Nenhuma</span>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+let editorInstance;
+
+// Função para atualizar preview
+function atualizarPreview() {
+  if (!editorInstance) return;
+  
+  const html = editorInstance.getData();
+  document.getElementById('preview').innerHTML = html;
+  
+  // Detectar variáveis
+  const regex = /{{(\w+)}}/g;
+  const variaveis = new Set();
+  let match;
+  
+  while ((match = regex.exec(html)) !== null) {
+    variaveis.add(match[1]);
+  }
+  
+  const variaveisSpan = document.getElementById('variaveisDetectadas');
+  if (variaveis.size === 0) {
+    variaveisSpan.textContent = 'Nenhuma';
+    variaveisSpan.className = 'text-gray-500 dark:text-gray-400 font-medium';
+  } else {
+    variaveisSpan.textContent = Array.from(variaveis).join(', ');
+    variaveisSpan.className = 'text-purple-600 dark:text-purple-400 font-medium';
+  }
+}
+
+ClassicEditor
+  .create(document.querySelector('#editor'), {
+    language: 'pt-br',
+    
+    // Toolbar COMPLETA
+    toolbar: {
+      items: [
+        'heading', '|',
+        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+        'bold', 'italic', 'underline', 'strikethrough', '|',
+        'alignment', '|',
+        'numberedList', 'bulletedList', '|',
+        'outdent', 'indent', '|',
+        'link', 'insertTable', 'blockQuote', '|',
+        'undo', 'redo', '|',
+        'sourceEditing'
+      ],
+      shouldNotGroupWhenFull: false
+    },
+    
+    // Configuração de tabelas
+    table: {
+      contentToolbar: [
+        'tableColumn', 'tableRow', 'mergeTableCells',
+        'tableProperties', 'tableCellProperties'
+      ]
+    },
+    
+    // Tamanhos de fonte
+    fontSize: {
+      options: [
+        'tiny',
+        'small',
+        'default',
+        'big',
+        'huge'
+      ]
+    },
+    
+    // Fontes disponíveis
+    fontFamily: {
+      options: [
+        'default',
+        'Arial, Helvetica, sans-serif',
+        'Courier New, Courier, monospace',
+        'Georgia, serif',
+        'Times New Roman, Times, serif',
+        'Verdana, Geneva, sans-serif'
+      ]
+    },
+    
+    // Headings
+    heading: {
+      options: [
+        { model: 'paragraph', title: 'Parágrafo', class: 'ck-heading_paragraph' },
+        { model: 'heading1', view: 'h1', title: 'Título 1', class: 'ck-heading_heading1' },
+        { model: 'heading2', view: 'h2', title: 'Título 2', class: 'ck-heading_heading2' },
+        { model: 'heading3', view: 'h3', title: 'Título 3', class: 'ck-heading_heading3' }
+      ]
+    }
+  })
+  .then(editor => {
+    editorInstance = editor;
+    console.log('✅ CKEditor 5 carregado com sucesso!');
+    
+    // Atualizar preview em tempo real
+    editor.model.document.on('change:data', () => {
+      atualizarPreview();
+    });
+    
+    // Preview inicial
+    setTimeout(() => {
+      atualizarPreview();
+    }, 500);
+  })
+  .catch(error => {
+    console.error('Erro ao carregar CKEditor:', error);
+    alert('Erro ao carregar o editor. Verifique sua conexão com a internet.');
+  });
+
+// Botão Inserir Imagem
+document.getElementById('btnInserirImagem').addEventListener('click', () => {
+  document.getElementById('inputImagem').click();
+});
+
+// Processar imagem selecionada
+document.getElementById('inputImagem').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file && editorInstance) {
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione apenas imagens!');
+      return;
+    }
+    
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 5MB!');
+      return;
+    }
+    
+    // Converter para Base64
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const base64 = event.target.result;
+      
+      // Inserir no editor
+      const viewFragment = editorInstance.data.processor.toView(
+        `<img src="${base64}" alt="Imagem" style="max-width: 100%; height: auto;" />`
+      );
+      const modelFragment = editorInstance.data.toModel(viewFragment);
+      editorInstance.model.insertContent(modelFragment);
+      
+      // Limpar input
+      e.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Botão Inserir Variável
+document.getElementById('btnInserirVariavel').addEventListener('click', () => {
+  const nomeVariavel = prompt('Nome da variável (ex: nome_servidor, data_emissao):');
+  if (nomeVariavel && editorInstance) {
+    const viewFragment = editorInstance.data.processor.toView(
+      `<span class="variavel">{{${nomeVariavel}}}</span>&nbsp;`
+    );
+    const modelFragment = editorInstance.data.toModel(viewFragment);
+    editorInstance.model.insertContent(modelFragment);
+  }
+});
+
+// Salvar conteúdo antes de submeter
+document.getElementById('formTemplate').addEventListener('submit', function(e) {
+  // CKEditor já sincroniza automaticamente
+});
+</script>
+
+<%- include('../partials/footer') %>

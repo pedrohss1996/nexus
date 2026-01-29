@@ -1,0 +1,170 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8 max-w-6xl mx-auto">
+  <!-- Cabeçalho -->
+  <div class="mb-6">
+    <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-4">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Voltar para Templates
+    </a>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+      <%= template ? 'Editar Template' : 'Novo Template' %>
+    </h1>
+  </div>
+
+  <!-- Formulário -->
+  <form action="<%= action %>" method="POST" class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+    <!-- Nome -->
+    <div class="mb-6">
+      <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Nome do Template *
+      </label>
+      <input 
+        type="text" 
+        id="nome" 
+        name="nome" 
+        required
+        value="<%= template ? template.nome : '' %>"
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        placeholder="Ex: Termo de Recebimento de Materiais"
+      >
+    </div>
+
+    <!-- Descrição -->
+    <div class="mb-6">
+      <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Descrição
+      </label>
+      <textarea 
+        id="descricao" 
+        name="descricao" 
+        rows="3"
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        placeholder="Descreva quando e como usar este template"
+      ><%= template ? template.descricao : '' %></textarea>
+    </div>
+
+    <!-- Tipo de Documento -->
+    <div class="mb-6">
+      <label for="tipo_documento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Tipo de Documento *
+      </label>
+      <select 
+        id="tipo_documento" 
+        name="tipo_documento" 
+        required
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+      >
+        <option value="">Selecione...</option>
+        <option value="termo" <%= template && template.tipo_documento === 'termo' ? 'selected' : '' %>>Termo</option>
+        <option value="oficio" <%= template && template.tipo_documento === 'oficio' ? 'selected' : '' %>>Ofício</option>
+        <option value="declaracao" <%= template && template.tipo_documento === 'declaracao' ? 'selected' : '' %>>Declaração</option>
+        <option value="contrato" <%= template && template.tipo_documento === 'contrato' ? 'selected' : '' %>>Contrato</option>
+        <option value="relatorio" <%= template && template.tipo_documento === 'relatorio' ? 'selected' : '' %>>Relatório</option>
+        <option value="atestado" <%= template && template.tipo_documento === 'atestado' ? 'selected' : '' %>>Atestado</option>
+        <option value="solicitacao" <%= template && template.tipo_documento === 'solicitacao' ? 'selected' : '' %>>Solicitação</option>
+        <option value="parecer" <%= template && template.tipo_documento === 'parecer' ? 'selected' : '' %>>Parecer</option>
+        <option value="outro" <%= template && template.tipo_documento === 'outro' ? 'selected' : '' %>>Outro</option>
+      </select>
+    </div>
+
+    <!-- Conteúdo HTML -->
+    <div class="mb-6">
+      <label for="conteudo_html" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Conteúdo do Documento (HTML) *
+      </label>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+        <strong>Dica:</strong> Use variáveis no formato <code class="bg-white dark:bg-slate-700 px-2 py-1 rounded">{{nome_variavel}}</code>
+        <br>Exemplo: <code class="bg-white dark:bg-slate-700 px-2 py-1 rounded">{{nome_responsavel}}</code>, <code class="bg-white dark:bg-slate-700 px-2 py-1 rounded">{{data_emissao}}</code>, <code class="bg-white dark:bg-slate-700 px-2 py-1 rounded">{{cpf}}</code>
+        <br>Tags suportadas: &lt;h1&gt;, &lt;h2&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;br&gt;, &lt;div&gt;
+      </div>
+      <textarea 
+        id="conteudo_html" 
+        name="conteudo_html" 
+        rows="15"
+        required
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-sm"
+        placeholder="<h1 style='text-align: center;'>TÍTULO DO DOCUMENTO</h1>
+<p style='margin-top: 30px;'>Eu, <strong>{{nome}}</strong>, portador do CPF <strong>{{cpf}}</strong>...</p>"
+      ><%= template ? template.conteudo_html : '' %></textarea>
+      <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        Variáveis detectadas: <span id="variaveisDetectadas" class="font-medium text-blue-600 dark:text-blue-400">-</span>
+      </div>
+    </div>
+
+    <!-- Configurações (JSON) -->
+    <div class="mb-6">
+      <details class="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+        <summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">Configurações Avançadas (Opcional)</summary>
+        <div class="mt-4">
+          <label for="configuracoes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Configurações (JSON)
+          </label>
+          <textarea 
+            id="configuracoes" 
+            name="configuracoes" 
+            rows="8"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-sm"
+          ><%= template ? JSON.stringify(template.configuracoes, null, 2) : JSON.stringify({
+  "tamanho_pagina": "A4",
+  "orientacao": "portrait",
+  "margens": {
+    "top": 50,
+    "right": 50,
+    "bottom": 50,
+    "left": 50
+  }
+}, null, 2) %></textarea>
+        </div>
+      </details>
+    </div>
+
+    <!-- Botões -->
+    <div class="flex gap-4">
+      <button 
+        type="submit"
+        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+      >
+        <%= template ? 'Atualizar Template' : 'Criar Template' %>
+      </button>
+      <a 
+        href="/documentos-pdf"
+        class="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-center"
+      >
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+// Detectar variáveis no conteúdo HTML
+const conteudoInput = document.getElementById('conteudo_html');
+const variaveisSpan = document.getElementById('variaveisDetectadas');
+
+function detectarVariaveis() {
+  const conteudo = conteudoInput.value;
+  const regex = /{{(\w+)}}/g;
+  const variaveis = new Set();
+  let match;
+  
+  while ((match = regex.exec(conteudo)) !== null) {
+    variaveis.add(match[1]);
+  }
+  
+  if (variaveis.size === 0) {
+    variaveisSpan.textContent = 'Nenhuma variável detectada';
+    variaveisSpan.className = 'font-medium text-gray-500 dark:text-gray-400';
+  } else {
+    variaveisSpan.textContent = Array.from(variaveis).join(', ');
+    variaveisSpan.className = 'font-medium text-blue-600 dark:text-blue-400';
+  }
+}
+
+conteudoInput.addEventListener('input', detectarVariaveis);
+detectarVariaveis(); // Executar ao carregar
+</script>
+
+<%- include('../partials/footer') %>

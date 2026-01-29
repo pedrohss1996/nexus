@@ -1,0 +1,194 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8">
+  <!-- Cabeçalho -->
+  <div class="mb-6">
+    <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-4">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Voltar para Templates
+    </a>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Gerar Documento</h1>
+    <p class="text-gray-600 dark:text-gray-400 mt-2">Template: <strong><%= template.nome %></strong></p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Formulário de Variáveis -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Preencher Variáveis</h2>
+      
+      <form id="formGerar">
+        <% 
+          const variaveis = typeof template.variaveis === 'string' 
+            ? JSON.parse(template.variaveis) 
+            : template.variaveis;
+        %>
+        <% if (!Array.isArray(variaveis) || variaveis.length === 0) { %>
+          <p class="text-gray-500 dark:text-gray-400">Este template não possui variáveis.</p>
+        <% } else { %>
+          <% variaveis.forEach(variavel => { %>
+            <div class="mb-4">
+              <label for="<%= variavel %>" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
+                <%= variavel.replace(/_/g, ' ') %>
+              </label>
+              <% if (variavel.includes('data')) { %>
+                <input 
+                  type="date" 
+                  id="<%= variavel %>" 
+                  name="<%= variavel %>"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
+                  data-variavel="<%= variavel %>"
+                >
+              <% } else if (variavel.includes('valor') || variavel.includes('preco')) { %>
+                <input 
+                  type="number" 
+                  id="<%= variavel %>" 
+                  name="<%= variavel %>"
+                  step="0.01"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
+                  data-variavel="<%= variavel %>"
+                  placeholder="0.00"
+                >
+              <% } else if (variavel.includes('texto') || variavel.includes('descricao') || variavel.includes('corpo')) { %>
+                <textarea 
+                  id="<%= variavel %>" 
+                  name="<%= variavel %>"
+                  rows="4"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
+                  data-variavel="<%= variavel %>"
+                ></textarea>
+              <% } else { %>
+                <input 
+                  type="text" 
+                  id="<%= variavel %>" 
+                  name="<%= variavel %>"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
+                  data-variavel="<%= variavel %>"
+                >
+              <% } %>
+            </div>
+          <% }); %>
+        <% } %>
+
+        <button 
+          type="submit"
+          id="btnGerar"
+          class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          Gerar PDF
+        </button>
+      </form>
+
+      <!-- Mensagem de sucesso -->
+      <div id="mensagemSucesso" class="hidden mt-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg">
+        <p class="font-medium">PDF gerado com sucesso!</p>
+        <a id="linkDownload" href="#" class="text-green-800 dark:text-green-300 underline font-semibold mt-2 inline-block">
+          Clique aqui para baixar
+        </a>
+      </div>
+
+      <!-- Mensagem de erro -->
+      <div id="mensagemErro" class="hidden mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
+        <p class="font-medium">Erro ao gerar PDF</p>
+        <p id="textoErro" class="text-sm mt-1"></p>
+      </div>
+    </div>
+
+    <!-- Preview do Template -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Preview do Documento</h2>
+      
+      <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-slate-900 max-h-[600px] overflow-y-auto">
+        <div id="preview" class="prose dark:prose-invert max-w-none">
+          <%- template.conteudo_html.replace(/{{(\w+)}}/g, '<span class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded font-semibold text-yellow-900 dark:text-yellow-200">{{$1}}</span>') %>
+        </div>
+      </div>
+
+      <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+        <strong>Nota:</strong> As variáveis destacadas serão substituídas pelos valores que você inserir.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('formGerar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const btnGerar = document.getElementById('btnGerar');
+  const mensagemSucesso = document.getElementById('mensagemSucesso');
+  const mensagemErro = document.getElementById('mensagemErro');
+  const linkDownload = document.getElementById('linkDownload');
+  const textoErro = document.getElementById('textoErro');
+  
+  // Ocultar mensagens
+  mensagemSucesso.classList.add('hidden');
+  mensagemErro.classList.add('hidden');
+  
+  // Desabilitar botão
+  btnGerar.disabled = true;
+  btnGerar.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Gerando PDF...';
+  
+  // Coletar dados do formulário
+  const formData = new FormData(e.target);
+  const dados = {};
+  for (const [key, value] of formData.entries()) {
+    dados[key] = value;
+  }
+  
+  try {
+    const response = await fetch('/documentos-pdf/<%= template.id %>/gerar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    });
+    
+    const resultado = await response.json();
+    
+    if (resultado.success) {
+      linkDownload.href = resultado.downloadUrl;
+      mensagemSucesso.classList.remove('hidden');
+    } else {
+      textoErro.textContent = resultado.message || 'Erro desconhecido';
+      mensagemErro.classList.remove('hidden');
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    textoErro.textContent = error.message;
+    mensagemErro.classList.remove('hidden');
+  } finally {
+    // Reabilitar botão
+    btnGerar.disabled = false;
+    btnGerar.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>Gerar PDF';
+  }
+});
+
+// Atualizar preview em tempo real
+document.querySelectorAll('.variavel-input').forEach(input => {
+  input.addEventListener('input', () => {
+    atualizarPreview();
+  });
+});
+
+function atualizarPreview() {
+  const preview = document.getElementById('preview');
+  let html = `<%- template.conteudo_html %>`;
+  
+  document.querySelectorAll('.variavel-input').forEach(input => {
+    const variavel = input.dataset.variavel;
+    const valor = input.value || `<span class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded font-semibold text-yellow-900 dark:text-yellow-200">{{${variavel}}}</span>`;
+    const regex = new RegExp(`{{${variavel}}}`, 'g');
+    html = html.replace(regex, valor);
+  });
+  
+  preview.innerHTML = html;
+}
+</script>
+
+<%- include('../partials/footer') %>

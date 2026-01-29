@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
-const { mockUser } = require('../utils/mockData');
 
 // Middleware de autenticação JWT
 const authenticateToken = async (req, res, next) => {
@@ -28,11 +27,16 @@ const authenticateToken = async (req, res, next) => {
     const jwtSecret = process.env.JWT_SECRET || 'mock-secret-key-for-development-only';
     const decoded = jwt.verify(cookieToken, jwtSecret);
 
-    // Se for usuário mockado, usar dados mockados
+    // Token com flag mock não é mais aceito - exige novo login no banco
     if (decoded.mock) {
-      console.log('🔷 Usando usuário MOCK:', mockUser);
-      req.user = mockUser;
-      return next();
+      if (req.path.startsWith('/api/')) {
+        return res.status(401).json({
+          success: false,
+          message: 'Sessão inválida. Faça login novamente.'
+        });
+      }
+      res.clearCookie('token');
+      return res.redirect('/auth/login');
     }
 
     // Buscar usuário no banco
@@ -56,12 +60,6 @@ const authenticateToken = async (req, res, next) => {
       req.user = result.rows[0];
       next();
     } catch (error) {
-      // Se der erro de conexão, usar modo mock
-      if (error.code === 'ECONNREFUSED' || error.message.includes('connect')) {
-        console.log('⚠️  Erro de conexão com banco. Usando modo MOCK...');
-        req.user = mockUser;
-        return next();
-      }
       throw error;
     }
   } catch (error) {

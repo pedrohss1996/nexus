@@ -1,0 +1,171 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8 max-w-5xl mx-auto">
+  <!-- Cabeçalho -->
+  <div class="mb-8">
+    <a href="/protocolo" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center mb-4">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Voltar
+    </a>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Novo Protocolo</h1>
+    <p class="text-gray-600 dark:text-gray-400 mt-2">Preencha as informações para criar um novo protocolo</p>
+  </div>
+
+  <!-- Formulário -->
+  <form action="<%= action %>" method="POST" class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8">
+    <div class="space-y-6">
+      <!-- Tipo de Documento -->
+      <div>
+        <label for="tipo_documento" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Tipo de Documento *
+        </label>
+        <select 
+          id="tipo_documento" 
+          name="tipo_documento" 
+          required
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        >
+          <option value="">Selecione...</option>
+          <option value="oficio">Ofício</option>
+          <option value="memorando">Memorando</option>
+          <option value="requerimento">Requerimento</option>
+          <option value="declaracao">Declaração</option>
+          <option value="atestado">Atestado</option>
+          <option value="termo">Termo</option>
+          <option value="contrato">Contrato</option>
+          <option value="relatorio">Relatório</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+
+      <!-- Assunto -->
+      <div>
+        <label for="assunto" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Assunto *
+        </label>
+        <textarea 
+          id="assunto" 
+          name="assunto" 
+          required
+          rows="3"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+          placeholder="Descreva o assunto do documento"
+        ><%= protocolo ? protocolo.assunto : '' %></textarea>
+      </div>
+
+      <!-- Interessado e CPF/CNPJ -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="interessado" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Interessado
+          </label>
+          <input 
+            type="text" 
+            id="interessado" 
+            name="interessado" 
+            value="<%= protocolo ? protocolo.interessado : '' %>"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="Nome do interessado"
+          >
+        </div>
+        <div>
+          <label for="cpf_cnpj" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            CPF/CNPJ
+          </label>
+          <input 
+            type="text" 
+            id="cpf_cnpj" 
+            name="cpf_cnpj" 
+            value="<%= protocolo ? protocolo.cpf_cnpj : '' %>"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="000.000.000-00"
+          >
+        </div>
+      </div>
+
+      <!-- Origem e Destino -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="origem" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Origem
+          </label>
+          <input 
+            type="text" 
+            id="origem" 
+            name="origem" 
+            value="<%= protocolo ? protocolo.origem : '' %>"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="Unidade/Setor de origem"
+          >
+        </div>
+        <div>
+          <label for="destino" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Destino
+          </label>
+          <input 
+            type="text" 
+            id="destino" 
+            name="destino" 
+            value="<%= protocolo ? protocolo.destino : '' %>"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            placeholder="Unidade/Setor de destino"
+          >
+        </div>
+      </div>
+
+      <!-- Prioridade -->
+      <div>
+        <label for="prioridade" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Prioridade
+        </label>
+        <select 
+          id="prioridade" 
+          name="prioridade"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        >
+          <option value="baixa">Baixa</option>
+          <option value="normal" selected>Normal</option>
+          <option value="alta">Alta</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+
+      <!-- Observações -->
+      <div>
+        <label for="observacoes" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Observações
+        </label>
+        <textarea 
+          id="observacoes" 
+          name="observacoes" 
+          rows="4"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+          placeholder="Informações adicionais"
+        ><%= protocolo ? protocolo.observacoes : '' %></textarea>
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <a 
+        href="/protocolo"
+        class="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
+      >
+        Cancelar
+      </a>
+      <button 
+        type="submit"
+        class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        Criar Protocolo
+      </button>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

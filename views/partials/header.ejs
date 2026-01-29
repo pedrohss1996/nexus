@@ -4,18 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title><%= typeof title !== 'undefined' ? title : 'DataFlow' %></title>
+  <title><%= typeof title !== 'undefined' ? title : 'E-DOC - Sistema de Gestão Eletrônica de Documentos' %></title>
   <link href="/css/output.css" rel="stylesheet">
+  <link href="/css/fullwidth-layout.css" rel="stylesheet">
+  
+  <!-- Quill Editor CSS -->
+  <% if (typeof useQuill !== 'undefined' && useQuill) { %>
+    <link href="/libs/quill/quill.snow.css" rel="stylesheet">
+  <% } %>
 </head>
 <body class="bg-gray-50 antialiased">
   <% if (typeof user !== 'undefined' && user) { %>
     <!-- Header -->
     <header class="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700 sticky top-0 z-50 transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="w-full px-6">
         <div class="flex justify-between items-center h-16">
-          <!-- Logo -->
-          <div class="flex items-center">
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 dark:from-cyan-400 dark:to-teal-400 bg-clip-text text-transparent">DataFlow</h1>
+          <!-- Logo E-DOC -->
+          <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-500 dark:to-indigo-600 p-2 rounded-lg shadow-lg">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">E-DOC</h1>
+              <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Gestão Eletrônica de Documentos</p>
+            </div>
           </div>
 
           <!-- Seletor de Unidade -->
@@ -87,46 +101,70 @@
 
     <!-- Navigation -->
     <nav class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="w-full px-6">
         <div class="flex items-center space-x-2 overflow-x-auto py-2">
-          <!-- Iniciar Processo - Botão Azul -->
-          <a href="/processos/novo" class="bg-blue-600 dark:bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center whitespace-nowrap">
+          <!-- Novo Documento - Botão Destaque -->
+          <a href="/documentos-pdf/novo" class="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white px-5 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg text-sm font-semibold flex items-center whitespace-nowrap">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            Iniciar Processo
+            Novo Documento
           </a>
           
-          <!-- Acompanhamento - Botão Verde Teal (Ativo) -->
-          <a href="/dashboard" class="bg-teal-500 dark:bg-teal-600 text-white px-4 py-2.5 rounded-lg hover:bg-teal-600 dark:hover:bg-teal-500 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center whitespace-nowrap">
+          <!-- Dashboard -->
+          <a href="/dashboard" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
             </svg>
-            Acompanhamento
+            Início
           </a>
           
-          <!-- Anexos - Item de Menu -->
-          <a href="/anexos" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+          <!-- Protocolo -->
+          <a href="/protocolo" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
             </svg>
-            Anexos
+            Protocolo
           </a>
           
-          <!-- Notas Fiscais - Item de Menu -->
-          <a href="/notas-fiscais" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+          <!-- Tramitação -->
+          <a href="/tramitacao" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+            </svg>
+            Tramitação
+          </a>
+          
+          <!-- Templates -->
+          <a href="/documentos-pdf" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
-            Notas Fiscais
+            Templates
           </a>
           
-          <!-- Fornecedores - Item de Menu -->
-          <a href="/fornecedores" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+          <!-- Arquivo Digital -->
+          <a href="/arquivo" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
             </svg>
-            Fornecedores
+            Arquivo
+          </a>
+          
+          <!-- Assinatura Digital -->
+          <a href="/assinatura" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+            Assinatura
+          </a>
+          
+          <!-- Processos -->
+          <a href="/processos" class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            Processos
           </a>
           
           <!-- Cadastros - Dropdown Menu -->
@@ -272,4 +310,4 @@
   <% } %>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors">
+  <main class="w-full px-0 py-0 bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors">

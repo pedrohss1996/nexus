@@ -1,0 +1,489 @@
+<%- include('../partials/header', { useQuill: true }) %>
+
+<!-- Carregar Quill.js antes de usar -->
+<script src="/libs/quill/quill.js"></script>
+<script src="/js/quill-table-module.js"></script>
+
+<style>
+  /* Remover padding do main e usar tela inteira */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  body {
+    overflow-x: hidden;
+  }
+</style>
+
+<div class="w-full">
+  <!-- Cabeçalho -->
+  <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-2">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Voltar para Templates
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <%= template ? 'Editar Template' : 'Novo Template' %>
+        </h1>
+      </div>
+      <div class="flex gap-3">
+        <a 
+          href="/documentos-pdf"
+          class="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
+        >
+          Cancelar
+        </a>
+        <button 
+          type="submit"
+          form="formTemplate"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <%= template ? 'Atualizar' : 'Criar Template' %>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário -->
+  <form action="<%= action %>" method="POST" id="formTemplate">
+    <!-- Informações Básicas - Barra superior -->
+    <div class="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Nome -->
+          <div>
+            <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Nome do Template *
+            </label>
+            <input 
+              type="text" 
+              id="nome" 
+              name="nome" 
+              required
+              value="<%= template ? template.nome : '' %>"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+              placeholder="Ex: Comunicação de Abono"
+            >
+          </div>
+
+          <!-- Tipo de Documento -->
+          <div>
+            <label for="tipo_documento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Tipo de Documento *
+            </label>
+            <select 
+              id="tipo_documento" 
+              name="tipo_documento" 
+              required
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">Selecione...</option>
+              <option value="termo" <%= template && template.tipo_documento === 'termo' ? 'selected' : '' %>>Termo</option>
+              <option value="oficio" <%= template && template.tipo_documento === 'oficio' ? 'selected' : '' %>>Ofício</option>
+              <option value="declaracao" <%= template && template.tipo_documento === 'declaracao' ? 'selected' : '' %>>Declaração</option>
+              <option value="contrato" <%= template && template.tipo_documento === 'contrato' ? 'selected' : '' %>>Contrato</option>
+              <option value="relatorio" <%= template && template.tipo_documento === 'relatorio' ? 'selected' : '' %>>Relatório</option>
+              <option value="comunicacao" <%= template && template.tipo_documento === 'comunicacao' ? 'selected' : '' %>>Comunicação</option>
+              <option value="atestado" <%= template && template.tipo_documento === 'atestado' ? 'selected' : '' %>>Atestado</option>
+              <option value="solicitacao" <%= template && template.tipo_documento === 'solicitacao' ? 'selected' : '' %>>Solicitação</option>
+              <option value="parecer" <%= template && template.tipo_documento === 'parecer' ? 'selected' : '' %>>Parecer</option>
+              <option value="outro" <%= template && template.tipo_documento === 'outro' ? 'selected' : '' %>>Outro</option>
+            </select>
+          </div>
+
+          <!-- Descrição -->
+          <div>
+            <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Descrição
+            </label>
+            <input 
+              type="text" 
+              id="descricao" 
+              name="descricao" 
+              value="<%= template ? template.descricao : '' %>"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+              placeholder="Breve descrição"
+            >
+          </div>
+        </div>
+    </div>
+
+    <!-- Editor e Preview - Tela inteira lado a lado -->
+    <div class="grid grid-cols-2 gap-0" style="height: calc(100vh - 280px);">
+      <!-- Editor Visual -->
+      <div class="bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-6 flex flex-col h-full">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2 flex-shrink-0">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Editor de Documento</h2>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" id="btnInserirVariavel" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+              </svg>
+              Variável
+            </button>
+            <button type="button" id="btnInserirTabela" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
+              Tabela
+            </button>
+            <button type="button" id="btnCabecalho" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              Cabeçalho
+            </button>
+          </div>
+        </div>
+
+        <!-- Container do Editor com scroll -->
+        <div class="flex-1 overflow-hidden flex flex-col">
+          <!-- Toolbar do Quill -->
+          <div id="toolbar" class="bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded-t-lg flex-shrink-0">
+          <!-- Formatação de Texto -->
+          <span class="ql-formats">
+            <select class="ql-font"></select>
+            <select class="ql-size"></select>
+          </span>
+          
+          <!-- Estilos -->
+          <span class="ql-formats">
+            <button class="ql-bold"></button>
+            <button class="ql-italic"></button>
+            <button class="ql-underline"></button>
+            <button class="ql-strike"></button>
+          </span>
+          
+          <!-- Cores -->
+          <span class="ql-formats">
+            <select class="ql-color"></select>
+            <select class="ql-background"></select>
+          </span>
+          
+          <!-- Alinhamento -->
+          <span class="ql-formats">
+            <button class="ql-align" value=""></button>
+            <button class="ql-align" value="center"></button>
+            <button class="ql-align" value="right"></button>
+            <button class="ql-align" value="justify"></button>
+          </span>
+          
+          <!-- Listas -->
+          <span class="ql-formats">
+            <button class="ql-list" value="ordered"></button>
+            <button class="ql-list" value="bullet"></button>
+            <button class="ql-indent" value="-1"></button>
+            <button class="ql-indent" value="+1"></button>
+          </span>
+          
+          <!-- Inserções -->
+          <span class="ql-formats">
+            <button class="ql-link"></button>
+            <button class="ql-image"></button>
+          </span>
+          
+          <!-- Limpar formatação -->
+          <span class="ql-formats">
+            <button class="ql-clean"></button>
+          </span>
+        </div>
+
+          <!-- Editor -->
+          <div id="editor" class="bg-white dark:bg-slate-900 border-l border-r border-b border-gray-300 dark:border-gray-600 rounded-b-lg flex-1 overflow-y-auto"></div>
+
+          <!-- Campo hidden para o HTML -->
+          <input type="hidden" id="conteudo_html" name="conteudo_html">
+          
+          <!-- Campo hidden para conteúdo inicial (ao editar) -->
+          <input type="hidden" id="conteudo_inicial" value="<%= template ? Buffer.from(template.conteudo_html).toString('base64') : '' %>">
+        </div>
+
+        <!-- Dicas -->
+        <div class="mt-4 text-xs bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-blue-800 dark:text-blue-300 flex-shrink-0">
+          <strong>💡 Dicas:</strong>
+          <ul class="list-disc list-inside mt-1 space-y-1">
+            <li>Use o botão "Inserir Variável" para adicionar campos dinâmicos</li>
+            <li>Variáveis são destacadas em roxo: <code class="bg-purple-200 dark:bg-purple-800 px-1 rounded">{{nome_variavel}}</code></li>
+            <li>Você pode inserir imagens, tabelas e formatação rica</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Preview ao Vivo -->
+      <div class="bg-gray-50 dark:bg-slate-900 p-6 flex flex-col h-full">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex-shrink-0">Preview do PDF</h2>
+        
+        <div class="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-slate-900 flex-1 overflow-y-auto">
+          <div id="preview" class="prose dark:prose-invert max-w-none">
+            <!-- Preview será atualizado aqui -->
+          </div>
+        </div>
+
+        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+          <div class="flex items-start">
+            <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <strong>Variáveis detectadas:</strong>
+              <span id="variaveisDetectadas" class="text-purple-600 dark:text-purple-400 font-medium">Nenhuma</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Modal para Inserir Variável -->
+<div id="modalVariavel" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Inserir Variável</h3>
+    
+    <div class="mb-4">
+      <label for="nomeVariavel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Nome da Variável
+      </label>
+      <input 
+        type="text" 
+        id="nomeVariavel" 
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-slate-700 dark:text-white"
+        placeholder="Ex: nome_servidor, data_emissao"
+      >
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Use letras minúsculas e underline (_)</p>
+    </div>
+
+    <div class="flex gap-3">
+      <button 
+        type="button" 
+        id="btnConfirmarVariavel"
+        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+      >
+        Inserir
+      </button>
+      <button 
+        type="button" 
+        id="btnCancelarVariavel"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+      >
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Inicializar Quill
+const quill = new Quill('#editor', {
+  modules: {
+    toolbar: {
+      container: '#toolbar',
+      handlers: {
+        'image': function() {
+          const url = prompt('Digite a URL da imagem:');
+          if (url) {
+            const range = this.quill.getSelection();
+            this.quill.insertEmbed(range.index, 'image', url);
+          }
+        }
+      }
+    }
+  },
+  theme: 'snow',
+  placeholder: 'Digite o conteúdo do seu documento aqui...'
+});
+
+// Carregar conteúdo inicial ao editar (decodificar base64)
+const conteudoInicial = document.getElementById('conteudo_inicial').value;
+if (conteudoInicial) {
+  try {
+    const htmlDecodificado = atob(conteudoInicial);
+    quill.clipboard.dangerouslyPasteHTML(htmlDecodificado);
+  } catch (e) {
+    console.error('Erro ao carregar conteúdo:', e);
+  }
+}
+
+// Atualizar preview em tempo real
+quill.on('text-change', function() {
+  atualizarPreview();
+});
+
+function atualizarPreview() {
+  const html = quill.root.innerHTML;
+  document.getElementById('preview').innerHTML = html;
+  
+  // Detectar variáveis
+  const regex = /{{(\w+)}}/g;
+  const variaveis = new Set();
+  let match;
+  
+  while ((match = regex.exec(html)) !== null) {
+    variaveis.add(match[1]);
+  }
+  
+  const variaveisSpan = document.getElementById('variaveisDetectadas');
+  if (variaveis.size === 0) {
+    variaveisSpan.textContent = 'Nenhuma';
+    variaveisSpan.className = 'text-gray-500 dark:text-gray-400 font-medium';
+  } else {
+    variaveisSpan.textContent = Array.from(variaveis).join(', ');
+    variaveisSpan.className = 'text-purple-600 dark:text-purple-400 font-medium';
+  }
+}
+
+// Modal de variável
+const modal = document.getElementById('modalVariavel');
+const btnInserir = document.getElementById('btnInserirVariavel');
+const btnConfirmar = document.getElementById('btnConfirmarVariavel');
+const btnCancelar = document.getElementById('btnCancelarVariavel');
+const inputVariavel = document.getElementById('nomeVariavel');
+
+btnInserir.addEventListener('click', () => {
+  modal.classList.remove('hidden');
+  inputVariavel.value = '';
+  inputVariavel.focus();
+});
+
+btnCancelar.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+btnConfirmar.addEventListener('click', () => {
+  const nomeVariavel = inputVariavel.value.trim();
+  if (nomeVariavel) {
+    // Inserir variável no editor
+    const range = quill.getSelection(true);
+    const variavelTexto = `{{${nomeVariavel}}}`;
+    
+    // Inserir variável com formatação
+    quill.insertText(range.index, variavelTexto, {
+      'color': '#9333ea',
+      'background': '#f3e8ff',
+      'bold': true
+    });
+    
+    // Adicionar espaço DEPOIS sem formatação
+    quill.insertText(range.index + variavelTexto.length, ' ', {
+      'color': '#000000',
+      'background': false,
+      'bold': false
+    });
+    
+    // Posicionar cursor após o espaço
+    quill.setSelection(range.index + variavelTexto.length + 1);
+    
+    modal.classList.add('hidden');
+    atualizarPreview();
+  }
+});
+
+// Enter no input insere a variável
+inputVariavel.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    btnConfirmar.click();
+  }
+});
+
+// Botão Inserir Tabela
+document.getElementById('btnInserirTabela').addEventListener('click', () => {
+  const linhas = prompt('Número de linhas:', '3');
+  const colunas = prompt('Número de colunas:', '3');
+  
+  if (linhas && colunas) {
+    inserirTabelaQuill(quill, parseInt(linhas), parseInt(colunas));
+    atualizarPreview();
+  }
+});
+
+// Botão Cabeçalho Oficial
+document.getElementById('btnCabecalho').addEventListener('click', () => {
+  const titulo = prompt('Título do órgão:', 'GOVERNO DO ESTADO');
+  const subtitulo = prompt('Subtítulo:', 'SECRETARIA DE GESTÃO');
+  
+  if (titulo && subtitulo) {
+    inserirCabecalhoOficial(quill, titulo, subtitulo);
+    atualizarPreview();
+  }
+});
+
+// Salvar HTML antes de submeter o formulário
+document.getElementById('formTemplate').addEventListener('submit', (e) => {
+  const html = quill.root.innerHTML;
+  document.getElementById('conteudo_html').value = html;
+});
+
+// Carregar preview inicial se houver template
+setTimeout(() => {
+  atualizarPreview();
+}, 100);
+</script>
+
+<style>
+/* Estilo customizado para o Quill no dark mode */
+.dark .ql-toolbar {
+  background: #334155;
+  border-color: #475569;
+}
+
+.dark .ql-container {
+  background: #0f172a;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: #94a3b8;
+}
+
+.dark .ql-stroke {
+  stroke: #cbd5e1;
+}
+
+.dark .ql-fill {
+  fill: #cbd5e1;
+}
+
+.dark .ql-picker-label {
+  color: #cbd5e1;
+}
+
+/* Ajustar altura do editor - tela inteira */
+.ql-container {
+  font-size: 14px;
+  height: 100%;
+}
+
+.ql-editor {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Melhorar scroll */
+.ql-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ql-editor::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.ql-editor::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.ql-editor::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>
+
+<%- include('../partials/footer') %>

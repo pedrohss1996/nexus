@@ -18,6 +18,10 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const processoRoutes = require('./routes/processoRoutes');
 const documentoRoutes = require('./routes/documentoRoutes');
 const fornecedorRoutes = require('./routes/fornecedorRoutes');
+const documentoPDFRoutes = require('./routes/documentoPDFRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const protocoloRoutes = require('./routes/protocoloRoutes');
+const tramitacaoRoutes = require('./routes/tramitacaoRoutes');
 const grupoRoutes = require('./routes/grupoRoutes');
 const unidadeRoutes = require('./routes/unidadeRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
@@ -45,9 +49,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:", "http:"],
+      fontSrc: ["'self'", "data:", "https://cdn.ckeditor.com", "https://ckeditor.com"],
+      connectSrc: ["'self'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
     },
   },
 }));
@@ -100,6 +106,10 @@ app.use('/dashboard', authenticateToken, loadUnidades, dashboardRoutes);
 app.use('/processos', authenticateToken, loadUnidades, processoRoutes);
 app.use('/documentos', authenticateToken, loadUnidades, documentoRoutes);
 app.use('/fornecedores', authenticateToken, loadUnidades, fornecedorRoutes);
+app.use('/documentos-pdf', authenticateToken, loadUnidades, documentoPDFRoutes);
+app.use('/upload', authenticateToken, uploadRoutes);
+app.use('/protocolo', authenticateToken, loadUnidades, protocoloRoutes);
+app.use('/tramitacao', authenticateToken, loadUnidades, tramitacaoRoutes);
 app.use('/grupos', authenticateToken, loadUnidades, grupoRoutes);
 app.use('/unidades', authenticateToken, loadUnidades, unidadeRoutes);
 app.use('/cadastros/usuarios', authenticateToken, loadUnidades, usuarioRoutes);
@@ -120,6 +130,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📝 Editor Visual de Documentos: Ativo`);
 });
 
 module.exports = { app, io };

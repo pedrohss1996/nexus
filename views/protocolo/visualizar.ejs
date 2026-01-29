@@ -1,0 +1,184 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8 max-w-7xl mx-auto">
+  <!-- Cabeçalho -->
+  <div class="mb-8">
+    <a href="/protocolo" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center mb-4">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Voltar para Protocolos
+    </a>
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Protocolo <%= protocolo.numero_protocolo %></h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2"><%= protocolo.tipo_documento %></p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <% if (protocolo.prioridade === 'urgente') { %>
+          <span class="px-4 py-2 text-sm font-semibold rounded-lg bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">🚨 Urgente</span>
+        <% } else if (protocolo.prioridade === 'alta') { %>
+          <span class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">⚠️ Alta</span>
+        <% } %>
+        
+        <% if (protocolo.status === 'aguardando') { %>
+          <span class="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Aguardando</span>
+        <% } else if (protocolo.status === 'em_tramite') { %>
+          <span class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Em Trâmite</span>
+        <% } else if (protocolo.status === 'arquivado') { %>
+          <span class="px-4 py-2 text-sm font-semibold rounded-lg bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Arquivado</span>
+        <% } %>
+
+        <a href="/tramitacao/protocolo/<%= protocolo.id %>/tramitar" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
+          Tramitar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid Principal -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Coluna Principal -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Informações do Protocolo -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Informações do Protocolo</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">Assunto</label>
+            <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.assunto %></p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">Interessado</label>
+              <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.interessado || '-' %></p>
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">CPF/CNPJ</label>
+              <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.cpf_cnpj || '-' %></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">Origem</label>
+              <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.origem || '-' %></p>
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">Destino</label>
+              <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.destino || '-' %></p>
+            </div>
+          </div>
+
+          <% if (protocolo.observacoes) { %>
+            <div>
+              <label class="text-sm font-semibold text-gray-500 dark:text-gray-400">Observações</label>
+              <p class="text-gray-900 dark:text-white mt-1"><%= protocolo.observacoes %></p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Histórico de Tramitações -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Histórico de Tramitações</h2>
+        
+        <% if (tramitacoes.length === 0) { %>
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+            </svg>
+            <p>Nenhuma tramitação registrada</p>
+          </div>
+        <% } else { %>
+          <div class="space-y-4">
+            <% tramitacoes.forEach((tram, index) => { %>
+              <div class="relative pl-8 pb-6 <%= index === tramitacoes.length - 1 ? '' : 'border-l-2 border-gray-200 dark:border-gray-700' %>">
+                <div class="absolute left-0 top-0 -translate-x-1/2 bg-blue-600 dark:bg-blue-500 rounded-full p-2">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                  </svg>
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-gray-900 dark:text-white"><%= tram.origem_nome %> → <%= tram.destino_nome %></h3>
+                    <% if (tram.status === 'pendente') { %>
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pendente</span>
+                    <% } else if (tram.status === 'recebido') { %>
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Recebido</span>
+                    <% } %>
+                  </div>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <strong>Tipo:</strong> <%= tram.tipo_tramitacao %> | 
+                    <strong>Enviado por:</strong> <%= tram.usuario_origem_nome %>
+                  </p>
+                  <% if (tram.despacho) { %>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 italic">"<%= tram.despacho %>"</p>
+                  <% } %>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <%= new Date(tram.data_envio).toLocaleString('pt-BR') %>
+                  </p>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Coluna Lateral -->
+    <div class="space-y-6">
+      <!-- Informações Gerais -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Informações Gerais</h3>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Unidade</label>
+            <p class="text-sm text-gray-900 dark:text-white"><%= protocolo.unidade_nome %></p>
+          </div>
+          
+          <div>
+            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Criado por</label>
+            <p class="text-sm text-gray-900 dark:text-white"><%= protocolo.criado_por_nome %></p>
+          </div>
+          
+          <div>
+            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Data de Criação</label>
+            <p class="text-sm text-gray-900 dark:text-white"><%= new Date(protocolo.criado_em).toLocaleString('pt-BR') %></p>
+          </div>
+          
+          <div>
+            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400">Última Atualização</label>
+            <p class="text-sm text-gray-900 dark:text-white"><%= new Date(protocolo.atualizado_em).toLocaleString('pt-BR') %></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histórico de Ações -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Histórico de Ações</h3>
+        
+        <div class="space-y-3">
+          <% historico.forEach(acao => { %>
+            <div class="text-sm">
+              <p class="font-semibold text-gray-900 dark:text-white"><%= acao.acao %></p>
+              <p class="text-gray-600 dark:text-gray-400"><%= acao.descricao %></p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <%= acao.usuario_nome %> - <%= new Date(acao.criado_em).toLocaleString('pt-BR') %>
+              </p>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

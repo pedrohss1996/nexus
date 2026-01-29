@@ -1,0 +1,38 @@
+/* Layout de Tela Inteira - Aplicado globalmente */
+
+/* Remover margens do main */
+main {
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Container padrão com padding interno */
+.page-container {
+  width: 100%;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Remover max-width de containers antigos */
+.container.mx-auto {
+  max-width: 100% !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+/* Header e Nav sem max-width */
+header > div,
+nav > div {
+  max-width: 100% !important;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+  .page-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

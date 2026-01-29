@@ -1,0 +1,120 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8 max-w-4xl mx-auto">
+  <!-- Cabeçalho -->
+  <div class="mb-8">
+    <a href="/protocolo/<%= protocolo.id %>" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center mb-4">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Voltar ao Protocolo
+    </a>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Tramitar Documento</h1>
+    <p class="text-gray-600 dark:text-gray-400 mt-2">Protocolo <%= protocolo.numero_protocolo %></p>
+  </div>
+
+  <!-- Informações do Protocolo -->
+  <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
+    <h3 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">Informações do Protocolo</h3>
+    <p class="text-sm text-blue-800 dark:text-blue-400"><strong>Assunto:</strong> <%= protocolo.assunto %></p>
+    <p class="text-sm text-blue-800 dark:text-blue-400 mt-1"><strong>Tipo:</strong> <%= protocolo.tipo_documento %></p>
+    <% if (protocolo.interessado) { %>
+      <p class="text-sm text-blue-800 dark:text-blue-400 mt-1"><strong>Interessado:</strong> <%= protocolo.interessado %></p>
+    <% } %>
+  </div>
+
+  <!-- Formulário de Tramitação -->
+  <form action="/tramitacao/protocolo/<%= protocolo.id %>/tramitar" method="POST" class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8">
+    <div class="space-y-6">
+      <!-- Unidade de Destino -->
+      <div>
+        <label for="unidade_destino_id" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Unidade de Destino *
+        </label>
+        <select 
+          id="unidade_destino_id" 
+          name="unidade_destino_id" 
+          required
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        >
+          <option value="">Selecione a unidade...</option>
+          <% unidadesDisponiveis.forEach(unidade => { %>
+            <option value="<%= unidade.id %>"><%= unidade.nome %> <%= unidade.sigla ? `(${unidade.sigla})` : '' %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- Tipo de Tramitação -->
+      <div>
+        <label for="tipo_tramitacao" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Tipo de Tramitação *
+        </label>
+        <select 
+          id="tipo_tramitacao" 
+          name="tipo_tramitacao" 
+          required
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        >
+          <option value="">Selecione...</option>
+          <option value="encaminhamento">Encaminhamento</option>
+          <option value="devolucao">Devolução</option>
+          <option value="arquivamento">Arquivamento</option>
+          <option value="redistribuicao">Redistribuição</option>
+          <option value="ciencia">Ciência</option>
+        </select>
+      </div>
+
+      <!-- Despacho -->
+      <div>
+        <label for="despacho" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Despacho *
+        </label>
+        <textarea 
+          id="despacho" 
+          name="despacho" 
+          required
+          rows="5"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+          placeholder="Descreva o motivo da tramitação e orientações necessárias..."
+        ></textarea>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Este despacho será visível para a unidade de destino</p>
+      </div>
+
+      <!-- Prazo de Resposta -->
+      <div>
+        <label for="prazo_resposta" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Prazo de Resposta (opcional)
+        </label>
+        <input 
+          type="date" 
+          id="prazo_resposta" 
+          name="prazo_resposta" 
+          min="<%= new Date().toISOString().split('T')[0] %>"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+        >
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Defina um prazo limite para resposta, se necessário</p>
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <a 
+        href="/protocolo/<%= protocolo.id %>"
+        class="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
+      >
+        Cancelar
+      </a>
+      <button 
+        type="submit"
+        class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+        </svg>
+        Tramitar Documento
+      </button>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,27 +1,9 @@
 const { query } = require('../config/database');
-const { 
-  mockOrcamento,
-  mockSolicitacoesRecentes
-} = require('../utils/mockData');
 
 class DashboardController {
   // Dashboard principal
   static async index(req, res) {
     try {
-      // Verificar se deve usar dados mockados
-      const USE_MOCK_MODE = process.env.USE_MOCK_DATA === 'true' || !process.env.DB_PASSWORD || (req.user && req.user.mock);
-
-      if (USE_MOCK_MODE) {
-        console.log('⚠️  MODO MOCK ATIVO - Usando dados mockados no dashboard');
-        
-        return res.render('dashboard/index', {
-          title: 'Dashboard - DataFlow',
-          user: req.user,
-          orcamento: mockOrcamento,
-          solicitacoesRecentes: mockSolicitacoesRecentes
-        });
-      }
-
       // Orçamento por centro de custos
       const orcamentoQuery = await query(
         `SELECT 
@@ -59,19 +41,6 @@ class DashboardController {
       });
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
-      
-      // Se der erro de conexão, usar dados mockados
-      if (error.code === 'ECONNREFUSED' || error.message.includes('connect')) {
-        console.log('⚠️  Erro de conexão com banco. Usando dados MOCK...');
-        
-        return res.render('dashboard/index', {
-          title: 'Dashboard - DataFlow',
-          user: req.user,
-          orcamento: mockOrcamento,
-          solicitacoesRecentes: mockSolicitacoesRecentes
-        });
-      }
-      
       res.status(500).render('error', {
         title: 'Erro - DataFlow',
         message: 'Erro ao carregar dashboard'

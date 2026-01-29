@@ -1,0 +1,196 @@
+<%- include('../partials/header') %>
+
+<div class="w-full px-8 py-8">
+  <!-- Cabeçalho -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+      <svg class="w-8 h-8 mr-3 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+      </svg>
+      Tramitação de Documentos
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400 mt-2">Gerencie o envio e recebimento de documentos entre unidades</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6">
+    <div class="border-b border-gray-200 dark:border-gray-700">
+      <nav class="-mb-px flex space-x-8">
+        <button 
+          onclick="switchTab('recebidas')"
+          id="tab-recebidas"
+          class="tab-button active border-b-2 border-blue-500 py-4 px-1 text-sm font-semibold text-blue-600 dark:text-blue-400"
+        >
+          Recebidas
+          <span class="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 py-1 px-2.5 rounded-full text-xs font-bold">
+            <%= recebidas.length %>
+          </span>
+        </button>
+        <button 
+          onclick="switchTab('enviadas')"
+          id="tab-enviadas"
+          class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+        >
+          Enviadas
+          <span class="ml-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-1 px-2.5 rounded-full text-xs font-bold">
+            <%= enviadas.length %>
+          </span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Conteúdo: Tramitações Recebidas -->
+  <div id="content-recebidas" class="tab-content">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-slate-700">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Protocolo</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Assunto</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Origem</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Tipo</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Data Envio</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
+          <% if (recebidas.length === 0) { %>
+            <tr>
+              <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                <p class="text-lg font-medium">Nenhuma tramitação recebida</p>
+              </td>
+            </tr>
+          <% } else { %>
+            <% recebidas.forEach(tramitacao => { %>
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                <td class="px-6 py-4">
+                  <div class="flex items-center">
+                    <div class="bg-green-100 dark:bg-green-900 p-2 rounded-lg mr-3">
+                      <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="font-semibold text-gray-900 dark:text-white"><%= tramitacao.numero_protocolo %></p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400"><%= tramitacao.tipo_documento %></p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= tramitacao.assunto.substring(0, 50) %><%= tramitacao.assunto.length > 50 ? '...' : '' %></p>
+                  <% if (tramitacao.despacho) { %>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Despacho: <%= tramitacao.despacho.substring(0, 40) %>...</p>
+                  <% } %>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= tramitacao.origem_nome %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400"><%= tramitacao.usuario_origem_nome %></p>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <%= tramitacao.tipo_tramitacao %>
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= new Date(tramitacao.data_envio).toLocaleDateString('pt-BR') %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400"><%= new Date(tramitacao.data_envio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) %></p>
+                </td>
+                <td class="px-6 py-4">
+                  <form action="/tramitacao/<%= tramitacao.id %>/receber" method="POST" class="inline">
+                    <button 
+                      type="submit"
+                      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Receber
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Conteúdo: Tramitações Enviadas -->
+  <div id="content-enviadas" class="tab-content hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-slate-700">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Protocolo</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Assunto</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Destino</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Status</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Data Envio</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
+          <% if (enviadas.length === 0) { %>
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <p class="text-lg font-medium">Nenhuma tramitação enviada</p>
+              </td>
+            </tr>
+          <% } else { %>
+            <% enviadas.forEach(tramitacao => { %>
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                <td class="px-6 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white"><%= tramitacao.numero_protocolo %></p>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= tramitacao.assunto.substring(0, 60) %>...</p>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= tramitacao.destino_nome %></p>
+                </td>
+                <td class="px-6 py-4">
+                  <% if (tramitacao.status === 'pendente') { %>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pendente</span>
+                  <% } else if (tramitacao.status === 'recebido') { %>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Recebido</span>
+                  <% } else { %>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Rejeitado</span>
+                  <% } %>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="text-sm text-gray-900 dark:text-white"><%= new Date(tramitacao.data_envio).toLocaleDateString('pt-BR') %></p>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  // Remover active de todos os botões
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+    btn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+  });
+  
+  // Esconder todo conteúdo
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+  
+  // Ativar tab selecionada
+  const activeBtn = document.getElementById(`tab-${tab}`);
+  activeBtn.classList.add('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+  activeBtn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+  
+  // Mostrar conteúdo
+  document.getElementById(`content-${tab}`).classList.remove('hidden');
+}
+</script>
+
+<%- include('../partials/footer') %>
