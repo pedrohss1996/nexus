@@ -26,7 +26,7 @@ Thumbs.db
 # Build
 dist/
 build/
-public/css/output.css
+# public/css/output.css - NÃO IGNORAR (necessário para produção)
 
 # Temporary files
 tmp/
