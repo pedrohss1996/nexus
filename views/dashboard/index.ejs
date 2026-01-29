@@ -1,11 +1,11 @@
-<%- include('../partials/header', { title: 'E-DOC - Sistema de Gestão Eletrônica de Documentos', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/header', { title: 'DataFlow - Sistema de Gestão Eletrônica de Documentos', user: typeof user !== 'undefined' ? user : null }) %>
 
 <div class="w-full px-8 py-8 space-y-6">
   <!-- Bem-vindo -->
   <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold mb-2">Bem-vindo ao E-DOC, <%= user.nome.split(' ')[0] %>!</h1>
+        <h1 class="text-3xl font-bold mb-2">Bem-vindo ao DataFlow, <%= user.nome.split(' ')[0] %>!</h1>
         <p class="text-blue-100 text-lg">Sistema de Gestão Eletrônica de Documentos</p>
       </div>
       <div class="bg-white/20 backdrop-blur-sm rounded-lg p-6">

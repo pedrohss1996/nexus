@@ -1,8 +1,8 @@
-# 📄 E-DOC - Sistema de Gestão Eletrônica de Documentos
+# 📄 DataFlow - Sistema de Gestão Eletrônica de Documentos
 
 ## 🎯 Visão Geral
 
-O **E-DOC** é um sistema completo de gestão eletrônica de documentos desenvolvido para modernizar e digitalizar processos documentais em organizações públicas e privadas.
+O **DataFlow** é um sistema completo de gestão eletrônica de documentos desenvolvido para modernizar e digitalizar processos documentais em organizações públicas e privadas.
 
 ## ✨ Principais Funcionalidades
 
@@ -50,7 +50,7 @@ O **E-DOC** é um sistema completo de gestão eletrônica de documentos desenvol
 - Registro de hash do documento
 - Validação de assinaturas
 
-### 📊 Dashboard E-DOC
+### 📊 Dashboard DataFlow
 - Visão geral de protocolos ativos
 - Tramitações pendentes
 - Documentos gerados no período
@@ -58,7 +58,7 @@ O **E-DOC** é um sistema completo de gestão eletrônica de documentos desenvol
 - Ações rápidas
 - Protocolos e tramitações recentes
 
-## 🗄️ Estrutura do Banco de Dados
+## 🗄️ Estrutura do Banco de Dados DataFlow
 
 ### Tabelas Principais
 
@@ -168,7 +168,7 @@ node scripts/run-migration-002.js
 node scripts/run-migration-003.js
 node scripts/run-migration-004.js
 node scripts/run-migration-005.js
-node scripts/run-migration-006.js  # Tabelas E-DOC
+node scripts/run-migration-006.js  # Tabelas DataFlow
 
 # 4. Iniciar servidor
 npm start
