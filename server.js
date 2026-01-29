@@ -94,8 +94,22 @@ app.use(session({
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Arquivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
+// Arquivos estáticos com configuração de MIME types
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+  }
+}));
 
 // Rotas públicas
 app.use('/auth', authRoutes);
@@ -117,6 +131,30 @@ app.use('/cadastros/usuarios', authenticateToken, loadUnidades, usuarioRoutes);
 // Rota raiz
 app.get('/', (req, res) => {
   res.redirect('/auth/login');
+});
+
+// Rota de health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Rota para testar CSS
+app.get('/test-css', (req, res) => {
+  const fs = require('fs');
+  const cssPath = path.join(__dirname, 'public', 'css', 'output.css');
+  const exists = fs.existsSync(cssPath);
+  const stats = exists ? fs.statSync(cssPath) : null;
+  
+  res.json({
+    cssExists: exists,
+    cssPath: cssPath,
+    cssSize: stats ? stats.size : 0,
+    publicPath: path.join(__dirname, 'public')
+  });
 });
 
 // Socket.io
