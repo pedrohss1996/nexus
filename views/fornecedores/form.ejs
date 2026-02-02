@@ -1,0 +1,205 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Fornecedor - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<% const f = fornecedor || {}; const isEdit = !!fornecedor; %>
+
+<div class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6">
+  <nav class="flex text-sm text-gray-600 dark:text-gray-400 mb-6">
+    <a href="/fornecedores" class="hover:text-cyan-600 dark:hover:text-cyan-400">Fornecedores</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 dark:text-white"><%= isEdit ? 'Editar' : 'Novo' %></span>
+  </nav>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white"><%= isEdit ? 'Editar Fornecedor' : 'Novo Fornecedor' %></h1>
+    </div>
+
+    <form method="POST" action="<%= isEdit ? `/fornecedores/${f.id}` : '/fornecedores' %>" class="p-6 space-y-8">
+      <!-- Identificação -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">1</span>
+          Identificação
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="cnpj" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CNPJ <span class="text-red-500">*</span></label>
+            <input type="text" id="cnpj" name="cnpj" value="<%= f.cnpj || '' %>" required maxlength="18" placeholder="00.000.000/0000-00"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="razao_social" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Razão Social</label>
+            <input type="text" id="razao_social" name="razao_social" value="<%= f.razao_social || '' %>" placeholder="Razão social"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div class="md:col-span-2">
+            <label for="nome_fantasia" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Fantasia</label>
+            <input type="text" id="nome_fantasia" name="nome_fantasia" value="<%= f.nome_fantasia || '' %>" placeholder="Nome fantasia"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome (legado)</label>
+            <input type="text" id="nome" name="nome" value="<%= f.nome || '' %>" placeholder="Nome curto"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="inscricao_estadual" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inscrição Estadual</label>
+            <input type="text" id="inscricao_estadual" name="inscricao_estadual" value="<%= f.inscricao_estadual || '' %>" placeholder="IE"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="inscricao_municipal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inscrição Municipal</label>
+            <input type="text" id="inscricao_municipal" name="inscricao_municipal" value="<%= f.inscricao_municipal || '' %>" placeholder="IM"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+      </section>
+
+      <!-- Endereço -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">2</span>
+          Endereço
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label for="logradouro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logradouro</label>
+            <input type="text" id="logradouro" name="logradouro" value="<%= f.logradouro || '' %>" placeholder="Rua, Av."
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="numero" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número</label>
+            <input type="text" id="numero" name="numero" value="<%= f.numero || '' %>" placeholder="Nº"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="complemento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Complemento</label>
+            <input type="text" id="complemento" name="complemento" value="<%= f.complemento || '' %>" placeholder="Sala, andar"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="bairro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bairro</label>
+            <input type="text" id="bairro" name="bairro" value="<%= f.bairro || '' %>" placeholder="Bairro"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="cidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade</label>
+            <input type="text" id="cidade" name="cidade" value="<%= f.cidade || '' %>" placeholder="Cidade"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="uf" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">UF</label>
+            <input type="text" id="uf" name="uf" value="<%= f.uf || '' %>" maxlength="2" placeholder="UF"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 uppercase">
+          </div>
+          <div>
+            <label for="cep" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CEP</label>
+            <input type="text" id="cep" name="cep" value="<%= f.cep || '' %>" maxlength="10" placeholder="00000-000"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="latitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
+            <input type="text" id="latitude" name="latitude" value="<%= f.latitude != null ? f.latitude : '' %>" placeholder="Geolocalização"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="longitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
+            <input type="text" id="longitude" name="longitude" value="<%= f.longitude != null ? f.longitude : '' %>" placeholder="Geolocalização"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label for="endereco" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Endereço completo (texto livre)</label>
+          <textarea id="endereco" name="endereco" rows="2" placeholder="Endereço em uma linha"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500"><%= f.endereco || '' %></textarea>
+        </div>
+      </section>
+
+      <!-- Contatos -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">3</span>
+          Contatos
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail geral</label>
+            <input type="email" id="email" name="email" value="<%= f.email || '' %>" placeholder="contato@exemplo.com"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="email_vendas" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail vendas / pedidos</label>
+            <input type="email" id="email_vendas" name="email_vendas" value="<%= f.email_vendas || '' %>" placeholder="vendas@exemplo.com"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="email_financeiro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail financeiro</label>
+            <input type="email" id="email_financeiro" name="email_financeiro" value="<%= f.email_financeiro || '' %>" placeholder="financeiro@exemplo.com"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="telefone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
+            <input type="text" id="telefone" name="telefone" value="<%= f.telefone || '' %>" placeholder="(00) 0000-0000"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+      </section>
+
+      <!-- Dados bancários e pagamento -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">4</span>
+          Dados bancários e condição de pagamento
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="banco" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banco</label>
+            <input type="text" id="banco" name="banco" value="<%= f.banco || '' %>" placeholder="Nome ou código do banco"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="agencia" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agência</label>
+            <input type="text" id="agencia" name="agencia" value="<%= f.agencia || '' %>" placeholder="Agência"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label for="conta" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conta</label>
+            <input type="text" id="conta" name="conta" value="<%= f.conta || '' %>" placeholder="Conta corrente"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div class="md:col-span-2">
+            <label for="condicao_pagamento_padrao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Condição de pagamento padrão</label>
+            <input type="text" id="condicao_pagamento_padrao" name="condicao_pagamento_padrao" value="<%= f.condicao_pagamento_padrao || '' %>" placeholder="Ex: 28/56 dias, à vista"
+              class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+      </section>
+
+      <!-- Vínculo Plano de Contas -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">5</span>
+          Vínculo com Plano de Contas
+        </h2>
+        <div>
+          <label for="conta_contabil_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conta contábil (unidade selecionada)</label>
+          <select id="conta_contabil_id" name="conta_contabil_id"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+            <option value="">— Nenhuma —</option>
+            <% if (typeof contasContabeis !== 'undefined' && contasContabeis.length) { contasContabeis.forEach(function(c) { %>
+              <option value="<%= c.id %>" <%= f.conta_contabil_id == c.id ? 'selected' : '' %>><%= c.codigo %> — <%= (c.nome || '').slice(0, 50) %></option>
+            <% }); } %>
+          </select>
+        </div>
+      </section>
+
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-slate-600">
+        <a href="<%= isEdit ? `/fornecedores/${f.id}` : '/fornecedores' %>" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm">Cancelar</a>
+        <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm shadow-sm transition-colors">
+          <%= isEdit ? 'Salvar alterações' : 'Cadastrar fornecedor' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

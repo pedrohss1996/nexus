@@ -1,173 +1,178 @@
 <%- include('../partials/header', { title: 'DataFlow - Sistema de Gestão Eletrônica de Documentos', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="w-full px-8 py-8 space-y-6">
+<div class="w-full px-6 py-4 space-y-3">
   <!-- Bem-vindo -->
-  <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white">
+  <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg shadow p-4 text-white">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold mb-2">Bem-vindo ao DataFlow, <%= user.nome.split(' ')[0] %>!</h1>
-        <p class="text-blue-100 text-lg">Sistema de Gestão Eletrônica de Documentos</p>
+        <h1 class="text-xl font-bold mb-0.5">Bem-vindo ao DataFlow, <%= user.nome.split(' ')[0] %>!</h1>
+        <p class="text-blue-100 text-sm">Sistema de Gestão Eletrônica de Documentos</p>
       </div>
-      <div class="bg-white/20 backdrop-blur-sm rounded-lg p-6">
+      <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
         <div class="text-center">
-          <p class="text-sm text-blue-100 mb-1">Data de Hoje</p>
-          <p class="text-2xl font-bold"><%= new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) %></p>
-          <p class="text-sm text-blue-100"><%= new Date().getFullYear() %></p>
+          <p class="text-xs text-blue-100 mb-0">Data de Hoje</p>
+          <p class="text-lg font-bold"><%= new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) %></p>
+          <p class="text-xs text-blue-100"><%= new Date().getFullYear() %></p>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Cards de Estatísticas -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     <!-- Protocolos Ativos -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between mb-4">
-        <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
-          <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between mb-1">
+        <div class="bg-blue-100 dark:bg-blue-900 p-2 rounded">
+          <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
           </svg>
         </div>
-        <span class="text-xs text-green-600 dark:text-green-400 font-semibold">+12% hoje</span>
+        <span class="text-xs text-green-600 dark:text-green-400 font-semibold">+12%</span>
       </div>
-      <h3 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Protocolos Ativos</h3>
-      <p class="text-3xl font-bold text-gray-900 dark:text-white">156</p>
+      <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Protocolos Ativos</h3>
+      <p class="text-xl font-bold text-gray-900 dark:text-white">156</p>
     </div>
 
     <!-- Tramitações Pendentes -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between mb-4">
-        <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-lg">
-          <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between mb-1">
+        <div class="bg-yellow-100 dark:bg-yellow-900 p-2 rounded">
+          <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
         </div>
         <span class="text-xs text-red-600 dark:text-red-400 font-semibold">Atenção!</span>
       </div>
-      <h3 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Tramitações Pendentes</h3>
-      <p class="text-3xl font-bold text-gray-900 dark:text-white">23</p>
+      <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Tramitações Pendentes</h3>
+      <p class="text-xl font-bold text-gray-900 dark:text-white">23</p>
     </div>
 
     <!-- Documentos Gerados -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between mb-4">
-        <div class="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
-          <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between mb-1">
+        <div class="bg-green-100 dark:bg-green-900 p-2 rounded">
+          <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
         </div>
         <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Este mês</span>
       </div>
-      <h3 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Documentos Gerados</h3>
-      <p class="text-3xl font-bold text-gray-900 dark:text-white">342</p>
+      <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Documentos Gerados</h3>
+      <p class="text-xl font-bold text-gray-900 dark:text-white">342</p>
     </div>
 
     <!-- Assinaturas Pendentes -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between mb-4">
-        <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg">
-          <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between mb-1">
+        <div class="bg-purple-100 dark:bg-purple-900 p-2 rounded">
+          <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
           </svg>
         </div>
         <span class="text-xs text-purple-600 dark:text-purple-400 font-semibold">Aguardando</span>
       </div>
-      <h3 class="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Assinaturas Pendentes</h3>
-      <p class="text-3xl font-bold text-gray-900 dark:text-white">8</p>
+      <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Assinaturas Pendentes</h3>
+      <p class="text-xl font-bold text-gray-900 dark:text-white">8</p>
     </div>
   </div>
 
   <!-- Ações Rápidas -->
-  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Ações Rápidas</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <a href="/protocolo/novo" class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg hover:shadow-md transition-all group">
-        <div class="bg-blue-600 dark:bg-blue-500 p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+    <h2 class="text-base font-bold text-gray-900 dark:text-white mb-3">Ações Rápidas</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <a href="/protocolo/novo" class="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg hover:shadow-md transition-all group">
+        <div class="bg-blue-600 dark:bg-blue-500 p-2 rounded-lg mb-2 group-hover:scale-110 transition-transform">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
         </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Novo Protocolo</span>
+        <span class="text-xs font-semibold text-gray-900 dark:text-white text-center">Novo Protocolo</span>
       </a>
 
-      <a href="/documentos-pdf/novo" class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:shadow-md transition-all group">
-        <div class="bg-green-600 dark:bg-green-500 p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="/documentos-pdf/novo" class="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:shadow-md transition-all group">
+        <div class="bg-green-600 dark:bg-green-500 p-2 rounded-lg mb-2 group-hover:scale-110 transition-transform">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
         </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Criar Documento</span>
+        <span class="text-xs font-semibold text-gray-900 dark:text-white text-center">Criar Documento</span>
       </a>
 
-      <a href="/tramitacao" class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg hover:shadow-md transition-all group">
-        <div class="bg-yellow-600 dark:bg-yellow-500 p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="/tramitacao" class="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg hover:shadow-md transition-all group">
+        <div class="bg-yellow-600 dark:bg-yellow-500 p-2 rounded-lg mb-2 group-hover:scale-110 transition-transform">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
         </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Ver Tramitações</span>
+        <span class="text-xs font-semibold text-gray-900 dark:text-white text-center">Ver Tramitações</span>
       </a>
 
-      <a href="/arquivo" class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg hover:shadow-md transition-all group">
-        <div class="bg-purple-600 dark:bg-purple-500 p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="/arquivo" class="flex flex-col items-center justify-center p-3 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg hover:shadow-md transition-all group">
+        <div class="bg-purple-600 dark:bg-purple-500 p-2 rounded-lg mb-2 group-hover:scale-110 transition-transform">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
           </svg>
         </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Arquivo Digital</span>
+        <span class="text-xs font-semibold text-gray-900 dark:text-white text-center">Arquivo Digital</span>
       </a>
     </div>
   </div>
 
+  <!-- Detalhamento de Orçamento (Plano de Contas da unidade selecionada) -->
+  <div>
+    <%- include('../partials/detalhamento-orcamento', { planoTree: typeof planoTree !== 'undefined' ? planoTree : [], unidade: typeof unidade !== 'undefined' ? unidade : null, showLink: typeof showLink !== 'undefined' ? showLink : false }) %>
+  </div>
+
   <!-- Protocolos Recentes & Tramitações -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
     <!-- Protocolos Recentes -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Protocolos Recentes</h2>
-        <a href="/protocolo" class="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline">Ver todos</a>
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Protocolos Recentes</h2>
+        <a href="/protocolo" class="text-blue-600 dark:text-blue-400 text-xs font-semibold hover:underline">Ver todos</a>
       </div>
-      <div class="space-y-4">
-        <% for(let i = 0; i < 5; i++) { %>
-          <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
-            <div class="flex items-center space-x-3">
-              <div class="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
-                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="space-y-2">
+        <% for(let i = 0; i < 3; i++) { %>
+          <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+            <div class="flex items-center space-x-2 min-w-0">
+              <div class="bg-blue-100 dark:bg-blue-900 p-1.5 rounded flex-shrink-0">
+                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                 </svg>
               </div>
-              <div>
-                <p class="font-semibold text-gray-900 dark:text-white text-sm">000<%= 100 + i %>/2026</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Ofício - Solicitação de Informações</p>
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 dark:text-white text-xs">000<%= 100 + i %>/2026</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Ofício - Solicitação</p>
               </div>
             </div>
-            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Em Trâmite</span>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 flex-shrink-0">Em Trâmite</span>
           </div>
         <% } %>
       </div>
     </div>
 
     <!-- Tramitações Pendentes -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Tramitações Pendentes</h2>
-        <a href="/tramitacao" class="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline">Ver todas</a>
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-gray-900 dark:text-white">Tramitações Pendentes</h2>
+        <a href="/tramitacao" class="text-blue-600 dark:text-blue-400 text-xs font-semibold hover:underline">Ver todas</a>
       </div>
-      <div class="space-y-4">
-        <% for(let i = 0; i < 5; i++) { %>
-          <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
-            <div class="flex items-center space-x-3">
-              <div class="bg-yellow-100 dark:bg-yellow-900 p-2 rounded-lg">
-                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="space-y-2">
+        <% for(let i = 0; i < 3; i++) { %>
+          <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+            <div class="flex items-center space-x-2 min-w-0">
+              <div class="bg-yellow-100 dark:bg-yellow-900 p-1.5 rounded flex-shrink-0">
+                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
                 </svg>
               </div>
-              <div>
-                <p class="font-semibold text-gray-900 dark:text-white text-sm">000<%= 200 + i %>/2026</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">De: Secretaria Administrativa</p>
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 dark:text-white text-xs">000<%= 200 + i %>/2026</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Secretaria Adm.</p>
               </div>
             </div>
-            <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold transition-colors">
+            <button class="bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors flex-shrink-0">
               Receber
             </button>
           </div>

@@ -116,6 +116,35 @@ class Unidade {
     return resultado.rows;
   }
 
+  // Buscar contas contábeis da unidade
+  static async buscarContasContabeis(unidadeId) {
+    const sql = `
+      SELECT * FROM contas_contabeis
+      WHERE unidade_id = $1 AND ativo = true
+      ORDER BY codigo ASC
+    `;
+    const resultado = await query(sql, [unidadeId]);
+    return resultado.rows;
+  }
+
+  // Criar conta contábil na unidade
+  static async criarContaContabil(unidadeId, dados) {
+    const sql = `
+      INSERT INTO contas_contabeis (unidade_id, codigo, nome, descricao, criado_por)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `;
+    const valores = [
+      unidadeId,
+      dados.codigo,
+      dados.nome,
+      dados.descricao || null,
+      dados.criado_por
+    ];
+    const resultado = await query(sql, valores);
+    return resultado.rows[0];
+  }
+
   // Estatísticas da unidade
   static async obterEstatisticas(unidadeId) {
     const sql = `

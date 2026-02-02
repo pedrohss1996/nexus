@@ -118,7 +118,33 @@ const requireRole = (roles) => {
   };
 };
 
+// Permite acesso se o usuário está editando a si mesmo (req.params.id === req.user.id) ou tem um dos roles
+const allowSelfOrRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.status(401).json({ success: false, message: 'Autenticação necessária' });
+      }
+      return res.redirect('/auth/login');
+    }
+    const id = req.params.id && parseInt(req.params.id, 10);
+    const isSelf = id === req.user.id;
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    const hasRole = rolesArray.includes(req.user.perfil);
+    if (isSelf || hasRole) return next();
+    if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.status(403).json({ success: false, message: 'Permissão insuficiente' });
+    }
+    return res.status(403).render('error', {
+      title: 'Acesso Negado - DataFlow',
+      message: 'Você não tem permissão para acessar esta página.',
+      user: req.user
+    });
+  };
+};
+
 module.exports = {
   authenticateToken,
-  requireRole
+  requireRole,
+  allowSelfOrRole
 };

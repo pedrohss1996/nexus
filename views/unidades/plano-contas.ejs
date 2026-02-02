@@ -1,0 +1,31 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Plano de Contas - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="space-y-4">
+  <nav class="flex text-xs text-slate-600">
+    <a href="/unidades" class="hover:text-cyan-600">Unidades</a>
+    <span class="mx-1">/</span>
+    <a href="/unidades/<%= unidade.id %>" class="hover:text-cyan-600"><%= unidade.nome %></a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-900">Plano de Contas</span>
+  </nav>
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-slate-900">Plano de Contas – <%= unidade.nome %></h1>
+  </div>
+
+  <div id="plano-alerta" class="hidden rounded-lg p-3 text-xs border bg-amber-50 border-amber-200 text-amber-800"></div>
+
+  <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+    <div id="plano-add-raiz-wrap" class="mb-3"></div>
+  <% } %>
+  <div id="plano-contas-tree" class="space-y-2"></div>
+</div>
+
+<script>
+  window.__PLANO_TREE__ = <%- JSON.stringify(typeof tree !== 'undefined' ? tree : []) %>;
+  window.__UNIDADE_ID__ = '<%= unidade.id %>';
+  window.__CAN_EDIT__ = <%= (user && (user.perfil === 'admin' || user.perfil === 'gestor')) ? 'true' : 'false' %>;
+</script>
+<script src="/js/plano-contas.js"></script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,52 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Fluxos - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6">
+  <nav class="flex text-sm text-gray-600 dark:text-gray-400 mb-6">
+    <a href="/inicio" class="hover:text-cyan-600 dark:hover:text-cyan-400">Início</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 dark:text-white">Fluxos</span>
+  </nav>
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Fluxos de processo</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure etapas, setores e transições (Aprovado/Reprovado) para cada fluxo.</p>
+    </div>
+    <a href="/fluxos/novo" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      Novo fluxo
+    </a>
+  </div>
+
+  <% if (typeof flash !== 'undefined' && (flash.success || flash.error)) { %>
+    <div class="mb-4 p-4 rounded-lg <%= flash.error ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %> text-sm">
+      <%= flash.error || flash.success %>
+    </div>
+  <% } %>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <% if (!fluxos || fluxos.length === 0) { %>
+      <div class="p-12 text-center text-gray-500 dark:text-gray-400">
+        <p class="mb-4">Nenhum fluxo cadastrado.</p>
+        <a href="/fluxos/novo" class="text-cyan-600 dark:text-cyan-400 hover:underline font-medium">Criar primeiro fluxo</a>
+      </div>
+    <% } else { %>
+      <ul class="divide-y divide-gray-200 dark:divide-slate-600">
+        <% fluxos.forEach(function(f) { %>
+          <li class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+            <div>
+              <span class="font-medium text-gray-900 dark:text-white"><%= f.nome || '—' %></span>
+              <% if (f.slug) { %><span class="text-xs text-gray-500 dark:text-gray-400 ml-2 font-mono"><%= f.slug %></span><% } %>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= f.versao || '1.0' %> · <%= f.total_etapas != null ? f.total_etapas : 0 %> etapas</p>
+            </div>
+            <a href="/fluxos/<%= f.id %>/configurar" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Configurar
+            </a>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

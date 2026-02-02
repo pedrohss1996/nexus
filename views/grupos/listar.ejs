@@ -25,7 +25,7 @@
         <select name="unidade_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
           <option value="">Todas as unidades</option>
           <% unidades.forEach(unidade => { %>
-            <option value="<%= unidade.id %>" <%= filtros.unidade_id == unidade.id ? 'selected' : '' %>>
+            <option value="<%= unidade.id %>" <%= (filtros.unidade_id && String(filtros.unidade_id) === String(unidade.id)) ? 'selected' : '' %>>
               <%= unidade.nome %>
             </option>
           <% }); %>

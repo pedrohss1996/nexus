@@ -14,6 +14,12 @@
       <%= grupo ? 'Editar Grupo' : 'Novo Grupo' %>
     </h1>
 
+    <% if (typeof erro !== 'undefined' && erro) { %>
+      <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+        <%= erro %>
+      </div>
+    <% } %>
+
     <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="space-y-6">
       <!-- Nome -->
       <div>
@@ -60,7 +66,7 @@
           <% unidades.forEach(unidade => { %>
             <option 
               value="<%= unidade.id %>" 
-              <%= grupo && grupo.unidade_id == unidade.id ? 'selected' : '' %>
+              <%= (grupo && grupo.unidade_id == unidade.id) || (!grupo && typeof unidadeSelecionada !== 'undefined' && unidadeSelecionada == unidade.id) ? 'selected' : '' %>
             >
               <%= unidade.nome %> 
               <% if (unidade.cd_tipo == 1) { %>

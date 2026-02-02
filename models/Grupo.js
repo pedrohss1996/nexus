@@ -4,18 +4,18 @@
 const { query } = require('../config/database');
 
 class Grupo {
-  // Criar novo grupo
+  // Criar novo grupo (criado_por só é usado se a coluna existir na tabela)
   static async criar(dados) {
     const sql = `
-      INSERT INTO grupos (nome, descricao, unidade_id, criado_por)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO grupos (nome, descricao, unidade_id)
+      VALUES ($1, $2, $3)
       RETURNING *
     `;
+    const unidadeId = dados.unidade_id != null ? parseInt(dados.unidade_id, 10) : null;
     const valores = [
       dados.nome,
       dados.descricao || null,
-      dados.unidade_id,
-      dados.criado_por
+      unidadeId
     ];
     const resultado = await query(sql, valores);
     return resultado.rows[0];

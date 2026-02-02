@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const UsuarioController = require('../controllers/UsuarioController');
-const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
+const { authenticateToken, requireRole, allowSelfOrRole } = require('../middlewares/authMiddleware');
 
 // Aplicar autenticação em todas as rotas
 router.use(authenticateToken);
@@ -19,17 +19,17 @@ router.post('/', requireRole(['admin']), UsuarioController.criar);
 // Detalhes do usuário
 router.get('/:id', requireRole(['admin', 'gestor']), UsuarioController.detalhes);
 
-// Formulário de edição
-router.get('/:id/editar', requireRole(['admin']), UsuarioController.formEditar);
+// Formulário de edição (próprio perfil ou admin)
+router.get('/:id/editar', allowSelfOrRole(['admin']), UsuarioController.formEditar);
 
-// Atualizar usuário
-router.post('/:id', requireRole(['admin']), UsuarioController.atualizar);
+// Atualizar usuário (próprio perfil ou admin; apenas admin pode alterar perfil de outros)
+router.post('/:id', allowSelfOrRole(['admin']), UsuarioController.atualizar);
 
-// Formulário de alteração de senha
-router.get('/:id/alterar-senha', requireRole(['admin']), UsuarioController.formAlterarSenha);
+// Formulário de alteração de senha (próprio perfil ou admin)
+router.get('/:id/alterar-senha', allowSelfOrRole(['admin']), UsuarioController.formAlterarSenha);
 
-// Alterar senha
-router.post('/:id/alterar-senha', requireRole(['admin']), UsuarioController.alterarSenha);
+// Alterar senha (próprio perfil ou admin)
+router.post('/:id/alterar-senha', allowSelfOrRole(['admin']), UsuarioController.alterarSenha);
 
 // Desativar usuário
 router.delete('/:id', requireRole(['admin']), UsuarioController.desativar);

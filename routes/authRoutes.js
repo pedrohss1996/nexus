@@ -5,6 +5,7 @@ const AuthController = require('../controllers/AuthController');
 // Rotas de autenticação
 router.get('/login', AuthController.showLogin);
 router.post('/login', AuthController.login);
+router.get('/logout', AuthController.logout);
 router.post('/logout', AuthController.logout);
 router.get('/register', AuthController.showRegister);
 router.post('/register', AuthController.register);

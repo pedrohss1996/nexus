@@ -1,9 +1,23 @@
 const { query } = require('../config/database');
+const PlanoContas = require('../models/PlanoContas');
+const Unidade = require('../models/Unidade');
 
 class DashboardController {
   // Dashboard principal
   static async index(req, res) {
     try {
+      let planoTree = [];
+      let unidadeOrcamento = null;
+      const unidadeId = req.session && req.session.unidadeSelecionada;
+      if (unidadeId) {
+        try {
+          planoTree = await PlanoContas.buildTree(unidadeId);
+          unidadeOrcamento = await Unidade.buscarPorId(unidadeId);
+        } catch (e) {
+          // Tabela ou colunas podem não existir
+        }
+      }
+
       // Orçamento por centro de custos
       const orcamentoQuery = await query(
         `SELECT 
@@ -37,7 +51,10 @@ class DashboardController {
         title: 'Dashboard - DataFlow',
         user: req.user,
         orcamento: orcamento,
-        solicitacoesRecentes: solicitacoesRecentesQuery.rows
+        solicitacoesRecentes: solicitacoesRecentesQuery.rows,
+        planoTree,
+        unidade: unidadeOrcamento,
+        showLink: true
       });
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);

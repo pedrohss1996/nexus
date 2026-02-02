@@ -90,7 +90,9 @@
         </div>
       <% } %>
 
-      <!-- Perfil -->
+      <!-- Perfil (apenas para novo usuário ou quando admin edita outro usuário) -->
+      <% const mostrarPerfil = !usuario || (typeof user !== 'undefined' && user.perfil === 'admin'); %>
+      <% if (mostrarPerfil) { %>
       <div>
         <label for="perfil" class="block text-sm font-medium text-gray-700 mb-2">
           Perfil de Acesso <span class="text-red-500">*</span>
@@ -112,6 +114,7 @@
           <p><strong>Administrador:</strong> Acesso total ao sistema</p>
         </div>
       </div>
+      <% } %>
 
       <!-- Botões -->
       <div class="flex items-center justify-between pt-6 border-t border-gray-200">

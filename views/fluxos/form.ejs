@@ -1,0 +1,59 @@
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Fluxo - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<% const f = fluxo || {}; const isEdit = !!fluxo; %>
+
+<div class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6">
+  <nav class="flex text-sm text-gray-600 dark:text-gray-400 mb-6">
+    <a href="/fluxos" class="hover:text-cyan-600 dark:hover:text-cyan-400">Fluxos</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 dark:text-white"><%= isEdit ? 'Editar' : 'Novo' %></span>
+  </nav>
+
+  <% if (typeof flash !== 'undefined' && (flash.success || flash.error)) { %>
+    <div class="mb-4 p-4 rounded-lg <%= flash.error ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %> text-sm">
+      <%= flash.error || flash.success %>
+    </div>
+  <% } %>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white"><%= isEdit ? 'Editar Fluxo' : 'Novo Fluxo' %></h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Nome, descrição, versão e criticidade (SLA). Depois você define as etapas e regras de transição.</p>
+    </div>
+
+    <form method="POST" action="<%= isEdit ? `/fluxos/${f.id}` : '/fluxos' %>" class="p-6 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome <span class="text-red-500">*</span></label>
+          <input type="text" id="nome" name="nome" value="<%= f.nome || '' %>" required maxlength="255" placeholder="Ex: Aquisição de Bens Móveis"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+        <div class="md:col-span-2">
+          <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
+          <textarea id="descricao" name="descricao" rows="3" placeholder="Descreva o objetivo do fluxo"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500"><%= f.descricao || '' %></textarea>
+        </div>
+        <div>
+          <label for="versao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Versão</label>
+          <input type="text" id="versao" name="versao" value="<%= f.versao || '1.0' %>" maxlength="50" placeholder="1.0"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+        <div>
+          <label for="criticidade_sla" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Criticidade / SLA</label>
+          <input type="text" id="criticidade_sla" name="criticidade_sla" value="<%= f.criticidade_sla || '' %>" maxlength="255" placeholder="Ex: 48h por etapa"
+            class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3 pt-2">
+        <button type="submit" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-colors">
+          <%= isEdit ? 'Salvar alterações' : 'Criar fluxo' %>
+        </button>
+        <a href="<%= isEdit ? `/fluxos/${f.id}` : '/fluxos' %>" class="inline-flex items-center gap-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

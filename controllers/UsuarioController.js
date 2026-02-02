@@ -205,7 +205,13 @@ class UsuarioController {
         });
       }
 
-      const usuario = await Usuario.atualizar(id, { nome, email, perfil });
+      // Usuário não-admin editando a si mesmo não pode alterar o perfil
+      const isSelf = parseInt(id, 10) === req.user.id;
+      const isAdmin = req.user.perfil === 'admin';
+      const dados = { nome, email };
+      if (isAdmin && !isSelf) dados.perfil = perfil;
+
+      const usuario = await Usuario.atualizar(id, dados);
 
       if (!usuario) {
         return res.status(404).render('error', {

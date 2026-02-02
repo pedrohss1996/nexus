@@ -27,14 +27,14 @@ router.post('/selecionar-unidade', (req, res) => {
         console.error('❌ Erro ao salvar sessão:', err);
       }
       
-      // Redirecionar de volta para a página anterior ou dashboard
-      const referer = req.get('Referer') || '/dashboard';
+      // Redirecionar de volta para a página anterior ou início
+      const referer = req.get('Referer') || '/inicio';
       console.log('🔄 Redirecionando para:', referer);
       res.redirect(referer);
     });
   } catch (error) {
     console.error('❌ Erro ao selecionar unidade:', error);
-    res.redirect('/dashboard');
+    res.redirect('/inicio');
   }
 });
 

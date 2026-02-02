@@ -77,8 +77,8 @@ class AuthController {
       // Registrar login bem-sucedido
       auditLog('LOGIN_SUCESSO', user.id, { email, ip: req.ip });
 
-      // Redirecionar para dashboard
-      res.redirect('/dashboard');
+      // Redirecionar para início
+      res.redirect('/inicio');
     } catch (error) {
       console.error('Erro no login:', error);
       res.render('auth/login', {

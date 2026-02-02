@@ -24,80 +24,78 @@
   </div>
 
   <!-- Filtro por tipo -->
-  <div class="mb-6">
+  <div class="mb-4">
     <div class="flex flex-wrap gap-2">
-      <button onclick="filtrarPorTipo('todos')" class="filtro-btn active px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700">
+      <button type="button" data-tipo="todos" class="filtro-btn active px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700">
         Todos
       </button>
-      <button onclick="filtrarPorTipo('termo')" class="filtro-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+      <button type="button" data-tipo="termo" class="filtro-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
         Termos
       </button>
-      <button onclick="filtrarPorTipo('oficio')" class="filtro-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+      <button type="button" data-tipo="oficio" class="filtro-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
         Ofícios
       </button>
-      <button onclick="filtrarPorTipo('declaracao')" class="filtro-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+      <button type="button" data-tipo="declaracao" class="filtro-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
         Declarações
       </button>
-      <button onclick="filtrarPorTipo('contrato')" class="filtro-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+      <button type="button" data-tipo="contrato" class="filtro-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
         Contratos
       </button>
-      <button onclick="filtrarPorTipo('relatorio')" class="filtro-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+      <button type="button" data-tipo="relatorio" class="filtro-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
         Relatórios
       </button>
     </div>
   </div>
 
-  <!-- Grid de Templates -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- Grid de Templates (cards menores, mais por linha) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <% if (templates.length === 0) { %>
-      <div class="col-span-full text-center py-12">
-        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="col-span-full text-center py-10">
+        <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        <p class="text-gray-600 dark:text-gray-400">Nenhum template cadastrado</p>
-        <a href="/documentos-pdf/novo" class="text-blue-600 hover:text-blue-700 mt-2 inline-block">Criar primeiro template</a>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">Nenhum template cadastrado</p>
+        <a href="/documentos-pdf/novo" class="text-blue-600 hover:text-blue-700 mt-2 inline-block text-sm">Criar primeiro template</a>
       </div>
     <% } else { %>
       <% templates.forEach(template => { %>
-        <div class="template-card bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-6" data-tipo="<%= template.tipo_documento %>">
-          <div class="flex justify-between items-start mb-4">
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-3">
-                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="template-card bg-white dark:bg-slate-800 rounded-lg shadow border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow p-4" data-tipo="<%= (template.tipo_documento || '').toLowerCase() %>">
+          <div class="flex justify-between items-start gap-2 mb-2">
+            <div class="flex items-center min-w-0 flex-1">
+              <div class="w-9 h-9 shrink-0 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-2">
+                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
               </div>
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><%= template.nome %></h3>
+              <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate"><%= template.nome %></h3>
                 <span class="text-xs text-gray-500 dark:text-gray-400 capitalize"><%= template.tipo_documento %></span>
               </div>
             </div>
           </div>
 
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2"><%= template.descricao || 'Sem descrição' %></p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"><%= template.descricao || 'Sem descrição' %></p>
 
-          <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-4">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-            </svg>
-            <% 
-              const vars = typeof template.variaveis === 'string' ? JSON.parse(template.variaveis) : template.variaveis;
-            %>
+          <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <% const vars = typeof template.variaveis === 'string' ? (template.variaveis ? JSON.parse(template.variaveis) : []) : (template.variaveis || []); %>
             <%= Array.isArray(vars) ? vars.length : 0 %> variáveis
           </div>
 
-          <div class="flex gap-2">
-            <a href="/documentos-pdf/<%= template.id %>/gerar" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <div class="flex gap-1.5">
+            <a href="/documentos-pdf/<%= template.id %>/gerar" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center px-2 py-1.5 rounded text-xs font-medium transition-colors">
               Gerar PDF
             </a>
-            <a href="/documentos-pdf/<%= template.id %>/editar" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <a href="/documentos-pdf/<%= template.id %>/editar" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1.5 rounded text-xs font-medium transition-colors">
               Editar
             </a>
-            <button onclick="excluirTemplate(<%= template.id %>)" class="bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </button>
+            <form action="/documentos-pdf/<%= template.id %>/excluir" method="post" class="inline" onsubmit="return confirm('Tem certeza que deseja excluir este template?');">
+              <input type="hidden" name="_method" value="DELETE">
+              <button type="submit" class="bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-red-600 dark:text-red-400 px-2 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer" title="Excluir">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </form>
           </div>
         </div>
       <% }); %>
@@ -106,52 +104,55 @@
 </div>
 
 <script>
-function filtrarPorTipo(tipo) {
-  const cards = document.querySelectorAll('.template-card');
-  const btns = document.querySelectorAll('.filtro-btn');
-  
-  // Atualizar estilo dos botões
-  btns.forEach(btn => {
-    btn.classList.remove('active', 'bg-blue-600', 'text-white');
-    btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+(function() {
+  // Filtro por tipo: usa data-tipo nos botões e compara em minúsculo
+  document.querySelectorAll('.filtro-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tipo = (this.getAttribute('data-tipo') || 'todos').toLowerCase();
+      var cards = document.querySelectorAll('.template-card');
+      var btns = document.querySelectorAll('.filtro-btn');
+
+      btns.forEach(function(b) {
+        b.classList.remove('active', 'bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+      });
+      this.classList.add('active', 'bg-blue-600', 'text-white');
+      this.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+
+      cards.forEach(function(card) {
+        var cardTipo = (card.getAttribute('data-tipo') || '').toLowerCase();
+        card.style.display = (tipo === 'todos' || cardTipo === tipo) ? 'block' : 'none';
+      });
+    });
   });
-  event.target.classList.add('active', 'bg-blue-600', 'text-white');
-  event.target.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-  
-  // Filtrar cards
-  cards.forEach(card => {
-    if (tipo === 'todos' || card.dataset.tipo === tipo) {
-      card.style.display = 'block';
-    } else {
-      card.style.display = 'none';
-    }
-  });
-}
+})();
 
 async function excluirTemplate(id) {
   if (!confirm('Tem certeza que deseja excluir este template?')) {
     return;
   }
-  
+
   try {
-    const response = await fetch(`/documentos-pdf/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    var response = await fetch('/documentos-pdf/' + id + '/excluir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin'
     });
-    
-    const data = await response.json();
-    
+
+    var contentType = response.headers.get('content-type');
+    var data = contentType && contentType.indexOf('application/json') !== -1
+      ? await response.json()
+      : { success: false, message: response.status === 401 ? 'Faça login novamente.' : 'Resposta inválida do servidor.' };
+
     if (data.success) {
       alert('Template excluído com sucesso!');
       location.reload();
     } else {
-      alert('Erro ao excluir template: ' + data.message);
+      alert('Erro ao excluir: ' + (data.message || 'Tente novamente.'));
     }
   } catch (error) {
     console.error('Erro:', error);
-    alert('Erro ao excluir template');
+    alert('Erro ao excluir template. Verifique a conexão e tente novamente.');
   }
 }
 </script>

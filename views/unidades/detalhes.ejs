@@ -8,6 +8,15 @@
     <span class="text-gray-900"><%= unidade.nome %></span>
   </nav>
 
+  <% if (typeof erro !== 'undefined' && erro) { %>
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+      <% if (erro === 'conta_duplicada') { %>Código de conta contábil já existe nesta unidade.<% } %>
+      <% if (erro === 'grupo_nome_obrigatorio') { %>Nome do grupo é obrigatório.<% } %>
+      <% if (erro === 'grupo_usuario_obrigatorio') { %>Selecione grupo e usuário.<% } %>
+      <% if (erro === 'usuario_ja_no_grupo') { %>Este usuário já está neste grupo.<% } %>
+    </div>
+  <% } %>
+
   <!-- Cabeçalho -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
     <div class="flex justify-between items-start">
@@ -59,19 +68,60 @@
     </div>
   </div>
 
+  <!-- Detalhamento de Orçamento (card como na tela inicial) -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Plano de Contas</h2>
+    <%- include('../partials/detalhamento-orcamento', { planoTree: typeof planoTree !== 'undefined' ? planoTree : [], unidade: typeof unidade !== 'undefined' ? unidade : null, showLink: true }) %>
+  </div>
+
+  <!-- Cadastro do Plano de Contas (na própria tela da unidade) -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Cadastro do Plano de Contas</h2>
+      <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+        <a href="/unidades/<%= unidade.id %>/plano-contas" class="text-cyan-600 hover:text-cyan-700 text-sm font-medium">Abrir em tela cheia</a>
+      <% } %>
+    </div>
+    <div id="plano-alerta-unidade" class="hidden rounded-lg p-3 text-xs border bg-amber-50 border-amber-200 text-amber-800 mb-3"></div>
+    <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+      <div id="plano-add-raiz-wrap" class="mb-3"></div>
+    <% } %>
+    <div id="plano-contas-tree" class="space-y-2"></div>
+  </div>
+  <script>
+    window.__PLANO_TREE__ = <%- JSON.stringify(typeof planoTree !== 'undefined' ? planoTree : []) %>;
+    window.__UNIDADE_ID__ = '<%= unidade.id %>';
+    window.__CAN_EDIT__ = <%= (user && (user.perfil === 'admin' || user.perfil === 'gestor')) ? 'true' : 'false' %>;
+    window.__CONTAINER_ALERT_ID__ = 'plano-alerta-unidade';
+  </script>
+  <script src="/js/plano-contas.js"></script>
+
   <!-- Grupos da Unidade -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-semibold text-gray-900">Grupos</h2>
       <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
         <a href="/grupos/novo?unidade_id=<%= unidade.id %>" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
-          Novo Grupo
+          Novo Grupo (página completa)
         </a>
       <% } %>
     </div>
+    <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+      <form method="POST" action="/unidades/<%= unidade.id %>/grupos" class="flex flex-wrap items-end gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div class="flex-1 min-w-[200px]">
+          <label for="grupo_nome" class="block text-xs font-medium text-gray-600 mb-1">Nome do grupo</label>
+          <input type="text" id="grupo_nome" name="nome" required placeholder="Ex: Farmácia, TI..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div class="flex-[2] min-w-[200px]">
+          <label for="grupo_descricao" class="block text-xs font-medium text-gray-600 mb-1">Descrição (opcional)</label>
+          <input type="text" id="grupo_descricao" name="descricao" placeholder="Breve descrição" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+        </div>
+        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Criar grupo</button>
+      </form>
+    <% } %>
     
     <% if (grupos.length === 0) { %>
       <div class="text-center py-8">
@@ -94,6 +144,42 @@
       </div>
     <% } %>
   </div>
+
+  <!-- Vincular usuário ao grupo -->
+  <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Vincular usuário ao grupo</h2>
+    <% if (grupos.length > 0 && typeof todosUsuarios !== 'undefined' && todosUsuarios.length > 0) { %>
+      <form method="POST" action="/unidades/<%= unidade.id %>/usuarios-grupos" class="flex flex-wrap items-end gap-3 p-4 bg-gray-50 rounded-lg">
+        <div class="flex-1 min-w-[180px]">
+          <label for="vinculo_grupo_id" class="block text-xs font-medium text-gray-600 mb-1">Grupo</label>
+          <select id="vinculo_grupo_id" name="grupo_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+            <option value="">Selecione o grupo</option>
+            <% grupos.forEach(g => { %>
+              <option value="<%= g.id %>"><%= g.nome %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="flex-1 min-w-[180px]">
+          <label for="vinculo_usuario_id" class="block text-xs font-medium text-gray-600 mb-1">Usuário</label>
+          <select id="vinculo_usuario_id" name="usuario_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+            <option value="">Selecione o usuário</option>
+            <% todosUsuarios.forEach(u => { %>
+              <option value="<%= u.id %>"><%= u.nome %> (<%= u.email %>)</option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="is_lider" name="is_lider" value="true" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+          <label for="is_lider" class="text-sm text-gray-600">Líder do grupo</label>
+        </div>
+        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Vincular</button>
+      </form>
+    <% } else { %>
+      <p class="text-gray-500 text-sm">Crie pelo menos um grupo e certifique-se de que existem usuários no sistema para vincular.</p>
+    <% } %>
+  </div>
+  <% } %>
 
   <!-- Usuários da Unidade -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

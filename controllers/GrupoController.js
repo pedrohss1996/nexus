@@ -6,13 +6,14 @@ const Unidade = require('../models/Unidade');
 const { auditLog } = require('../utils/logger');
 
 class GrupoController {
-  // Listar todos os grupos
+  // Listar todos os grupos (por padrão só da unidade selecionada)
   static async listar(req, res) {
     try {
       const { unidade_id, busca } = req.query;
       const filtros = {};
-      
-      if (unidade_id) filtros.unidade_id = unidade_id;
+      // Primeira carga (sem unidade_id na URL): mostra só grupos da unidade selecionada; senão respeita o filtro (incluindo "Todas")
+      const unidadeFiltro = unidade_id === undefined ? res.locals.unidadeSelecionada : (unidade_id || null);
+      if (unidadeFiltro) filtros.unidade_id = unidadeFiltro;
       if (busca) filtros.busca = busca;
 
       const grupos = await Grupo.buscarTodos(filtros);
@@ -23,7 +24,7 @@ class GrupoController {
         user: req.user,
         grupos,
         unidades,
-        filtros
+        filtros: { unidade_id: unidade_id === undefined ? res.locals.unidadeSelecionada : (unidade_id || ''), busca: filtros.busca || '' }
       });
     } catch (error) {
       console.error('Erro ao listar grupos:', error);
@@ -73,7 +74,8 @@ class GrupoController {
         title: 'Novo Grupo - DataFlow',
         user: req.user,
         grupo: null,
-        unidades
+        unidades,
+        unidadeSelecionada: res.locals.unidadeSelecionada
       });
     } catch (error) {
       console.error('Erro ao carregar formulário:', error);
@@ -88,22 +90,60 @@ class GrupoController {
   static async criar(req, res) {
     try {
       const { nome, descricao, unidade_id } = req.body;
+      const nomeTrim = (nome || '').trim();
+      if (!nomeTrim) {
+        const unidades = await Unidade.buscarTodas();
+        return res.status(400).render('grupos/form', {
+          title: 'Novo Grupo - DataFlow',
+          user: req.user,
+          grupo: null,
+          unidades,
+          unidadeSelecionada: res.locals.unidadeSelecionada,
+          erro: 'Nome do grupo é obrigatório.'
+        });
+      }
+      // Garantir unidade válida: usa da sessão se vier vazio ou inválido
+      const unidadeId = unidade_id ? parseInt(unidade_id, 10) : null;
+      const unidadeSessao = res.locals.unidadeSelecionada != null ? parseInt(res.locals.unidadeSelecionada, 10) : null;
+      const unidadeFinal = (unidadeId && !isNaN(unidadeId)) ? unidadeId : (unidadeSessao && !isNaN(unidadeSessao) ? unidadeSessao : null);
+      if (!unidadeFinal || isNaN(unidadeFinal)) {
+        const unidades = await Unidade.buscarTodas();
+        return res.status(400).render('grupos/form', {
+          title: 'Novo Grupo - DataFlow',
+          user: req.user,
+          grupo: null,
+          unidades,
+          unidadeSelecionada: res.locals.unidadeSelecionada,
+          erro: 'Selecione uma unidade no formulário ou no seletor do topo da página.'
+        });
+      }
 
       const grupo = await Grupo.criar({
-        nome,
-        descricao,
-        unidade_id,
-        criado_por: req.user.id
+        nome: nomeTrim,
+        descricao: (descricao || '').trim() || null,
+        unidade_id: unidadeFinal,
+        criado_por: req.user?.id ?? null
       });
 
-      await auditLog('GRUPO_CRIADO', req.user.id, { grupo_id: grupo.id, nome, unidade_id });
+      try {
+        await auditLog('GRUPO_CRIADO', req.user?.id, { grupo_id: grupo.id, nome: nomeTrim, unidade_id: unidadeFinal });
+      } catch (_) { /* não falha a criação por falha de log */ }
 
       res.redirect(`/grupos/${grupo.id}`);
     } catch (error) {
-      console.error('Erro ao criar grupo:', error);
-      res.status(500).render('error', {
-        title: 'Erro - DataFlow',
-        message: 'Erro ao criar grupo'
+      console.error('Erro ao criar grupo:', error?.message, error?.code, error?.detail);
+      const unidades = await Unidade.buscarTodas().catch(() => []);
+      let msg = 'Erro ao criar grupo. Tente novamente.';
+      if (error?.code === '23503') msg = 'Unidade ou usuário não encontrado. Selecione uma unidade válida.';
+      else if (error?.code === '23502') msg = 'Dado obrigatório faltando. Preencha nome e unidade.';
+      else if (error?.message) msg = `Erro ao criar grupo: ${error.message}`;
+      return res.status(500).render('grupos/form', {
+        title: 'Novo Grupo - DataFlow',
+        user: req.user,
+        grupo: null,
+        unidades,
+        unidadeSelecionada: res.locals.unidadeSelecionada,
+        erro: msg
       });
     }
   }
@@ -127,7 +167,8 @@ class GrupoController {
         title: `Editar ${grupo.nome} - DataFlow`,
         user: req.user,
         grupo,
-        unidades
+        unidades,
+        unidadeSelecionada: res.locals.unidadeSelecionada
       });
     } catch (error) {
       console.error('Erro ao carregar formulário:', error);

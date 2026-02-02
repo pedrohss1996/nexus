@@ -139,7 +139,7 @@ class DocumentoPDFController {
     }
   }
 
-  // Excluir template (soft delete)
+  // Excluir template (soft delete) — aceita POST (formulário) e DELETE (fetch); redireciona se for form
   static async excluir(req, res) {
     try {
       const { id } = req.params;
@@ -149,10 +149,18 @@ class DocumentoPDFController {
         [id]
       );
 
-      res.json({ success: true, message: 'Template excluído com sucesso' });
+      const wantsJson = req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1);
+      if (wantsJson) {
+        return res.json({ success: true, message: 'Template excluído com sucesso' });
+      }
+      res.redirect('/documentos-pdf');
     } catch (error) {
       console.error('Erro ao excluir template:', error);
-      res.status(500).json({ success: false, message: 'Erro ao excluir template' });
+      const wantsJson = req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1);
+      if (wantsJson) {
+        return res.status(500).json({ success: false, message: 'Erro ao excluir template' });
+      }
+      res.redirect('/documentos-pdf');
     }
   }
 

@@ -18,6 +18,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const processoRoutes = require('./routes/processoRoutes');
 const documentoRoutes = require('./routes/documentoRoutes');
 const fornecedorRoutes = require('./routes/fornecedorRoutes');
+const fluxoRoutes = require('./routes/fluxoRoutes');
 const documentoPDFRoutes = require('./routes/documentoPDFRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const protocoloRoutes = require('./routes/protocoloRoutes');
@@ -90,6 +91,17 @@ app.use(session({
   }
 }));
 
+// Flash messages (usa session; req.flash() grava, res.locals.flash é lido na view)
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash || {};
+  req.session.flash = {};
+  req.flash = (type, message) => {
+    if (!req.session.flash) req.session.flash = {};
+    req.session.flash[type] = message;
+  };
+  next();
+});
+
 // Configuração de views (EJS)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -116,11 +128,12 @@ app.use('/auth', authRoutes);
 
 // Rotas protegidas (com autenticação e carregamento de unidades)
 app.use('/api', authenticateToken, loadUnidades, apiRoutes);
-app.use('/dashboard', authenticateToken, loadUnidades, dashboardRoutes);
+app.use('/inicio', authenticateToken, loadUnidades, dashboardRoutes);
 app.use('/processos', authenticateToken, loadUnidades, processoRoutes);
 app.use('/documentos', authenticateToken, loadUnidades, documentoRoutes);
 app.use('/fornecedores', authenticateToken, loadUnidades, fornecedorRoutes);
 app.use('/documentos-pdf', authenticateToken, loadUnidades, documentoPDFRoutes);
+app.use('/fluxos', authenticateToken, loadUnidades, fluxoRoutes);
 app.use('/upload', authenticateToken, uploadRoutes);
 app.use('/protocolo', authenticateToken, loadUnidades, protocoloRoutes);
 app.use('/tramitacao', authenticateToken, loadUnidades, tramitacaoRoutes);
