@@ -16,10 +16,24 @@ const uploadAnexoStorage = multer.diskStorage({
     cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(safe));
   }
 });
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/png', 'image/jpeg', 'image/gif', 'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain', 'text/csv',
+  'application/zip',
+]);
+
 const uploadAnexoMulter = multer({
   storage: uploadAnexoStorage,
   limits: { fileSize: 15 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, true)
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) return cb(null, true);
+    cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}`));
+  }
 });
 
 function slugify(text) {

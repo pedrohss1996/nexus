@@ -21,35 +21,39 @@
   <!-- Cards de Estatísticas -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     <!-- Protocolos Ativos -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+    <a href="/protocolo" class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow block">
       <div class="flex items-center justify-between mb-1">
         <div class="bg-blue-100 dark:bg-blue-900 p-2 rounded">
           <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
           </svg>
         </div>
-        <span class="text-xs text-green-600 dark:text-green-400 font-semibold">+12%</span>
+        <span class="text-xs text-blue-600 dark:text-blue-400 font-semibold">Ativos</span>
       </div>
       <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Protocolos Ativos</h3>
-      <p class="text-xl font-bold text-gray-900 dark:text-white">156</p>
-    </div>
+      <p class="text-xl font-bold text-gray-900 dark:text-white"><%= stats.protocolosAtivos %></p>
+    </a>
 
     <!-- Tramitações Pendentes -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+    <a href="/tramitacao" class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow block">
       <div class="flex items-center justify-between mb-1">
         <div class="bg-yellow-100 dark:bg-yellow-900 p-2 rounded">
           <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
         </div>
-        <span class="text-xs text-red-600 dark:text-red-400 font-semibold">Atenção!</span>
+        <% if (stats.tramitacoesPendentes > 0) { %>
+          <span class="text-xs text-red-600 dark:text-red-400 font-semibold">Atenção!</span>
+        <% } else { %>
+          <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Em dia</span>
+        <% } %>
       </div>
       <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Tramitações Pendentes</h3>
-      <p class="text-xl font-bold text-gray-900 dark:text-white">23</p>
-    </div>
+      <p class="text-xl font-bold text-gray-900 dark:text-white"><%= stats.tramitacoesPendentes %></p>
+    </a>
 
-    <!-- Documentos Gerados -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
+    <!-- Documentos Gerados (mês) -->
+    <a href="/documentos-pdf" class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow block">
       <div class="flex items-center justify-between mb-1">
         <div class="bg-green-100 dark:bg-green-900 p-2 rounded">
           <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,8 +63,8 @@
         <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Este mês</span>
       </div>
       <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Documentos Gerados</h3>
-      <p class="text-xl font-bold text-gray-900 dark:text-white">342</p>
-    </div>
+      <p class="text-xl font-bold text-gray-900 dark:text-white"><%= stats.documentosGeradosMes %></p>
+    </a>
 
     <!-- Assinaturas Pendentes -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 hover:shadow-md transition-shadow">
@@ -70,10 +74,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
           </svg>
         </div>
-        <span class="text-xs text-purple-600 dark:text-purple-400 font-semibold">Aguardando</span>
+        <% if (stats.assinaturasPendentes > 0) { %>
+          <span class="text-xs text-purple-600 dark:text-purple-400 font-semibold">Aguardando</span>
+        <% } else { %>
+          <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Nenhuma</span>
+        <% } %>
       </div>
       <h3 class="text-gray-500 dark:text-gray-400 text-xs font-medium mb-0">Assinaturas Pendentes</h3>
-      <p class="text-xl font-bold text-gray-900 dark:text-white">8</p>
+      <p class="text-xl font-bold text-gray-900 dark:text-white"><%= stats.assinaturasPendentes %></p>
     </div>
   </div>
 
@@ -124,7 +132,7 @@
     <%- include('../partials/detalhamento-orcamento', { planoTree: typeof planoTree !== 'undefined' ? planoTree : [], unidade: typeof unidade !== 'undefined' ? unidade : null, showLink: typeof showLink !== 'undefined' ? showLink : false }) %>
   </div>
 
-  <!-- Protocolos Recentes & Tramitações -->
+  <!-- Protocolos Recentes & Tramitações Pendentes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
     <!-- Protocolos Recentes -->
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
@@ -133,21 +141,39 @@
         <a href="/protocolo" class="text-blue-600 dark:text-blue-400 text-xs font-semibold hover:underline">Ver todos</a>
       </div>
       <div class="space-y-2">
-        <% for(let i = 0; i < 3; i++) { %>
-          <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
-            <div class="flex items-center space-x-2 min-w-0">
-              <div class="bg-blue-100 dark:bg-blue-900 p-1.5 rounded flex-shrink-0">
-                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                </svg>
+        <% if (protocolosRecentes && protocolosRecentes.length > 0) { %>
+          <% protocolosRecentes.forEach(function(p) { %>
+            <a href="/protocolo/<%= p.id %>" class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors block">
+              <div class="flex items-center space-x-2 min-w-0">
+                <div class="bg-blue-100 dark:bg-blue-900 p-1.5 rounded flex-shrink-0">
+                  <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900 dark:text-white text-xs"><%= p.numero_protocolo || '—' %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= p.tipo_documento %> — <%= p.data %></p>
+                </div>
               </div>
-              <div class="min-w-0">
-                <p class="font-semibold text-gray-900 dark:text-white text-xs">000<%= 100 + i %>/2026</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Ofício - Solicitação</p>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 flex-shrink-0">Em Trâmite</span>
-          </div>
+              <%
+                var statusClass = {
+                  'em_tramite': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                  'pendente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                  'arquivado': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                  'encerrado': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                }[p.status] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                var statusLabel = {
+                  'em_tramite': 'Em Trâmite',
+                  'pendente': 'Pendente',
+                  'arquivado': 'Arquivado',
+                  'encerrado': 'Encerrado',
+                }[p.status] || p.status;
+              %>
+              <span class="px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 <%= statusClass %>"><%= statusLabel %></span>
+            </a>
+          <% }); %>
+        <% } else { %>
+          <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-4">Nenhum protocolo encontrado.</p>
         <% } %>
       </div>
     </div>
@@ -159,23 +185,27 @@
         <a href="/tramitacao" class="text-blue-600 dark:text-blue-400 text-xs font-semibold hover:underline">Ver todas</a>
       </div>
       <div class="space-y-2">
-        <% for(let i = 0; i < 3; i++) { %>
-          <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
-            <div class="flex items-center space-x-2 min-w-0">
-              <div class="bg-yellow-100 dark:bg-yellow-900 p-1.5 rounded flex-shrink-0">
-                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
-                </svg>
+        <% if (tramitacoesPendentes && tramitacoesPendentes.length > 0) { %>
+          <% tramitacoesPendentes.forEach(function(t) { %>
+            <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+              <div class="flex items-center space-x-2 min-w-0">
+                <div class="bg-yellow-100 dark:bg-yellow-900 p-1.5 rounded flex-shrink-0">
+                  <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900 dark:text-white text-xs"><%= t.numero_protocolo || '—' %></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Para: <%= t.destino_nome || 'Não definido' %> &bull; <%= t.data_envio %></p>
+                </div>
               </div>
-              <div class="min-w-0">
-                <p class="font-semibold text-gray-900 dark:text-white text-xs">000<%= 200 + i %>/2026</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Secretaria Adm.</p>
-              </div>
+              <a href="/tramitacao" class="bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors flex-shrink-0">
+                Receber
+              </a>
             </div>
-            <button class="bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors flex-shrink-0">
-              Receber
-            </button>
-          </div>
+          <% }); %>
+        <% } else { %>
+          <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-4">Nenhuma tramitação pendente.</p>
         <% } %>
       </div>
     </div>

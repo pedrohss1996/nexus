@@ -1,27 +1,61 @@
   </main>
 
+  <!-- Container de Toasts -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // Sistema global de toast notifications
+    window.showToast = function(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toast-container');
+      if (!container) return;
+
+      var colors = {
+        success: 'bg-green-600 text-white',
+        error:   'bg-red-600 text-white',
+        warning: 'bg-yellow-500 text-white',
+        info:    'bg-blue-600 text-white',
+      };
+      var icons = {
+        success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
+        error:   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
+        warning: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>',
+        info:    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/>',
+      };
+
+      var toast = document.createElement('div');
+      toast.className = 'flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg pointer-events-auto max-w-sm transition-all duration-300 opacity-0 translate-y-2 ' + (colors[type] || colors.info);
+      toast.innerHTML = '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">' + (icons[type] || icons.info) + '</svg>' +
+        '<span class="text-sm font-medium flex-1">' + message + '</span>' +
+        '<button onclick="this.parentElement.remove()" class="ml-2 opacity-70 hover:opacity-100">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' +
+        '</button>';
+
+      container.appendChild(toast);
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          toast.classList.remove('opacity-0', 'translate-y-2');
+        });
+      });
+
+      setTimeout(function() {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 4500);
+    };
+  </script>
+
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Conectar ao Socket.io se houver token
     const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     if (token) {
-      const socket = io({
-        auth: { token: token }
-      });
-
-      socket.on('connect', () => {
-        console.log('Conectado ao Socket.io');
-      });
-
+      const socket = io({ auth: { token } });
       socket.on('processo:notificacao', (data) => {
-        console.log('Notificação de processo:', data);
-        // Implementar notificações visuais
+        if (window.showToast) showToast(data.mensagem || 'Nova notificação', 'info');
       });
-
       socket.on('processo:alerta', (data) => {
-        console.log('Alerta de processo:', data);
-        // Implementar alertas visuais
+        if (window.showToast) showToast(data.mensagem || 'Alerta de processo', 'warning');
       });
     }
   </script>

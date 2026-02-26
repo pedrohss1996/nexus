@@ -23,16 +23,20 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 // Função helper para executar queries
 const query = async (text, params) => {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Query executada', { text, duration, rows: res.rowCount });
+    if (isDev) {
+      const duration = Date.now() - start;
+      console.log('Query executada', { duration: `${duration}ms`, rows: res.rowCount });
+    }
     return res;
   } catch (error) {
-    console.error('Erro na query:', { text, error: error.message });
+    console.error('Erro na query:', { text: text.substring(0, 120), error: error.message });
     throw error;
   }
 };

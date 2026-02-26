@@ -97,6 +97,20 @@
     fill: #111827;
     font-weight: 500;
   }
+  .connection-group {
+    pointer-events: all;
+    cursor: pointer;
+  }
+  .connection-group:hover .connection-label-bg {
+    stroke: #ef4444;
+    stroke-width: 1.5;
+  }
+  .connection-group .connection-delete-hint {
+    display: none;
+  }
+  .connection-group:hover .connection-delete-hint {
+    display: block;
+  }
   .dark .fluxo-canvas {
     background: linear-gradient(to right, #1e293b 1px, transparent 1px),
                 linear-gradient(to bottom, #1e293b 1px, transparent 1px);
@@ -192,8 +206,11 @@
     </div>
 
     <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-      <strong>Instruções:</strong> Arraste os cards para posicionar. Dê um <strong>duplo clique</strong> em um card para configurar a etapa.
-      Para criar conexão: pressione <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> e clique no card origem, depois <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> + clique no card destino.
+      <strong>Instruções:</strong>
+      Arraste os cards para reposicionar. &bull;
+      <strong>Duplo clique</strong> no card para configurar. &bull;
+      Para <strong>criar conexão</strong>: <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> + clique na origem, depois <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> + clique no destino. &bull;
+      Para <strong>remover conexão</strong>: clique no rótulo da seta.
     </p>
   <% } %>
 </div>
@@ -226,9 +243,9 @@
     </div>
 
     <div>
-      <label for="configGrupo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vincular a grupo (setor) *</label>
-      <select id="configGrupo" name="proprietario_id" required class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-        <option value="">— Selecionar grupo —</option>
+      <label for="configGrupo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vincular a grupo (setor)</label>
+      <select id="configGrupo" name="proprietario_id" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+        <option value="">— Sem grupo vinculado —</option>
         <% gruposList.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
       </select>
     </div>
@@ -427,10 +444,27 @@
   function drawConnections() {
     var svg = document.getElementById('connectionsSvg');
     var canvas = document.getElementById('fluxoCanvas');
-    var canvasRect = canvas.getBoundingClientRect();
     svg.setAttribute('width', canvas.scrollWidth);
     svg.setAttribute('height', canvas.scrollHeight);
     svg.innerHTML = '';
+
+    // Defs (arrowheads) devem vir ANTES dos paths que os referenciam
+    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    ['green', 'red'].forEach(function(color) {
+      var marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+      marker.setAttribute('id', 'arrowhead-' + color);
+      marker.setAttribute('markerWidth', '10');
+      marker.setAttribute('markerHeight', '10');
+      marker.setAttribute('refX', '9');
+      marker.setAttribute('refY', '3');
+      marker.setAttribute('orient', 'auto');
+      var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      polygon.setAttribute('points', '0 0, 10 3, 0 6');
+      polygon.setAttribute('fill', color === 'red' ? '#ef4444' : '#10b981');
+      marker.appendChild(polygon);
+      defs.appendChild(marker);
+    });
+    svg.appendChild(defs);
     
     edgesData.forEach(function(edge) {
       var origem = getCardElement(edge.etapa_origem_id);
@@ -451,69 +485,98 @@
       var x2 = p2.x - Math.cos(angle) * offset;
       var y2 = p2.y - Math.sin(angle) * offset;
 
-      // Curva suave entre os pontos (quadratic bezier)
       var mx = (x1 + x2) / 2;
       var my = (y1 + y2) / 2;
       var nx = -dy / dist;
       var ny = dx / dist;
-      var curva = 30;
-      var cx = mx + nx * curva;
-      var cy = my + ny * curva;
+      var cx = mx + nx * 30;
+      var cy = my + ny * 30;
       
       var lineColor = (edge.label || '').toLowerCase().indexOf('não') !== -1 || (edge.label || '').toLowerCase().indexOf('reprov') !== -1 ? '#ef4444' : '#10b981';
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+      // Grupo clicável para deletar a conexão
+      var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('class', 'connection-group');
+      group.setAttribute('data-edge-id', edge.id);
+      group.addEventListener('click', function() {
+        var edgeId = this.getAttribute('data-edge-id');
+        if (!confirm('Remover esta conexão?')) return;
+        fetch('/fluxos/' + fluxoId + '/edges/' + edgeId, {
+          method: 'DELETE',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              edgesData = edgesData.filter(function(e) { return String(e.id) !== String(edgeId); });
+              drawConnections();
+              if (window.showToast) showToast('Conexão removida.', 'success');
+            } else {
+              if (window.showToast) showToast(data.message || 'Erro ao remover conexão.', 'error');
+            }
+          })
+          .catch(function() { if (window.showToast) showToast('Erro ao remover conexão.', 'error'); });
+      });
+
+      // Hitbox invisível para facilitar o clique na linha
+      var hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       var d = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
+      hitPath.setAttribute('d', d);
+      hitPath.setAttribute('fill', 'none');
+      hitPath.setAttribute('stroke', 'transparent');
+      hitPath.setAttribute('stroke-width', '16');
+      group.appendChild(hitPath);
+
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', d);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', lineColor);
       path.setAttribute('stroke-width', '3');
       path.setAttribute('marker-end', 'url(#arrowhead-' + (lineColor === '#ef4444' ? 'red' : 'green') + ')');
       path.setAttribute('class', 'connection-line');
-      svg.appendChild(path);
+      group.appendChild(path);
       
-      var midX = (x1 + x2) / 2;
-      var midY = (y1 + y2) / 2;
+      var midX = cx;
+      var midY = cy;
       var labelText = edge.label || 'sempre';
       var labelWidth = Math.max(40, labelText.length * 7);
       var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', midX - 25);
+      bg.setAttribute('x', midX - labelWidth / 2);
       bg.setAttribute('y', midY - 10);
       bg.setAttribute('width', labelWidth);
-      bg.setAttribute('height', '16');
+      bg.setAttribute('height', '18');
       bg.setAttribute('fill', 'white');
-      bg.setAttribute('rx', '3');
+      bg.setAttribute('rx', '4');
       bg.setAttribute('stroke', lineColor);
       bg.setAttribute('stroke-width', '1');
-      svg.appendChild(bg);
+      bg.setAttribute('class', 'connection-label-bg');
+      group.appendChild(bg);
+
+      // Ícone × para indicar que pode remover (visível no hover via CSS)
+      var delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      delText.setAttribute('x', midX + labelWidth / 2 - 6);
+      delText.setAttribute('y', midY + 3);
+      delText.setAttribute('text-anchor', 'middle');
+      delText.setAttribute('class', 'connection-delete-hint');
+      delText.setAttribute('fill', '#ef4444');
+      delText.setAttribute('font-size', '11');
+      delText.setAttribute('font-weight', '700');
+      delText.textContent = '×';
+      group.appendChild(delText);
       
       var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       text.setAttribute('x', midX);
-      text.setAttribute('y', midY + 2);
+      text.setAttribute('y', midY + 3);
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('class', 'connection-label');
       text.setAttribute('fill', lineColor);
       text.setAttribute('font-size', '11');
       text.setAttribute('font-weight', '600');
-      text.textContent = edge.label || 'sempre';
-      svg.appendChild(text);
+      text.textContent = labelText;
+      group.appendChild(text);
+
+      svg.appendChild(group);
     });
-    
-    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    ['green', 'red'].forEach(function(color) {
-      var marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-      marker.setAttribute('id', 'arrowhead-' + color);
-      marker.setAttribute('markerWidth', '10');
-      marker.setAttribute('markerHeight', '10');
-      marker.setAttribute('refX', '9');
-      marker.setAttribute('refY', '3');
-      marker.setAttribute('orient', 'auto');
-      var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      polygon.setAttribute('points', '0 0, 10 3, 0 6');
-      polygon.setAttribute('fill', color === 'red' ? '#ef4444' : '#10b981');
-      marker.appendChild(polygon);
-      defs.appendChild(marker);
-    });
-    svg.appendChild(defs);
   }
 
   function openPainel(etapa) {
@@ -642,22 +705,30 @@
     e.preventDefault();
     var etapaId = document.getElementById('configEtapaId').value;
     if (!etapaId) return;
+    var nome = document.getElementById('configNome').value.trim();
+    if (!nome) {
+      if (window.showToast) showToast('Informe o nome da etapa.', 'warning');
+      document.getElementById('configNome').focus();
+      return;
+    }
     var etapa = getEtapa(etapaId);
-    var card = getCardElement(etapaId);
     var docTemplates = [];
     document.querySelectorAll('.config-doc-template:checked').forEach(function(cb) { docTemplates.push(cb.value); });
+    var grupoVal = document.getElementById('configGrupo').value;
     var body = {
-      nome: document.getElementById('configNome').value,
+      nome: nome,
       codigo: document.getElementById('configCodigo').value || undefined,
-      proprietario_id: parseInt(document.getElementById('configGrupo').value, 10),
+      proprietario_id: grupoVal ? parseInt(grupoVal, 10) : null,
       tipo_acao: document.getElementById('configTipoAcao').value,
-      prazo_em_dias: document.getElementById('configPrazo').value ? parseInt(document.getElementById('configPrazo').value, 10) : undefined,
+      prazo_em_dias: document.getElementById('configPrazo').value ? parseInt(document.getElementById('configPrazo').value, 10) : null,
       exige_assinatura: document.getElementById('configExigeAssinatura').checked ? '1' : '0',
       eh_inicio: document.getElementById('configEhInicio').checked ? '1' : '0',
       eh_fim: document.getElementById('configEhFim').checked ? '1' : '0',
       documento_templates: docTemplates,
       ordem: etapa ? etapa.ordem : undefined
     };
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
     fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -665,10 +736,19 @@
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.success) { closePainel(); location.reload(); }
-        else alert(data.message || 'Erro ao salvar.');
+        if (data.success) {
+          if (window.showToast) showToast('Etapa salva com sucesso!', 'success');
+          closePainel();
+          setTimeout(function() { location.reload(); }, 800);
+        } else {
+          if (window.showToast) showToast(data.message || 'Erro ao salvar.', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+        }
       })
-      .catch(function() { alert('Erro ao salvar.'); });
+      .catch(function() {
+        if (window.showToast) showToast('Erro de conexão ao salvar.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+      });
   });
 
   document.getElementById('btnRemoverEtapa').addEventListener('click', function() {
@@ -677,10 +757,15 @@
     fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.success) { closePainel(); location.reload(); }
-        else alert(data.message || 'Erro ao remover.');
+        if (data.success) {
+          if (window.showToast) showToast('Etapa removida.', 'success');
+          closePainel();
+          setTimeout(function() { location.reload(); }, 800);
+        } else {
+          if (window.showToast) showToast(data.message || 'Erro ao remover.', 'error');
+        }
       })
-      .catch(function() { alert('Erro ao remover.'); });
+      .catch(function() { if (window.showToast) showToast('Erro ao remover.', 'error'); });
   });
 
   document.getElementById('btnAdicionarEtapa').addEventListener('click', function() {
@@ -706,10 +791,16 @@
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.success) { document.getElementById('modalConexao').classList.add('hidden'); location.reload(); }
-        else alert(data.message || 'Erro ao criar conexão.');
+        if (data.success) {
+          document.getElementById('modalConexao').classList.add('hidden');
+          if (window.showToast) showToast('Conexão criada!', 'success');
+          edgesData.push(data.edge);
+          drawConnections();
+        } else {
+          if (window.showToast) showToast(data.message || 'Erro ao criar conexão.', 'error');
+        }
       })
-      .catch(function() { alert('Erro ao criar conexão.'); });
+      .catch(function() { if (window.showToast) showToast('Erro ao criar conexão.', 'error'); });
   });
 
   document.getElementById('btnFecharModalConexao').addEventListener('click', function() {
@@ -731,7 +822,10 @@
     e.preventDefault();
     var etapaId = document.getElementById('configEtapaId').value;
     var input = document.getElementById('inputAnexoEtapa');
-    if (!etapaId || !input.files || !input.files[0]) { alert('Selecione um arquivo.'); return; }
+    if (!etapaId || !input.files || !input.files[0]) {
+      if (window.showToast) showToast('Selecione um arquivo.', 'warning');
+      return;
+    }
     var fd = new FormData();
     fd.append('arquivo', input.files[0]);
     fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId + '/anexos', {
@@ -741,10 +835,15 @@
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.success) { input.value = ''; location.reload(); }
-        else alert(data.message || 'Erro ao anexar.');
+        if (data.success) {
+          input.value = '';
+          if (window.showToast) showToast('Arquivo anexado!', 'success');
+          location.reload();
+        } else {
+          if (window.showToast) showToast(data.message || 'Erro ao anexar.', 'error');
+        }
       })
-      .catch(function() { alert('Erro ao anexar.'); });
+      .catch(function() { if (window.showToast) showToast('Erro ao anexar.', 'error'); });
   });
 
   document.getElementById('configAnexosLista').addEventListener('click', function(e) {
@@ -759,10 +858,14 @@
     })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.success) location.reload();
-        else alert(data.message || 'Erro ao remover.');
+        if (data.success) {
+          if (window.showToast) showToast('Anexo removido.', 'success');
+          location.reload();
+        } else {
+          if (window.showToast) showToast(data.message || 'Erro ao remover.', 'error');
+        }
       })
-      .catch(function() { alert('Erro ao remover.'); });
+      .catch(function() { if (window.showToast) showToast('Erro ao remover.', 'error'); });
   });
 
   document.addEventListener('keydown', function(e) {
