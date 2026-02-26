@@ -1,113 +1,151 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Unidades - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="w-full px-8 py-8 space-y-6" \>
+<%
+  function tipoLabel(cd) {
+    if (cd == 1) return 'Hospital';
+    if (cd == 2) return 'Clínica';
+    if (cd == 3) return 'Departamento';
+    return 'Unidade';
+  }
+  function tipoColor(cd) {
+    if (cd == 1) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+    if (cd == 2) return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+    return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+  }
+%>
+
+<div class="w-full px-6 py-6 space-y-5">
   <!-- Cabeçalho -->
-  <div class="flex justify-between items-center">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Unidades</h1>
-      <p class="text-sm text-gray-600 mt-1">Gerencie as unidades hospitalares e departamentos</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Unidades</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Hospitais, clínicas e departamentos cadastrados</p>
     </div>
     <% if (user.perfil === 'admin') { %>
-      <a href="/unidades/novo" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-6 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
+      <a href="/unidades/novo" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Nova Unidade
       </a>
     <% } %>
   </div>
 
   <!-- Filtros -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <form method="GET" action="/unidades" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-        <select name="cd_tipo" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+    <form method="GET" action="/unidades" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[150px]">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tipo</label>
+        <select name="cd_tipo" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
           <option value="">Todos os tipos</option>
           <option value="1" <%= filtros.cd_tipo == 1 ? 'selected' : '' %>>Hospital</option>
           <option value="2" <%= filtros.cd_tipo == 2 ? 'selected' : '' %>>Clínica</option>
           <option value="3" <%= filtros.cd_tipo == 3 ? 'selected' : '' %>>Departamento</option>
         </select>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Buscar</label>
+        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome da unidade..." class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
       </div>
-      <div class="flex items-end space-x-2">
-        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium">
-          Filtrar
-        </button>
-        <a href="/unidades" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
-          Limpar
-        </a>
+      <div class="flex gap-2">
+        <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium transition-colors">Filtrar</button>
+        <a href="/unidades" class="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">Limpar</a>
       </div>
     </form>
   </div>
 
-  <!-- Lista de Unidades -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- Tabela de Unidades -->
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
     <% if (unidades.length === 0) { %>
-      <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-        </svg>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nenhuma unidade encontrada</h3>
-        <p class="text-gray-600 mb-4">Não há unidades cadastradas com os filtros selecionados.</p>
+      <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div class="bg-gray-100 dark:bg-slate-700 rounded-full p-4 mb-4">
+          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Nenhuma unidade encontrada</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Não há unidades cadastradas com os filtros aplicados.</p>
         <% if (user.perfil === 'admin') { %>
-          <a href="/unidades/novo" class="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium">
-            Criar primeira unidade
-            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
+          <a href="/unidades/novo" class="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 font-medium hover:underline">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Cadastrar primeira unidade
           </a>
         <% } %>
       </div>
     <% } else { %>
-      <% unidades.forEach(unidade => { %>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div class="p-6">
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex-1">
-                <div class="flex items-center mb-2">
-                  <% if (unidade.cd_tipo == 1) { %>
-                    <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                  <% } else if (unidade.cd_tipo == 2) { %>
-                    <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                  <% } else { %>
-                    <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                  <% } %>
-                  <span class="text-xs font-semibold text-gray-500 uppercase">
-                    <%= unidade.cd_tipo == 1 ? 'Hospital' : unidade.cd_tipo == 2 ? 'Clínica' : 'Departamento' %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+          <thead class="bg-gray-50 dark:bg-slate-700/50">
+            <tr>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unidade</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Tipo</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+            <% unidades.forEach(unidade => { %>
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors" id="row-unidade-<%= unidade.id %>">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white"><%= unidade.nome %></p>
+                      <span class="text-xs sm:hidden <%= tipoColor(unidade.cd_tipo) %> px-1.5 py-0.5 rounded font-medium"><%= tipoLabel(unidade.cd_tipo) %></span>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 hidden sm:table-cell">
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full <%= tipoColor(unidade.cd_tipo) %>">
+                    <%= tipoLabel(unidade.cd_tipo) %>
                   </span>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">
-                  <a href="/unidades/<%= unidade.id %>" class="hover:text-teal-600 transition-colors">
-                    <%= unidade.nome %>
-                  </a>
-                </h3>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-              <a href="/unidades/<%= unidade.id %>" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center">
-                Ver detalhes
-                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      <% }); %>
+                </td>
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center justify-center gap-1">
+                    <a href="/unidades/<%= unidade.id %>" title="Ver detalhes" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </a>
+                    <% if (user.perfil === 'admin') { %>
+                      <a href="/unidades/<%= unidade.id %>/editar" title="Editar" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </a>
+                      <button type="button" title="Excluir" onclick="excluirUnidade(<%= unidade.id %>, '<%= unidade.nome.replace(/'/g, "\\'") %>')" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-5 py-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30">
+        <p class="text-xs text-gray-500 dark:text-gray-400"><%= unidades.length %> unidade<%= unidades.length !== 1 ? 's' : '' %> encontrada<%= unidades.length !== 1 ? 's' : '' %></p>
+      </div>
     <% } %>
   </div>
 </div>
 
-<%- include('../partials/footer') %>
+<% if (user.perfil === 'admin') { %>
+<script>
+async function excluirUnidade(id, nome) {
+  if (!confirm('Desativar a unidade "' + nome + '"?\n\nOs grupos e usuários vinculados serão preservados.')) return;
+  try {
+    const r = await fetch('/unidades/' + id, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('row-unidade-' + id)?.remove();
+      if (window.showToast) showToast('Unidade "' + nome + '" desativada.', 'success');
+    } else {
+      if (window.showToast) showToast(data.message || 'Erro ao desativar unidade.', 'error');
+    }
+  } catch (_) {
+    if (window.showToast) showToast('Erro ao desativar unidade.', 'error');
+  }
+}
+</script>
+<% } %>
 
+<%- include('../partials/footer') %>

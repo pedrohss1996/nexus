@@ -1,112 +1,154 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Grupos - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="w-full px-8 py-8 space-y-6" \>
+<div class="w-full px-6 py-6 space-y-5">
   <!-- Cabeçalho -->
-  <div class="flex justify-between items-center">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Grupos</h1>
-      <p class="text-sm text-gray-600 mt-1">Gerencie os grupos e equipes do sistema</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Grupos</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Setores e equipes cadastrados no sistema</p>
     </div>
     <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-      <a href="/grupos/novo" class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-6 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md text-sm font-medium flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
+      <a href="/grupos/novo" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Novo Grupo
       </a>
     <% } %>
   </div>
 
   <!-- Filtros -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <form method="GET" action="/grupos" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Unidade</label>
-        <select name="unidade_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+    <form method="GET" action="/grupos" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[180px]">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unidade</label>
+        <select name="unidade_id" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
           <option value="">Todas as unidades</option>
-          <% unidades.forEach(unidade => { %>
-            <option value="<%= unidade.id %>" <%= (filtros.unidade_id && String(filtros.unidade_id) === String(unidade.id)) ? 'selected' : '' %>>
-              <%= unidade.nome %>
-            </option>
+          <% unidades.forEach(u => { %>
+            <option value="<%= u.id %>" <%= String(filtros.unidade_id) === String(u.id) ? 'selected' : '' %>><%= u.nome %></option>
           <% }); %>
         </select>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome ou descrição..." class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Buscar</label>
+        <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Nome ou descrição..." class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
       </div>
-      <div class="flex items-end space-x-2">
-        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium">
-          Filtrar
-        </button>
-        <a href="/grupos" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
-          Limpar
-        </a>
+      <div class="flex gap-2">
+        <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium transition-colors">Filtrar</button>
+        <a href="/grupos" class="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">Limpar</a>
       </div>
     </form>
   </div>
 
-  <!-- Lista de Grupos -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- Tabela de Grupos -->
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
     <% if (grupos.length === 0) { %>
-      <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-        </svg>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nenhum grupo encontrado</h3>
-        <p class="text-gray-600 mb-4">Não há grupos cadastrados com os filtros selecionados.</p>
+      <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div class="bg-gray-100 dark:bg-slate-700 rounded-full p-4 mb-4">
+          <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Nenhum grupo encontrado</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Não há grupos cadastrados com os filtros aplicados.</p>
         <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-          <a href="/grupos/novo" class="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium">
+          <a href="/grupos/novo" class="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 font-medium hover:underline">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Criar primeiro grupo
-            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
           </a>
         <% } %>
       </div>
     <% } else { %>
-      <% grupos.forEach(grupo => { %>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div class="p-6">
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">
-                  <a href="/grupos/<%= grupo.id %>" class="hover:text-teal-600 transition-colors">
-                    <%= grupo.nome %>
-                  </a>
-                </h3>
-                <p class="text-sm text-gray-600 line-clamp-2"><%= grupo.descricao || 'Sem descrição' %></p>
-              </div>
-            </div>
-            
-            <div class="flex items-center text-sm text-gray-600 mb-3">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-              </svg>
-              <%= grupo.unidade_nome %>
-            </div>
-
-            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-              <div class="flex items-center text-sm text-gray-600">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                <span class="font-medium"><%= grupo.total_membros %></span>
-                <span class="ml-1">membro<%= grupo.total_membros != 1 ? 's' : '' %></span>
-              </div>
-              <a href="/grupos/<%= grupo.id %>" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center">
-                Ver detalhes
-                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      <% }); %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+          <thead class="bg-gray-50 dark:bg-slate-700/50">
+            <tr>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Grupo</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Unidade</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Membros</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+            <% grupos.forEach(grupo => { %>
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors" id="row-grupo-<%= grupo.id %>">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-gray-900 dark:text-white truncate"><%= grupo.nome %></p>
+                      <% if (grupo.descricao) { %>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs"><%= grupo.descricao %></p>
+                      <% } %>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 sm:hidden"><%= grupo.unidade_nome %></p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 hidden sm:table-cell">
+                  <span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                    <svg class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+                    </svg>
+                    <%= grupo.unidade_nome %>
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-center hidden md:table-cell">
+                  <span class="inline-flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <%= grupo.total_membros %>
+                  </span>
+                </td>
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center justify-center gap-1">
+                    <a href="/grupos/<%= grupo.id %>" title="Ver detalhes" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </a>
+                    <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
+                      <a href="/grupos/<%= grupo.id %>/editar" title="Editar" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </a>
+                    <% } %>
+                    <% if (user.perfil === 'admin') { %>
+                      <button type="button" title="Excluir" onclick="excluirGrupo(<%= grupo.id %>, '<%= grupo.nome.replace(/'/g, "\\'") %>')" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-5 py-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30">
+        <p class="text-xs text-gray-500 dark:text-gray-400"><%= grupos.length %> grupo<%= grupos.length !== 1 ? 's' : '' %> encontrado<%= grupos.length !== 1 ? 's' : '' %></p>
+      </div>
     <% } %>
   </div>
 </div>
 
-<%- include('../partials/footer') %>
+<% if (user.perfil === 'admin') { %>
+<script>
+async function excluirGrupo(id, nome) {
+  if (!confirm('Excluir o grupo "' + nome + '"?\n\nEsta ação desativará o grupo. Os membros vinculados serão preservados.')) return;
+  try {
+    const r = await fetch('/grupos/' + id, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('row-grupo-' + id)?.remove();
+      if (window.showToast) showToast('Grupo "' + nome + '" excluído com sucesso.', 'success');
+    } else {
+      if (window.showToast) showToast(data.message || 'Erro ao excluir grupo.', 'error');
+    }
+  } catch (_) {
+    if (window.showToast) showToast('Erro ao excluir grupo.', 'error');
+  }
+}
+</script>
+<% } %>
 
+<%- include('../partials/footer') %>

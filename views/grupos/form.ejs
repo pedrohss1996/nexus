@@ -1,99 +1,72 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Grupo - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="max-w-3xl mx-auto space-y-6">
-  <!-- Breadcrumb -->
-  <nav class="flex text-sm text-gray-600">
-    <a href="/grupos" class="hover:text-teal-600">Grupos</a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900"><%= grupo ? 'Editar' : 'Novo' %></span>
-  </nav>
+<div class="w-full px-6 py-6">
+  <div class="max-w-xl mx-auto">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-5">
+      <a href="/grupos" class="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Grupos</a>
+      <svg class="w-4 h-4 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      <span class="text-gray-900 dark:text-white font-medium"><%= grupo ? 'Editar grupo' : 'Novo grupo' %></span>
+    </nav>
 
-  <!-- Formulário -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">
-      <%= grupo ? 'Editar Grupo' : 'Novo Grupo' %>
-    </h1>
-
-    <% if (typeof erro !== 'undefined' && erro) { %>
-      <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-        <%= erro %>
-      </div>
-    <% } %>
-
-    <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="space-y-6">
-      <!-- Nome -->
-      <div>
-        <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
-          Nome do Grupo <span class="text-red-500">*</span>
-        </label>
-        <input 
-          type="text" 
-          id="nome" 
-          name="nome" 
-          value="<%= grupo ? grupo.nome : '' %>" 
-          required
-          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-          placeholder="Ex: Administração, Farmácia, TI..."
-        >
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= grupo ? 'Editar grupo' : 'Novo grupo' %></h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= grupo ? 'Altere as informações do grupo abaixo.' : 'Preencha as informações para criar um novo grupo.' %></p>
       </div>
 
-      <!-- Descrição -->
-      <div>
-        <label for="descricao" class="block text-sm font-medium text-gray-700 mb-2">
-          Descrição
-        </label>
-        <textarea 
-          id="descricao" 
-          name="descricao" 
-          rows="4"
-          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-          placeholder="Descreva o propósito e responsabilidades deste grupo..."
-        ><%= grupo ? (grupo.descricao || '') : '' %></textarea>
-      </div>
+      <% if (typeof erro !== 'undefined' && erro) { %>
+        <div class="mx-6 mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 flex items-center gap-3">
+          <svg class="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p class="text-sm text-red-700 dark:text-red-300"><%= erro %></p>
+        </div>
+      <% } %>
 
-      <!-- Unidade -->
-      <div>
-        <label for="unidade_id" class="block text-sm font-medium text-gray-700 mb-2">
-          Unidade <span class="text-red-500">*</span>
-        </label>
-        <select 
-          id="unidade_id" 
-          name="unidade_id" 
-          required
-          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-        >
-          <option value="">Selecione uma unidade</option>
-          <% unidades.forEach(unidade => { %>
-            <option 
-              value="<%= unidade.id %>" 
-              <%= (grupo && grupo.unidade_id == unidade.id) || (!grupo && typeof unidadeSelecionada !== 'undefined' && unidadeSelecionada == unidade.id) ? 'selected' : '' %>
-            >
-              <%= unidade.nome %> 
-              <% if (unidade.cd_tipo == 1) { %>
-                (Hospital)
-              <% } else if (unidade.cd_tipo == 2) { %>
-                (Clínica)
-              <% } else if (unidade.cd_tipo == 3) { %>
-                (Departamento)
-              <% } %>
-            </option>
-          <% }); %>
-        </select>
-      </div>
+      <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="p-6 space-y-5">
+        <div>
+          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Nome do Grupo <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="nome" name="nome" value="<%= grupo ? grupo.nome : '' %>" required maxlength="255"
+            placeholder="Ex: Administrativo, Farmácia, TI..."
+            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+        </div>
 
-      <!-- Botões -->
-      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-        <a href="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
-          Cancelar
-        </a>
-        <button 
-          type="submit" 
-          class="bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-2.5 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md font-medium text-sm"
-        >
-          <%= grupo ? 'Salvar Alterações' : 'Criar Grupo' %>
-        </button>
-      </div>
-    </form>
+        <div>
+          <label for="unidade_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Unidade <span class="text-red-500">*</span>
+          </label>
+          <select id="unidade_id" name="unidade_id" required
+            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            <option value="">— Selecione uma unidade —</option>
+            <% unidades.forEach(u => { %>
+              <option value="<%= u.id %>"
+                <%= (grupo && grupo.unidade_id == u.id) || (!grupo && typeof unidadeSelecionada !== 'undefined' && unidadeSelecionada == u.id) ? 'selected' : '' %>>
+                <%= u.nome %>
+                <% if (u.cd_tipo == 1) { %>(Hospital)<% } else if (u.cd_tipo == 2) { %>(Clínica)<% } else if (u.cd_tipo == 3) { %>(Departamento)<% } %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div>
+          <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Descrição</label>
+          <textarea id="descricao" name="descricao" rows="3" maxlength="500"
+            placeholder="Responsabilidades e propósito do grupo..."
+            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors resize-none"><%= grupo ? (grupo.descricao || '') : '' %></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-700">
+          <a href="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">
+            Cancelar
+          </a>
+          <button type="submit" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <%= grupo ? 'Salvar alterações' : 'Criar grupo' %>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
