@@ -51,11 +51,13 @@
     "helmet": "^7.1.0",
     "html-to-text": "^9.0.5",
     "htmlparser2": "^10.1.0",
+    "jodit": "^4.9.14",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "pdfkit": "^0.17.2",
     "pg": "^8.11.3",
+    "puppeteer": "^24.37.5",
     "quill": "^2.0.3",
     "socket.io": "^4.6.1",
     "tinymce": "^8.3.2"

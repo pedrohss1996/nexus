@@ -57,26 +57,41 @@ class Unidade {
 
   // Atualizar unidade
   static async atualizar(id, dados) {
-    const sql = `
-      UPDATE unidades 
-      SET nome = COALESCE($1, nome),
-          cd_tipo = COALESCE($2, cd_tipo),
-          descricao = COALESCE($3, descricao),
-          endereco = COALESCE($4, endereco),
-          telefone = COALESCE($5, telefone),
-          email = COALESCE($6, email)
-      WHERE id = $7 AND ativo = true
-      RETURNING *
-    `;
-    const valores = [
-      dados.nome,
-      dados.cd_tipo,
-      dados.descricao,
-      dados.endereco,
-      dados.telefone,
-      dados.email,
-      id
-    ];
+    const sets = [];
+    const valores = [];
+    let n = 1;
+
+    if (dados.nome !== undefined) {
+      sets.push(`nome = $${n++}`);
+      valores.push(dados.nome);
+    }
+    if (dados.cd_tipo !== undefined) {
+      sets.push(`cd_tipo = $${n++}`);
+      valores.push(parseInt(dados.cd_tipo, 10) || 1);
+    }
+    if (dados.descricao !== undefined) {
+      sets.push(`descricao = $${n++}`);
+      valores.push(dados.descricao || null);
+    }
+    if (dados.endereco !== undefined) {
+      sets.push(`endereco = $${n++}`);
+      valores.push(dados.endereco || null);
+    }
+    if (dados.telefone !== undefined) {
+      sets.push(`telefone = $${n++}`);
+      valores.push(dados.telefone || null);
+    }
+    if (dados.email !== undefined) {
+      sets.push(`email = $${n++}`);
+      valores.push(dados.email || null);
+    }
+
+    if (sets.length === 0) {
+      return this.buscarPorId(id);
+    }
+
+    valores.push(id);
+    const sql = `UPDATE unidades SET ${sets.join(', ')} WHERE id = $${n} AND ativo = true RETURNING *`;
     const resultado = await query(sql, valores);
     return resultado.rows[0];
   }

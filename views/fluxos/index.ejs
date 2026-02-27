@@ -1,52 +1,136 @@
-<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Fluxos - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/header', { title: 'Fluxos de Processo - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6">
-  <nav class="flex text-sm text-gray-600 dark:text-gray-400 mb-6">
-    <a href="/inicio" class="hover:text-cyan-600 dark:hover:text-cyan-400">Início</a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900 dark:text-white">Fluxos</span>
-  </nav>
+<div class="w-full px-6 py-6 space-y-5">
 
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <!-- Cabeçalho -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Fluxos de processo</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure etapas, setores e transições (Aprovado/Reprovado) para cada fluxo.</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+        </svg>
+        Fluxos de Processo
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Configure os fluxos de trabalho com etapas, questionários e aprovações</p>
     </div>
-    <a href="/fluxos/novo" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-      Novo fluxo
-    </a>
+    <% if (typeof user !== 'undefined' && user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <a href="/fluxos/novo"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo Fluxo
+      </a>
+    <% } %>
   </div>
 
-  <% if (typeof flash !== 'undefined' && (flash.success || flash.error)) { %>
-    <div class="mb-4 p-4 rounded-lg <%= flash.error ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %> text-sm">
-      <%= flash.error || flash.success %>
+  <!-- Flash messages -->
+  <% if (typeof messages !== 'undefined') { %>
+    <% if (messages.success && messages.success.length) { %>
+      <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 text-sm rounded-lg px-4 py-3"><%= messages.success[0] %></div>
+    <% } %>
+    <% if (messages.error && messages.error.length) { %>
+      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 text-sm rounded-lg px-4 py-3"><%= messages.error[0] %></div>
+    <% } %>
+  <% } %>
+
+  <!-- Lista de fluxos -->
+  <% if (!fluxos || fluxos.length === 0) { %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-full p-5 mb-4">
+        <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+        </svg>
+      </div>
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">Nenhum fluxo cadastrado</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-xs">Crie fluxos de processo com etapas de questionário, aprovação e parecer técnico.</p>
+      <% if (typeof user !== 'undefined' && user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+        <a href="/fluxos/novo" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Criar primeiro fluxo
+        </a>
+      <% } %>
+    </div>
+  <% } else { %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <% fluxos.forEach(function(fluxo) {
+        var total = parseInt(fluxo.total_etapas) || 0;
+        var criado = fluxo.criado_em ? new Date(fluxo.criado_em).toLocaleDateString('pt-BR') : '';
+      %>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all group flex flex-col">
+
+          <!-- Topo colorido -->
+          <div class="h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-xl"></div>
+
+          <div class="p-5 flex-1 flex flex-col">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="min-w-0">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white truncate" title="<%= fluxo.nome %>">
+                  <%= fluxo.nome %>
+                </h3>
+                <span class="text-xs text-gray-400 dark:text-gray-500 font-mono"><%= fluxo.slug %></span>
+              </div>
+              <span class="flex-shrink-0 text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-lg">
+                v<%= fluxo.versao || '1.0' %>
+              </span>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex items-center gap-3 mb-4">
+              <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <div class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <strong class="text-gray-700 dark:text-gray-200"><%= total %></strong> etapa<%= total !== 1 ? 's' : '' %>
+              </div>
+              <% if (fluxo.criticidade_sla) { %>
+                <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <div class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <%= fluxo.criticidade_sla %>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Preview mini das etapas (dots) -->
+            <% if (total > 0) { %>
+              <div class="flex items-center gap-1 mb-4 overflow-hidden">
+                <div class="w-3 h-3 rounded-full bg-green-400 flex-shrink-0"></div>
+                <% for (var i = 0; i < Math.min(total, 6); i++) { %>
+                  <div class="flex-1 h-0.5 bg-gray-200 dark:bg-slate-600 min-w-0"></div>
+                  <div class="w-3 h-3 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                <% } %>
+                <% if (total > 6) { %>
+                  <div class="flex-1 h-0.5 bg-gray-200 dark:bg-slate-600"></div>
+                  <span class="text-xs text-gray-400 flex-shrink-0">+<%= total - 6 %></span>
+                <% } %>
+                <div class="flex-1 h-0.5 bg-gray-200 dark:bg-slate-600 min-w-0"></div>
+                <div class="w-3 h-3 rounded-full bg-red-400 flex-shrink-0"></div>
+              </div>
+            <% } %>
+
+            <div class="text-xs text-gray-400 dark:text-gray-500 mb-4">Criado em <%= criado %></div>
+
+            <!-- Ações -->
+            <div class="flex gap-2 mt-auto">
+              <a href="/fluxos/<%= fluxo.id %>/configurar"
+                class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Configurar
+              </a>
+              <% if (typeof user !== 'undefined' && user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+                <a href="/fluxos/<%= fluxo.id %>/editar"
+                  class="inline-flex items-center justify-center px-2.5 py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors" title="Editar">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </a>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
     </div>
   <% } %>
 
-  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
-    <% if (!fluxos || fluxos.length === 0) { %>
-      <div class="p-12 text-center text-gray-500 dark:text-gray-400">
-        <p class="mb-4">Nenhum fluxo cadastrado.</p>
-        <a href="/fluxos/novo" class="text-cyan-600 dark:text-cyan-400 hover:underline font-medium">Criar primeiro fluxo</a>
-      </div>
-    <% } else { %>
-      <ul class="divide-y divide-gray-200 dark:divide-slate-600">
-        <% fluxos.forEach(function(f) { %>
-          <li class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
-            <div>
-              <span class="font-medium text-gray-900 dark:text-white"><%= f.nome || '—' %></span>
-              <% if (f.slug) { %><span class="text-xs text-gray-500 dark:text-gray-400 ml-2 font-mono"><%= f.slug %></span><% } %>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= f.versao || '1.0' %> · <%= f.total_etapas != null ? f.total_etapas : 0 %> etapas</p>
-            </div>
-            <a href="/fluxos/<%= f.id %>/configurar" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              Configurar
-            </a>
-          </li>
-        <% }); %>
-      </ul>
-    <% } %>
-  </div>
 </div>
 
 <%- include('../partials/footer') %>

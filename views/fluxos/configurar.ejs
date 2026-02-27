@@ -2,881 +2,1365 @@
 <%
   const f = fluxo || {};
   const etapasList = typeof etapas !== 'undefined' ? etapas : [];
-  const edgesList = typeof edges !== 'undefined' ? edges : [];
+  const edgesList  = typeof edges  !== 'undefined' ? edges  : [];
   const gruposList = (typeof gruposUnidade !== 'undefined' && Array.isArray(gruposUnidade)) ? gruposUnidade : [];
   const unidadeNomeStr = typeof unidadeNome !== 'undefined' ? unidadeNome : '';
   const temUnidade = !!unidadeNomeStr && gruposList.length > 0;
-  function tipoLabel(t) {
-    if (t === 'aprovacao') return 'Aprovação';
-    if (t === 'parecer_tecnico') return 'Parecer';
-    if (t === 'assinatura_digital') return 'Assinatura';
-    return 'Formulário';
+
+  function tipoInfo(t) {
+    if (t === 'questionario')    return { label:'Questionário', icon:'📋', color:'#3b82f6' };
+    if (t === 'aprovacao')       return { label:'Aprovação',    icon:'✅', color:'#22c55e' };
+    if (t === 'parecer' || t === 'parecer_tecnico') return { label:'Parecer', icon:'💬', color:'#8b5cf6' };
+    if (t === 'assinatura_digital') return { label:'Assinatura', icon:'✍️', color:'#f59e0b' };
+    return { label:'Formulário', icon:'📄', color:'#64748b' };
   }
 %>
 
 <style>
+  /* ── Canvas ── */
   .fluxo-canvas {
     position: relative;
     width: 100%;
-    height: calc(100vh - 200px);
-    min-height: 600px;
-    background: linear-gradient(to right, #f9fafb 1px, transparent 1px),
-                linear-gradient(to bottom, #f9fafb 1px, transparent 1px);
-    background-size: 20px 20px;
+    height: calc(100vh - 220px);
+    min-height: 560px;
+    background-color: #f8fafc;
+    background-image:
+      linear-gradient(rgba(148,163,184,.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,.15) 1px, transparent 1px);
+    background-size: 24px 24px;
     overflow: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-  }
-  .fluxo-card {
-    position: absolute;
-    width: 200px;
-    min-height: 120px;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 0;
-    cursor: move;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: box-shadow 0.2s;
-  }
-  .fluxo-card:hover {
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border-color: #06b6d4;
-  }
-  .fluxo-card.dragging {
-    opacity: 0.7;
-    z-index: 1000;
-  }
-  .fluxo-card-header {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-bottom: 1px solid #e5e7eb;
-    color: #6b7280;
-  }
-  .fluxo-card-bar {
-    height: 4px;
-    width: 100%;
-  }
-  .fluxo-card-bar.inicio {
-    background: #10b981;
-  }
-  .fluxo-card-bar.fim {
-    background: #ef4444;
-  }
-  .fluxo-card-body {
-    padding: 0.75rem;
-  }
-  .fluxo-card-title {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #111827;
-    margin-bottom: 0.5rem;
-  }
-  .fluxo-card-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-  }
-  .fluxo-card-badge {
-    font-size: 0.625rem;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    background: #f3f4f6;
-    color: #374151;
-  }
-  .connection-line {
-    pointer-events: none;
-  }
-  .connection-arrow {
-    fill: #6b7280;
-  }
-  .connection-label {
-    font-size: 0.75rem;
-    fill: #111827;
-    font-weight: 500;
-  }
-  .connection-group {
-    pointer-events: all;
-    cursor: pointer;
-  }
-  .connection-group:hover .connection-label-bg {
-    stroke: #ef4444;
-    stroke-width: 1.5;
-  }
-  .connection-group .connection-delete-hint {
-    display: none;
-  }
-  .connection-group:hover .connection-delete-hint {
-    display: block;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: default;
   }
   .dark .fluxo-canvas {
-    background: linear-gradient(to right, #1e293b 1px, transparent 1px),
-                linear-gradient(to bottom, #1e293b 1px, transparent 1px);
-    background-size: 20px 20px;
-    border-color: #475569;
+    background-color: #0f172a;
+    background-image:
+      linear-gradient(rgba(71,85,105,.25) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(71,85,105,.25) 1px, transparent 1px);
+    border-color: #334155;
   }
-  .dark .fluxo-card {
-    background: #1e293b;
-    border-color: #475569;
+
+  /* ── Card de etapa ── */
+  .fluxo-card {
+    position: absolute;
+    width: 210px;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: move;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 0 0 0 transparent;
+    transition: box-shadow .15s, border-color .15s;
+    user-select: none;
   }
-  .dark .fluxo-card:hover {
-    border-color: #06b6d4;
+  .dark .fluxo-card { background: #1e293b; border-color: #334155; }
+  .fluxo-card:hover  { box-shadow: 0 4px 16px rgba(0,0,0,.12); border-color: #a5b4fc; }
+  .dark .fluxo-card:hover { border-color: #6366f1; }
+  .fluxo-card.dragging { opacity: .72; z-index: 999; box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+  .fluxo-card.connecting-source { outline: 3px solid #06b6d4; outline-offset: 3px; }
+
+  .fluxo-card-topbar { height: 5px; border-radius: 8px 8px 0 0; }
+  .fluxo-card-header {
+    padding: 5px 10px 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: #94a3b8;
+    border-bottom: 1px solid #f1f5f9;
   }
-  .dark .fluxo-card-header {
-    border-color: #475569;
-    color: #94a3b8;
+  .dark .fluxo-card-header { color: #475569; border-color: #334155; }
+  .fluxo-card-body { padding: 10px 12px 12px; }
+  .fluxo-card-icon { font-size: 16px; margin-bottom: 4px; }
+  .fluxo-card-title { font-size: 13px; font-weight: 700; color: #1e293b; line-height: 1.3; margin-bottom: 6px; }
+  .dark .fluxo-card-title { color: #f1f5f9; }
+  .fluxo-card-code  { font-size: 10px; color: #94a3b8; font-family: monospace; margin-bottom: 6px; }
+  .fluxo-card-badges { display: flex; flex-wrap: wrap; gap: 3px; }
+  .fluxo-badge {
+    font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 4px;
+    background: #f1f5f9; color: #475569;
   }
-  .dark .fluxo-card-title {
-    color: #f1f5f9;
+  .dark .fluxo-badge { background: #334155; color: #94a3b8; }
+
+  /* ── SVG conexões ── */
+  .connection-group { pointer-events: all; cursor: pointer; }
+  .conn-hit  { fill: none; stroke: transparent; stroke-width: 14; }
+  .conn-line { fill: none; stroke-width: 2.5; }
+  .conn-label-bg { rx: 4; }
+  .conn-label { font-size: 10px; font-weight: 700; }
+  .conn-del { display: none; }
+  .connection-group:hover .conn-del { display: block; }
+  .connection-group:hover .conn-label-bg { stroke-width: 2; }
+
+  /* ── Painel lateral ── */
+  #painelConfig {
+    position: fixed; top: 0; right: 0; height: 100%;
+    width: 100%; max-width: 420px;
+    background: #fff;
+    border-left: 1px solid #e2e8f0;
+    box-shadow: -4px 0 24px rgba(0,0,0,.12);
+    z-index: 50;
+    transform: translateX(100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;           /* ← não deixa vazar conteúdo */
+    display: flex; flex-direction: column;
   }
-  .dark .fluxo-card-badge {
-    background: #334155;
-    color: #cbd5e1;
+  #painelConfig.open { transform: translateX(0); }
+  .dark #painelConfig { background: #1e293b; border-color: #334155; }
+
+  .painel-header {
+    padding: 14px 16px; border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;             /* ← nunca encolhe */
+    background: inherit;
   }
+  .dark .painel-header { border-color: #334155; }
+
+  /* Corpo rolável do painel */
+  #painelBody {
+    flex: 1; min-height: 0;     /* ← crucial para flex + overflow funcionar */
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* Rodapé fixo do painel */
+  #painelFooter {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
+    display: flex; gap: 8px;
+    background: inherit;
+  }
+  .dark #painelFooter { border-color: #334155; }
+
+  /* ── Tipo selector ── */
+  .tipo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .tipo-opt {
+    border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px 4px;
+    cursor: pointer; text-align: center; transition: all .12s;
+    background: #f8fafc;
+  }
+  .dark .tipo-opt { background: #0f172a; border-color: #334155; }
+  .tipo-opt:hover { border-color: #a5b4fc; background: #eef2ff; }
+  .dark .tipo-opt:hover { background: #1e1b4b; }
+  .tipo-opt.sel { border-color: #6366f1; background: #eef2ff; }
+  .dark .tipo-opt.sel { background: #1e1b4b; border-color: #6366f1; }
+  .tipo-opt-icon  { font-size: 18px; }
+  .tipo-opt-label { font-size: 10px; font-weight: 700; color: #374151; display: block; margin-top: 2px; }
+  .dark .tipo-opt-label { color: #e2e8f0; }
+
+  /* ── Question builder ── */
+  .qb-item {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 10px; margin-bottom: 6px;
+  }
+  .dark .qb-item { background: #0f172a; border-color: #334155; }
+  .qb-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .qb-drag { color: #94a3b8; cursor: grab; }
+  .qb-num  { font-size: 11px; font-weight: 700; color: #64748b; min-width: 14px; }
+  .qb-label { flex: 1; min-width: 0; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; background: #fff; color: #1e293b; }
+  .dark .qb-label { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+  .qb-tipo  { font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; background: #fff; color: #1e293b; }
+  .dark .qb-tipo { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+  .qb-req  { font-size: 10px; color: #64748b; display:flex; align-items:center; gap:3px; white-space:nowrap; }
+  .qb-del  { color: #ef4444; cursor: pointer; font-size: 14px; line-height:1; }
+  .qb-opts { margin-top: 6px; padding-left: 22px; }
+  .qb-opt-row { display: flex; gap: 5px; align-items: center; margin-bottom: 3px; }
+  .qb-opt-inp { flex: 1; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 5px; padding: 3px 7px; background: #fff; color: #1e293b; }
+  .dark .qb-opt-inp { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+
+  /* ── Form helpers ── */
+  .fl-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .dark .fl-label { color: #e2e8f0; }
+  .fl-input, .fl-select, .fl-textarea {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 7px;
+    padding: 7px 10px; font-size: 13px; color: #1e293b; background: #fff;
+  }
+  .fl-input:focus, .fl-select:focus, .fl-textarea:focus {
+    outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+  }
+  .dark .fl-input, .dark .fl-select, .dark .fl-textarea {
+    background: #0f172a; border-color: #334155; color: #f1f5f9;
+  }
+  .fl-textarea { resize: vertical; min-height: 70px; }
+  .fl-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+                color: #94a3b8; margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+  .dark .fl-section { color: #475569; border-color: #1e293b; }
 </style>
 
-<div class="w-full px-4 sm:px-6 py-6">
-  <nav class="flex text-sm text-gray-600 dark:text-gray-400 mb-4">
-    <a href="/fluxos" class="hover:text-cyan-600 dark:hover:text-cyan-400">Fluxos</a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900 dark:text-white truncate"><%= (f.nome || 'Fluxo').slice(0, 50) %></span>
+<div class="w-full px-4 sm:px-6 py-5">
+
+  <!-- Breadcrumb + header -->
+  <nav class="flex text-sm text-gray-500 dark:text-gray-400 mb-3 items-center gap-1.5">
+    <a href="/fluxos" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Fluxos</a>
+    <svg class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-gray-900 dark:text-white font-medium truncate"><%= (f.nome || 'Fluxo').slice(0,60) %></span>
+    <span class="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full font-semibold ml-1">v<%= f.versao || '1.0' %></span>
   </nav>
 
-  <% if (typeof flash !== 'undefined' && (flash.success || flash.error)) { %>
-    <div class="mb-4 p-4 rounded-lg <%= flash.error ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %> text-sm">
-      <%= flash.error || flash.success %>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+    <div>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= f.nome %></h1>
+      <% if (f.descricao) { %><p class="text-sm text-gray-500 dark:text-gray-400"><%= f.descricao %></p><% } %>
     </div>
-  <% } %>
-
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-    <h1 class="text-xl font-bold text-gray-900 dark:text-white"><%= f.nome || 'Fluxo' %></h1>
-    <div class="flex items-center gap-2">
-      <button type="button" id="btnAdicionarEtapa" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="btnAdicionarEtapa"
+        class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Adicionar etapa
       </button>
-      <a href="/fluxos/<%= f.id %>/editar" class="inline-flex items-center gap-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Editar fluxo</a>
-      <a href="/fluxos" class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 text-sm font-medium">Voltar</a>
+      <a href="/fluxos/<%= f.id %>/editar"
+        class="inline-flex items-center gap-1.5 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+        ✏️ Editar info
+      </a>
+      <a href="/fluxos" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-2">← Voltar</a>
     </div>
   </div>
 
   <% if (!temUnidade) { %>
     <div class="rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-6 text-center">
-      <p class="text-gray-800 dark:text-gray-200 font-medium">Selecione uma unidade no topo da página para configurar as etapas.</p>
+      <p class="text-amber-800 dark:text-amber-300 font-medium">⚠️ Selecione uma unidade no topo da página para configurar as etapas e grupos.</p>
     </div>
   <% } else { %>
-    <!-- Canvas do fluxo -->
-    <div class="relative mb-4">
-      <div id="fluxoCanvas" class="fluxo-canvas">
-        <!-- SVG overlay para conexões -->
-        <svg id="connectionsSvg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></svg>
-        
-        <!-- Cards das etapas -->
-        <% etapasList.forEach(function(e) {
-          const posX = e.pos_x != null ? e.pos_x : (etapasList.indexOf(e) * 220 + 50);
-          const posY = e.pos_y != null ? e.pos_y : 50;
-          const grupoNome = e.proprietario_nome || '';
-        %>
-        <div class="fluxo-card" 
-             id="node-<%= e.id %>"
-             data-etapa-id="<%= e.id %>"
-             data-proprietario-id="<%= e.proprietario_id || '' %>"
-             style="left: <%= posX %>px; top: <%= posY %>px; z-index: 10;">
-          <% if (e.eh_inicio) { %><div class="fluxo-card-bar inicio"></div><% } %>
-          <% if (e.eh_fim) { %><div class="fluxo-card-bar fim"></div><% } %>
-          <% if (grupoNome) { %>
-            <div class="fluxo-card-header"><%= grupoNome %></div>
-          <% } %>
-          <div class="fluxo-card-body">
-            <div class="fluxo-card-title"><%= e.nome %></div>
-            <% if (e.codigo) { %>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 font-mono"><%= e.codigo %></div>
-            <% } %>
-            <div class="fluxo-card-badges">
-              <span class="fluxo-card-badge"><%= tipoLabel(e.tipo_acao) %></span>
-              <% if (e.prazo_em_dias) { %><span class="fluxo-card-badge"><%= e.prazo_em_dias %>d</span><% } %>
-              <% if (e.exige_assinatura) { %><span class="fluxo-card-badge">Assin.</span><% } %>
+
+    <!-- Canvas -->
+    <div id="fluxoCanvas" class="fluxo-canvas mb-3">
+      <svg id="svgConexoes" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;"></svg>
+
+      <% etapasList.forEach(function(e) {
+        const px = e.pos_x != null ? e.pos_x : (etapasList.indexOf(e) * 240 + 40);
+        const py = e.pos_y != null ? e.pos_y : 60;
+        const ti = tipoInfo(e.tipo_acao);
+        const grupoNome = e.proprietario_nome || '';
+        const camposRaw = e.campos_requeridos;
+        let campos = {};
+        try { campos = typeof camposRaw === 'string' ? JSON.parse(camposRaw) : (camposRaw || {}); } catch(_) {}
+        const nPerguntas = campos.perguntas ? campos.perguntas.length : 0;
+        let dvArr = [];
+        try { dvArr = typeof e.documentos_vinculados === 'string' ? JSON.parse(e.documentos_vinculados) : (e.documentos_vinculados || []); } catch(_) {}
+        const nDocs = Array.isArray(dvArr) ? dvArr.length : 0;
+      %>
+      <div class="fluxo-card"
+        id="node-<%= e.id %>"
+        data-etapa-id="<%= e.id %>"
+        data-proprietario-id="<%= e.proprietario_id || '' %>"
+        style="left:<%= px %>px;top:<%= py %>px;z-index:10;">
+        <!-- Barra de cor do tipo -->
+        <div class="fluxo-card-topbar" style="background:<%= ti.color %>;"></div>
+        <!-- Barra fina início/fim sobreposta -->
+        <% if (e.eh_inicio) { %><div style="height:3px;background:#10b981;margin-top:-1px;"></div><% } %>
+        <% if (e.eh_fim)    { %><div style="height:3px;background:#ef4444;margin-top:-1px;"></div><% } %>
+        <% if (grupoNome) { %>
+          <div class="fluxo-card-header"><%= grupoNome %></div>
+        <% } %>
+        <div class="fluxo-card-body">
+          <!-- Linha topo: ícone + indicadores -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:18px;"><%= ti.icon %></span>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <% if (nPerguntas > 0) { %>
+                <span title="<%= nPerguntas %> pergunta(s)" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:1px 5px;border-radius:4px;">📋 <%= nPerguntas %></span>
+              <% } %>
+              <% if (nDocs > 0) { %>
+                <span title="<%= nDocs %> documento(s) vinculado(s)" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:4px;">📄 <%= nDocs %></span>
+              <% } %>
+              <% if (e.exige_assinatura) { %>
+                <span title="Exige assinatura digital" style="font-size:12px;background:#fdf4ff;color:#7e22ce;padding:1px 4px;border-radius:4px;" title="Assinatura digital">✍️</span>
+              <% } %>
             </div>
           </div>
+          <div class="fluxo-card-title"><%= e.nome %></div>
+          <% if (e.codigo) { %><div class="fluxo-card-code"><%= e.codigo %></div><% } %>
+          <div class="fluxo-card-badges" style="margin-top:6px;">
+            <span class="fluxo-badge" style="background:<%= ti.color %>22;color:<%= ti.color %>;"><%= ti.label %></span>
+            <% if (e.eh_inicio) { %><span class="fluxo-badge" style="background:#d1fae5;color:#065f46;">▶ Início</span><% } %>
+            <% if (e.eh_fim)    { %><span class="fluxo-badge" style="background:#fee2e2;color:#991b1b;">■ Fim</span><% } %>
+            <% if (e.prazo_em_dias) { %><span class="fluxo-badge">⏱ <%= e.prazo_em_dias %>d</span><% } %>
+          </div>
         </div>
-        <% }); %>
       </div>
+      <% }); %>
     </div>
 
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-      <strong>Instruções:</strong>
-      Arraste os cards para reposicionar. &bull;
-      <strong>Duplo clique</strong> no card para configurar. &bull;
-      Para <strong>criar conexão</strong>: <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> + clique na origem, depois <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-xs">Shift</kbd> + clique no destino. &bull;
-      Para <strong>remover conexão</strong>: clique no rótulo da seta.
-    </p>
+    <!-- Instruções -->
+    <div class="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
+      <span>🖱️ <strong>Arrastar</strong> para mover</span>
+      <span>🖱️🖱️ <strong>Duplo clique</strong> para configurar</span>
+      <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded">Shift</kbd> + clique para conectar etapas</span>
+      <span>🔗 Clique no rótulo da seta para remover conexão</span>
+    </div>
+
   <% } %>
 </div>
 
-<!-- Painel Configurar etapa (direita) -->
-<aside id="painelConfig" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 shadow-xl z-50 transform translate-x-full transition-transform duration-200 ease-out overflow-y-auto">
-  <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Configurar etapa</h2>
-    <button type="button" id="btnFecharPainel" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" aria-label="Fechar">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+<!-- ══════════════════════════════════════════ -->
+<!-- PAINEL LATERAL: Configurar etapa          -->
+<!-- ══════════════════════════════════════════ -->
+<div id="painelConfig">
+  <div class="painel-header">
+    <h2 class="text-base font-bold text-gray-900 dark:text-white">Configurar etapa</h2>
+    <button id="btnFecharPainel" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
     </button>
   </div>
-  <form id="formConfigEtapa" class="p-4 space-y-4">
-    <input type="hidden" id="configEtapaId" name="etapa_id" value="">
-    
-    <div>
-      <label class="inline-flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="configEhInicio" name="eh_inicio" value="1" class="rounded border-gray-300 dark:border-slate-600 text-green-600 focus:ring-green-500">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Marcar como etapa de início</span>
-      </label>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">Só pode haver uma etapa de início no fluxo.</p>
-    </div>
-    
-    <div>
-      <label class="inline-flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="configEhFim" name="eh_fim" value="1" class="rounded border-gray-300 dark:border-slate-600 text-red-600 focus:ring-red-500">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Marcar como etapa de fim</span>
-      </label>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">Pode haver múltiplas etapas de fim.</p>
+
+  <!-- Hidden id do form — fora do scroll para sempre estar acessível -->
+  <input type="hidden" id="configEtapaId">
+
+  <!-- Corpo rolável -->
+  <div id="painelBody">
+    <!-- Tipo -->
+    <div style="margin-bottom:12px;">
+      <label class="fl-label">Tipo de etapa</label>
+      <div class="tipo-grid" id="tipoGrid">
+        <div class="tipo-opt" data-tipo="questionario">
+          <div class="tipo-opt-icon">📋</div>
+          <span class="tipo-opt-label">Questionário</span>
+        </div>
+        <div class="tipo-opt" data-tipo="aprovacao">
+          <div class="tipo-opt-icon">✅</div>
+          <span class="tipo-opt-label">Aprovação</span>
+        </div>
+        <div class="tipo-opt" data-tipo="parecer">
+          <div class="tipo-opt-icon">💬</div>
+          <span class="tipo-opt-label">Parecer</span>
+        </div>
+      </div>
     </div>
 
-    <div>
-      <label for="configGrupo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vincular a grupo (setor)</label>
-      <select id="configGrupo" name="proprietario_id" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-        <option value="">— Sem grupo vinculado —</option>
+    <!-- Geral -->
+    <div class="fl-section" style="margin-top:4px;">INFORMAÇÕES GERAIS</div>
+
+    <div style="margin-bottom:10px;">
+      <label class="fl-label">Nome da etapa *</label>
+      <input type="text" id="configNome" class="fl-input" required maxlength="255">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="fl-label">Código (único no fluxo)</label>
+      <input type="text" id="configCodigo" class="fl-input" maxlength="80" placeholder="Gerado automaticamente se vazio">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="fl-label">Responsável (grupo)</label>
+      <select id="configGrupo" class="fl-select">
+        <option value="">— Sem grupo —</option>
         <% gruposList.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
       </select>
     </div>
-
-    <div>
-      <label for="configNome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da etapa *</label>
-      <input type="text" id="configNome" name="nome" required maxlength="255" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-    </div>
-    
-    <div>
-      <label for="configCodigo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código (único no fluxo)</label>
-      <input type="text" id="configCodigo" name="codigo" maxlength="80" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm font-mono bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-    </div>
-    
-    <div>
-      <label for="configTipoAcao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de ação</label>
-      <select id="configTipoAcao" name="tipo_acao" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-        <option value="formulario">Formulário</option>
-        <option value="aprovacao">Aprovação</option>
-        <option value="parecer_tecnico">Parecer técnico</option>
-        <option value="assinatura_digital">Assinatura digital</option>
-      </select>
-    </div>
-    
-    <div>
-      <label for="configPrazo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prazo / SLA (dias)</label>
-      <input type="number" id="configPrazo" name="prazo_em_dias" min="0" placeholder="Ex: 5" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-    </div>
-    
-    <div>
-      <label class="inline-flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="configExigeAssinatura" name="exige_assinatura" value="1" class="rounded border-gray-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500">
-        <span class="text-sm text-gray-700 dark:text-gray-300">Exige assinatura digital (ICP-Brasil)</span>
-      </label>
-    </div>
-    
-    <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Documentos vinculados (templates PDF)</label>
-      <div id="configDocumentosCheckboxes" class="space-y-1.5 max-h-40 overflow-y-auto rounded-lg border border-gray-300 dark:border-slate-600 p-3 bg-white dark:bg-slate-700">
-        <% (typeof templatesPdf !== 'undefined' && templatesPdf.length) ? templatesPdf.forEach(function(t) { %>
-          <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-800 dark:text-gray-200">
-            <input type="checkbox" name="documento_templates" value="<%= t.id %>" class="config-doc-template rounded border-gray-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500">
-            <span><%= t.nome %></span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">(<%= t.tipo_documento %>)</span>
-          </label>
-        <% }) : [] %>
-        <% if (typeof templatesPdf === 'undefined' || !templatesPdf.length) { %>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Nenhum template cadastrado.</p>
-        <% } %>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;">
+      <div>
+        <label class="fl-label">Prazo (dias)</label>
+        <input type="number" id="configPrazo" class="fl-input" min="0" placeholder="Opcional">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding-bottom:2px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#475569;" class="dark:text-slate-400">
+          <input type="checkbox" id="configExigeAssinatura" style="width:14px;height:14px;"> Exige assinatura
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#22c55e;">
+          <input type="checkbox" id="configEhInicio" style="width:14px;height:14px;"> Etapa de início
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#ef4444;">
+          <input type="checkbox" id="configEhFim" style="width:14px;height:14px;"> Etapa de fim
+        </label>
       </div>
     </div>
-    
-    <div>
-      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Anexos da etapa</label>
-      <ul id="configAnexosLista" class="space-y-1 mb-2 text-sm text-gray-700 dark:text-gray-300"></ul>
-      <form id="formAnexoEtapa" class="flex gap-2 items-center flex-wrap">
-        <input type="file" id="inputAnexoEtapa" name="arquivo" class="text-sm text-gray-600 dark:text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-cyan-600 file:text-white file:text-sm file:font-medium file:cursor-pointer hover:file:bg-cyan-700">
-        <button type="submit" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Anexar</button>
-      </form>
-    </div>
-    
-    <div class="flex gap-2 pt-2">
-      <button type="submit" class="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Salvar</button>
-      <button type="button" id="btnRemoverEtapa" class="px-4 py-2.5 rounded-lg text-sm font-medium border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Remover</button>
-    </div>
-  </form>
-</aside>
-<div id="painelConfigBackdrop" class="fixed inset-0 bg-black/30 z-40 hidden" aria-hidden="true"></div>
 
-<!-- Modal Adicionar etapa -->
-<div id="modalEtapa" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true" role="dialog">
-  <div class="flex min-h-full items-center justify-center p-4">
-    <div id="modalEtapaBackdrop" class="fixed inset-0 bg-black/50 dark:bg-slate-900/70"></div>
-    <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-gray-200 dark:border-slate-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Adicionar etapa</h3>
+    <!-- Configuração por tipo -->
+    <div class="fl-section" id="tipoConfigTitle">CONFIGURAÇÃO DA ETAPA</div>
+    <div id="tipoConfigArea"></div>
+
+    <!-- Documentos -->
+    <% if (typeof templatesPdf !== 'undefined' && templatesPdf.length > 0) { %>
+    <div class="fl-section">DOCUMENTOS VINCULADOS</div>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;max-height:110px;overflow-y:auto;background:#fff;" class="dark:bg-slate-900 dark:border-slate-700">
+      <% templatesPdf.forEach(function(t) { %>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;margin-bottom:4px;cursor:pointer;" class="dark:text-slate-300">
+          <input type="checkbox" name="documento_templates" value="<%= t.id %>" class="config-doc-template" style="width:13px;height:13px;">
+          <span><%= t.nome %></span>
+          <span style="font-size:10px;color:#94a3b8;">(<%= t.tipo_documento %>)</span>
+        </label>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <!-- Anexos -->
+    <div class="fl-section">ANEXOS</div>
+    <ul id="configAnexosLista" style="list-style:none;padding:0;margin:0 0 8px;"></ul>
+    <form id="formAnexoEtapa" style="display:flex;gap:6px;align-items:center;">
+      <input type="file" id="inputAnexoEtapa" style="font-size:12px;color:#64748b;flex:1;min-width:0;" class="dark:text-slate-400">
+      <button type="submit" style="padding:5px 12px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Anexar</button>
+    </form>
+  </div><!-- /painelBody -->
+
+  <!-- Rodapé fixo com botões sempre visíveis -->
+  <div id="painelFooter">
+    <button type="button" id="btnSalvarEtapa"
+      style="flex:1;padding:9px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+      Salvar
+    </button>
+    <button type="button" id="btnRemoverEtapa"
+      style="padding:9px 14px;color:#ef4444;background:#fff;border:1px solid #fecaca;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;"
+      class="dark:bg-slate-900 dark:border-red-900">
+      Excluir
+    </button>
+  </div>
+</div>
+<div id="painelConfigBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:49;"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: Adicionar etapa                    -->
+<!-- ══════════════════════════════════════════ -->
+<div id="modalEtapa" style="display:none;position:fixed;inset:0;z-index:60;overflow-y:auto;">
+  <div style="display:flex;min-height:100%;align-items:center;justify-content:center;padding:16px;">
+    <div id="modalEtapaBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);"></div>
+    <div style="position:relative;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:480px;overflow:hidden;" class="dark:bg-slate-800">
+      <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;" class="dark:border-slate-700">
+        <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white">Adicionar etapa</h3>
       </div>
-      <form method="POST" action="/fluxos/<%= f.id %>/etapas" class="p-4 space-y-4">
+      <form method="POST" action="/fluxos/<%= f.id %>/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <!-- Tipo visual — event delegation via #novoTipoGrid -->
         <div>
-          <label for="novaGrupo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grupo (setor) *</label>
-          <select id="novaGrupo" name="proprietario_id" required class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          <label class="fl-label">Tipo *</label>
+          <div class="tipo-grid" id="novoTipoGrid">
+            <div class="tipo-opt sel" data-novo-tipo="questionario" style="border-color:#6366f1;background:#eef2ff;">
+              <div class="tipo-opt-icon">📋</div>
+              <span class="tipo-opt-label">Questionário</span>
+            </div>
+            <div class="tipo-opt" data-novo-tipo="aprovacao">
+              <div class="tipo-opt-icon">✅</div>
+              <span class="tipo-opt-label">Aprovação</span>
+            </div>
+            <div class="tipo-opt" data-novo-tipo="parecer">
+              <div class="tipo-opt-icon">💬</div>
+              <span class="tipo-opt-label">Parecer</span>
+            </div>
+          </div>
+          <!-- Campo hidden que vai para o form -->
+          <input type="hidden" name="tipo_acao" id="novoTipoValor" value="questionario">
+        </div>
+        <div>
+          <label class="fl-label">Grupo (setor) *</label>
+          <select name="proprietario_id" required class="fl-select">
             <option value="">— Selecionar grupo —</option>
             <% gruposList.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
           </select>
         </div>
         <div>
-          <label for="novaNome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome da etapa *</label>
-          <input type="text" id="novaNome" name="nome" required maxlength="255" placeholder="Ex: Validar documentação" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
+          <label class="fl-label">Nome da etapa *</label>
+          <input type="text" name="nome" required maxlength="255" placeholder="Ex: Validar documentação" class="fl-input" id="novaNome">
         </div>
-        <div>
-          <label for="novaCodigo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código (opcional)</label>
-          <input type="text" id="novaCodigo" name="codigo" maxlength="80" placeholder="Será gerado do nome se vazio" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm font-mono bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-        </div>
-        <div>
-          <label for="novaTipo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo *</label>
-          <select id="novaTipo" name="tipo_acao" required class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-            <option value="formulario">Formulário</option>
-            <option value="aprovacao">Aprovação</option>
-            <option value="parecer_tecnico">Parecer técnico</option>
-            <option value="assinatura_digital">Assinatura digital</option>
-          </select>
-        </div>
-        <div>
-          <label for="novaPrazo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prazo (dias)</label>
-          <input type="number" id="novaPrazo" name="prazo_em_dias" min="0" placeholder="Opcional" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-        </div>
-        <div>
-          <label class="inline-flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="exige_assinatura" value="1" class="rounded border-gray-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500">
-            <span class="text-sm text-gray-700 dark:text-gray-300">Exige assinatura digital (ICP-Brasil)</span>
-          </label>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Documentos vinculados (templates PDF)</label>
-          <div class="space-y-1.5 max-h-32 overflow-y-auto rounded-lg border border-gray-300 dark:border-slate-600 p-3 bg-white dark:bg-slate-700">
-            <% if (typeof templatesPdf !== 'undefined' && templatesPdf.length) { templatesPdf.forEach(function(t) { %>
-              <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-800 dark:text-gray-200">
-                <input type="checkbox" name="documento_templates" value="<%= t.id %>" class="rounded border-gray-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500">
-                <span><%= t.nome %></span>
-                <span class="text-xs text-gray-500">(<%= t.tipo_documento %>)</span>
-              </label>
-            <% }); } else { %>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Nenhum template.</p>
-            <% } %>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="fl-label">Código (opcional)</label>
+            <input type="text" name="codigo" maxlength="80" placeholder="Auto" class="fl-input" style="font-family:monospace;">
+          </div>
+          <div>
+            <label class="fl-label">Prazo (dias)</label>
+            <input type="number" name="prazo_em_dias" min="0" placeholder="Opcional" class="fl-input">
           </div>
         </div>
-        <div class="flex gap-2 pt-2">
-          <button type="submit" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Criar etapa</button>
-          <button type="button" id="btnFecharModalEtapa" class="px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+        <div style="display:flex;gap:8px;padding-top:4px;">
+          <button type="submit" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Criar etapa</button>
+          <button type="button" id="btnFecharModalEtapa" style="padding:10px 16px;border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:8px;font-size:13px;cursor:pointer;" class="dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">Cancelar</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- Modal Nova conexão -->
-<div id="modalConexao" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-modal="true" role="dialog">
-  <div class="flex min-h-full items-center justify-center p-4">
-    <div id="modalConexaoBackdrop" class="fixed inset-0 bg-black/50 dark:bg-slate-900/70"></div>
-    <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-full max-w-md p-6">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nova conexão</h3>
-      <form id="formConexao" class="space-y-4">
-        <input type="hidden" id="conexaoOrigem" name="etapa_origem_id" value="">
-        <input type="hidden" id="conexaoDestino" name="etapa_destino_id" value="">
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: Editor de Perguntas              -->
+<!-- ══════════════════════════════════════════ -->
+<div id="modalPerguntas" style="display:none;position:fixed;inset:0;z-index:80;align-items:center;justify-content:center;padding:16px;">
+  <div id="mqBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:0;"></div>
+  <div style="position:relative;z-index:1;width:100%;max-width:640px;max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.25);display:flex;flex-direction:column;" class="dark:bg-slate-800">
+
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;" class="dark:border-slate-700">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white">📋 Editor de Questionário</h3>
+        <p style="font-size:12px;color:#94a3b8;margin:3px 0 0;">Crie as perguntas que os usuários devem responder nesta etapa</p>
+      </div>
+      <button id="btnFecharPerguntas" style="color:#94a3b8;background:none;border:none;cursor:pointer;padding:4px;">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Perguntas existentes (scrollável) -->
+    <div class="mq-content" style="flex:1;min-height:0;overflow-y:auto;padding:16px;">
+      <div id="modalQ-perguntas"></div>
+    </div>
+
+    <!-- Adicionar nova pergunta -->
+    <div class="mq-add-footer" style="padding:12px 16px;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 8px;">Adicionar pergunta</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button type="button" data-tipo-add="texto_curto" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">📝 Texto curto</button>
+        <button type="button" data-tipo-add="texto_longo" style="padding:5px 10px;font-size:11px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">📄 Texto longo</button>
+        <button type="button" data-tipo-add="numero"      style="padding:5px 10px;font-size:11px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">🔢 Número</button>
+        <button type="button" data-tipo-add="data"        style="padding:5px 10px;font-size:11px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">📅 Data</button>
+        <button type="button" data-tipo-add="hora"        style="padding:5px 10px;font-size:11px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">🕐 Hora</button>
+        <button type="button" data-tipo-add="radio"       style="padding:5px 10px;font-size:11px;font-weight:600;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;cursor:pointer;color:#4338ca;">⊙ Seleção única</button>
+        <button type="button" data-tipo-add="checkbox"    style="padding:5px 10px;font-size:11px;font-weight:600;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;cursor:pointer;color:#4338ca;">☑ Múltipla escolha</button>
+        <button type="button" data-tipo-add="selecao"     style="padding:5px 10px;font-size:11px;font-weight:600;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;cursor:pointer;color:#4338ca;">≡ Lista suspensa</button>
+        <button type="button" data-tipo-add="arquivo"     style="padding:5px 10px;font-size:11px;font-weight:600;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;color:#15803d;">📎 Arquivo</button>
+        <button type="button" data-tipo-add="sim_nao"     style="padding:5px 10px;font-size:11px;font-weight:600;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;cursor:pointer;color:#92400e;">↕ Sim / Não</button>
+      </div>
+    </div>
+
+    <!-- Footer: salvar / cancelar -->
+    <div style="padding:12px 16px;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;">
+      <button type="button" id="btnCancelarPerguntas" style="padding:8px 18px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button type="button" id="btnSalvarPerguntas"   style="padding:8px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">✓ Salvar perguntas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: Nova conexão                       -->
+<!-- ══════════════════════════════════════════ -->
+<div id="modalConexao" style="display:none;position:fixed;inset:0;z-index:60;overflow-y:auto;">
+  <div style="display:flex;min-height:100%;align-items:center;justify-content:center;padding:16px;">
+    <div id="modalConexaoBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);"></div>
+    <div style="position:relative;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:400px;padding:24px;" class="dark:bg-slate-800">
+      <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0 0 16px;" class="dark:text-white">Nova conexão</h3>
+      <form id="formConexao" style="display:flex;flex-direction:column;gap:14px;">
+        <input type="hidden" id="conexaoOrigem">
+        <input type="hidden" id="conexaoDestino">
         <div>
-          <label for="conexaoLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ação / Condição</label>
-          <select id="conexaoLabel" name="label" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500">
-            <option value="Sim">Sim / Aprovado</option>
-            <option value="Não">Não / Reprovado</option>
-            <option value="Pendente">Pendente</option>
-            <option value="sempre">Sempre</option>
+          <label class="fl-label">Ação / Condição</label>
+          <select id="conexaoLabel" class="fl-select">
+            <option value="Sim">✅ Sim / Aprovado</option>
+            <option value="Não">❌ Não / Reprovado</option>
+            <option value="Pendente">⏳ Pendente</option>
+            <option value="sempre">→ Sempre (seguir)</option>
           </select>
         </div>
-        <div class="flex gap-2 pt-2">
-          <button type="submit" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">Criar conexão</button>
-          <button type="button" id="btnFecharModalConexao" class="px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+        <div style="display:flex;gap:8px;">
+          <button type="submit" style="flex:1;padding:9px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Criar conexão</button>
+          <button type="button" id="btnFecharModalConexao" style="padding:9px 16px;border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:8px;font-size:13px;cursor:pointer;" class="dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">Cancelar</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════ -->
+<!-- SCRIPT                                    -->
+<!-- ══════════════════════════════════════════ -->
 <script>
-(function() {
-  var fluxoId = '<%= f.id %>';
-  var etapasData = <%- JSON.stringify(etapasList.map(function(e) { return { id: e.id, nome: e.nome, codigo: e.codigo, ordem: e.ordem, eh_inicio: e.eh_inicio, eh_fim: e.eh_fim, proprietario_id: e.proprietario_id, proprietario_nome: e.proprietario_nome, tipo_acao: e.tipo_acao, prazo_em_dias: e.prazo_em_dias, exige_assinatura: e.exige_assinatura, documentos_vinculados: e.documentos_vinculados, pos_x: e.pos_x, pos_y: e.pos_y }; })) %>;
-  var edgesData = <%- JSON.stringify(edgesList.map(function(e) { return { id: e.id, etapa_origem_id: e.etapa_origem_id, etapa_destino_id: e.etapa_destino_id, label: e.label || 'sempre', origem_codigo: e.origem_codigo, destino_codigo: e.destino_codigo }; })) %>;
-  var anexosPorEtapa = <%- JSON.stringify(typeof anexosPorEtapa !== 'undefined' ? anexosPorEtapa : {}) %>;
-  var gruposList = <%- JSON.stringify(gruposList) %>;
-  var templatesPdf = <%- JSON.stringify(typeof templatesPdf !== 'undefined' ? templatesPdf : []) %>;
-  
-  var draggingCard = null;
-  var dragOffset = { x: 0, y: 0 };
+(function () {
+  var fluxoId    = '<%= f.id %>';
+  var etapasData = <%- JSON.stringify(etapasList.map(function(e){
+    var cr={};try{cr=typeof e.campos_requeridos==='string'?JSON.parse(e.campos_requeridos):(e.campos_requeridos||{});}catch(_){}
+    var dv=[];try{dv=typeof e.documentos_vinculados==='string'?JSON.parse(e.documentos_vinculados):(e.documentos_vinculados||[]);}catch(_){}
+    return {id:e.id,nome:e.nome,codigo:e.codigo,ordem:e.ordem,eh_inicio:e.eh_inicio,eh_fim:e.eh_fim,
+            proprietario_id:e.proprietario_id,proprietario_nome:e.proprietario_nome,
+            tipo_acao:(e.tipo_acao==='parecer_tecnico'?'parecer':e.tipo_acao||'questionario'),
+            prazo_em_dias:e.prazo_em_dias,exige_assinatura:e.exige_assinatura,
+            campos_requeridos:cr,documentos_vinculados:dv,pos_x:e.pos_x,pos_y:e.pos_y};
+  })) %>;
+  var edgesData  = <%- JSON.stringify(edgesList.map(function(e){
+    return {id:e.id,etapa_origem_id:e.etapa_origem_id,etapa_destino_id:e.etapa_destino_id,label:e.label||'sempre'};
+  })) %>;
+  var anexosPorEtapa = <%- JSON.stringify(typeof anexosPorEtapa!=='undefined'?anexosPorEtapa:{}) %>;
+
+  // ── Drag ────────────────────────────────────────────────────
+  var dragging   = null;
+  var dragOffset = {x:0,y:0};
   var connectingFrom = null;
-  var tempLine = null;
 
-  function getEtapa(id) {
-    var n = parseInt(id, 10);
-    for (var i = 0; i < etapasData.length; i++) if (etapasData[i].id === n) return etapasData[i];
-    return null;
-  }
+  function getEtapa(id) { return etapasData.find(function(e){return e.id===+id;}); }
 
-  function getCardElement(etapaId) {
-    return document.getElementById('node-' + etapaId);
-  }
+  document.querySelectorAll('.fluxo-card').forEach(function(card){
+    var etapaId = +card.dataset.etapaId;
 
-  function getCardCenter(card) {
-    var rect = card.getBoundingClientRect();
-    var canvasRect = document.getElementById('fluxoCanvas').getBoundingClientRect();
-    return {
-      x: rect.left - canvasRect.left + rect.width / 2,
-      y: rect.top - canvasRect.top + rect.height / 2
-    };
-  }
-
-  function drawConnections() {
-    var svg = document.getElementById('connectionsSvg');
-    var canvas = document.getElementById('fluxoCanvas');
-    svg.setAttribute('width', canvas.scrollWidth);
-    svg.setAttribute('height', canvas.scrollHeight);
-    svg.innerHTML = '';
-
-    // Defs (arrowheads) devem vir ANTES dos paths que os referenciam
-    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    ['green', 'red'].forEach(function(color) {
-      var marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-      marker.setAttribute('id', 'arrowhead-' + color);
-      marker.setAttribute('markerWidth', '10');
-      marker.setAttribute('markerHeight', '10');
-      marker.setAttribute('refX', '9');
-      marker.setAttribute('refY', '3');
-      marker.setAttribute('orient', 'auto');
-      var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      polygon.setAttribute('points', '0 0, 10 3, 0 6');
-      polygon.setAttribute('fill', color === 'red' ? '#ef4444' : '#10b981');
-      marker.appendChild(polygon);
-      defs.appendChild(marker);
-    });
-    svg.appendChild(defs);
-    
-    edgesData.forEach(function(edge) {
-      var origem = getCardElement(edge.etapa_origem_id);
-      var destino = getCardElement(edge.etapa_destino_id);
-      if (!origem || !destino) return;
-      
-      var p1 = getCardCenter(origem);
-      var p2 = getCardCenter(destino);
-      
-      var dx = p2.x - p1.x;
-      var dy = p2.y - p1.y;
-      var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      var angle = Math.atan2(dy, dx);
-      
-      var offset = 50;
-      var x1 = p1.x + Math.cos(angle) * offset;
-      var y1 = p1.y + Math.sin(angle) * offset;
-      var x2 = p2.x - Math.cos(angle) * offset;
-      var y2 = p2.y - Math.sin(angle) * offset;
-
-      var mx = (x1 + x2) / 2;
-      var my = (y1 + y2) / 2;
-      var nx = -dy / dist;
-      var ny = dx / dist;
-      var cx = mx + nx * 30;
-      var cy = my + ny * 30;
-      
-      var lineColor = (edge.label || '').toLowerCase().indexOf('não') !== -1 || (edge.label || '').toLowerCase().indexOf('reprov') !== -1 ? '#ef4444' : '#10b981';
-
-      // Grupo clicável para deletar a conexão
-      var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      group.setAttribute('class', 'connection-group');
-      group.setAttribute('data-edge-id', edge.id);
-      group.addEventListener('click', function() {
-        var edgeId = this.getAttribute('data-edge-id');
-        if (!confirm('Remover esta conexão?')) return;
-        fetch('/fluxos/' + fluxoId + '/edges/' + edgeId, {
-          method: 'DELETE',
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            if (data.success) {
-              edgesData = edgesData.filter(function(e) { return String(e.id) !== String(edgeId); });
-              drawConnections();
-              if (window.showToast) showToast('Conexão removida.', 'success');
-            } else {
-              if (window.showToast) showToast(data.message || 'Erro ao remover conexão.', 'error');
-            }
-          })
-          .catch(function() { if (window.showToast) showToast('Erro ao remover conexão.', 'error'); });
-      });
-
-      // Hitbox invisível para facilitar o clique na linha
-      var hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      var d = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
-      hitPath.setAttribute('d', d);
-      hitPath.setAttribute('fill', 'none');
-      hitPath.setAttribute('stroke', 'transparent');
-      hitPath.setAttribute('stroke-width', '16');
-      group.appendChild(hitPath);
-
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', lineColor);
-      path.setAttribute('stroke-width', '3');
-      path.setAttribute('marker-end', 'url(#arrowhead-' + (lineColor === '#ef4444' ? 'red' : 'green') + ')');
-      path.setAttribute('class', 'connection-line');
-      group.appendChild(path);
-      
-      var midX = cx;
-      var midY = cy;
-      var labelText = edge.label || 'sempre';
-      var labelWidth = Math.max(40, labelText.length * 7);
-      var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bg.setAttribute('x', midX - labelWidth / 2);
-      bg.setAttribute('y', midY - 10);
-      bg.setAttribute('width', labelWidth);
-      bg.setAttribute('height', '18');
-      bg.setAttribute('fill', 'white');
-      bg.setAttribute('rx', '4');
-      bg.setAttribute('stroke', lineColor);
-      bg.setAttribute('stroke-width', '1');
-      bg.setAttribute('class', 'connection-label-bg');
-      group.appendChild(bg);
-
-      // Ícone × para indicar que pode remover (visível no hover via CSS)
-      var delText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      delText.setAttribute('x', midX + labelWidth / 2 - 6);
-      delText.setAttribute('y', midY + 3);
-      delText.setAttribute('text-anchor', 'middle');
-      delText.setAttribute('class', 'connection-delete-hint');
-      delText.setAttribute('fill', '#ef4444');
-      delText.setAttribute('font-size', '11');
-      delText.setAttribute('font-weight', '700');
-      delText.textContent = '×';
-      group.appendChild(delText);
-      
-      var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', midX);
-      text.setAttribute('y', midY + 3);
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('class', 'connection-label');
-      text.setAttribute('fill', lineColor);
-      text.setAttribute('font-size', '11');
-      text.setAttribute('font-weight', '600');
-      text.textContent = labelText;
-      group.appendChild(text);
-
-      svg.appendChild(group);
-    });
-  }
-
-  function openPainel(etapa) {
-    document.getElementById('configEtapaId').value = etapa.id;
-    document.getElementById('configNome').value = etapa.nome || '';
-    document.getElementById('configCodigo').value = etapa.codigo || '';
-    document.getElementById('configTipoAcao').value = etapa.tipo_acao || 'formulario';
-    document.getElementById('configPrazo').value = etapa.prazo_em_dias != null ? etapa.prazo_em_dias : '';
-    document.getElementById('configExigeAssinatura').checked = !!etapa.exige_assinatura;
-    document.getElementById('configEhInicio').checked = !!etapa.eh_inicio;
-    document.getElementById('configEhFim').checked = !!etapa.eh_fim;
-    document.getElementById('configGrupo').value = etapa.proprietario_id || '';
-    
-    var docs = etapa.documentos_vinculados;
-    var templateIds = [];
-    if (Array.isArray(docs)) docs.forEach(function(d) { if (d && d.template_id) templateIds.push(String(d.template_id)); });
-    else if (typeof docs === 'string') try { var a = JSON.parse(docs); if (Array.isArray(a)) a.forEach(function(d) { if (d && d.template_id) templateIds.push(String(d.template_id)); }); } catch (_) {}
-    document.querySelectorAll('.config-doc-template').forEach(function(cb) {
-      cb.checked = templateIds.indexOf(cb.value) !== -1;
-    });
-    
-    var anexos = anexosPorEtapa[etapa.id] || [];
-    var lista = document.getElementById('configAnexosLista');
-    lista.innerHTML = '';
-    anexos.forEach(function(a) {
-      var li = document.createElement('li');
-      li.className = 'flex items-center justify-between gap-2 py-1 px-2 rounded bg-gray-100 dark:bg-slate-600';
-      li.innerHTML = '<a href="/fluxos/' + fluxoId + '/etapas/' + etapa.id + '/anexos/' + a.id + '/download" class="text-cyan-600 dark:text-cyan-400 hover:underline truncate flex-1" target="_blank">' + (a.nome_original || a.nome_arquivo) + '</a>' +
-        '<button type="button" class="btnRemoverAnexo p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" data-anexo-id="' + a.id + '" title="Remover">&#215;</button>';
-      lista.appendChild(li);
-    });
-    if (anexos.length === 0) lista.innerHTML = '<li class="text-gray-500 dark:text-gray-400 text-xs">Nenhum anexo.</li>';
-    
-    document.getElementById('painelConfig').classList.remove('translate-x-full');
-    document.getElementById('painelConfigBackdrop').classList.remove('hidden');
-  }
-
-  function closePainel() {
-    document.getElementById('painelConfig').classList.add('translate-x-full');
-    document.getElementById('painelConfigBackdrop').classList.add('hidden');
-  }
-
-  function saveCardPosition(etapaId, x, y) {
-    fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId + '/posicao', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify({ pos_x: Math.round(x), pos_y: Math.round(y) })
-    }).catch(function() {});
-  }
-
-  document.querySelectorAll('.fluxo-card').forEach(function(card) {
-    var etapaId = parseInt(card.getAttribute('data-etapa-id'), 10);
-    
-    card.addEventListener('mousedown', function(e) {
-      if (e.target.closest('button') || e.target.closest('a')) return;
+    card.addEventListener('mousedown', function(e){
+      if (e.target.closest('button,a')) return;
       if (e.shiftKey) {
         e.preventDefault();
-        if (connectingFrom && connectingFrom !== card) {
-          var fromId = parseInt(connectingFrom.getAttribute('data-etapa-id'), 10);
-          var toId = etapaId;
-          if (fromId !== toId) {
-            document.getElementById('conexaoOrigem').value = fromId;
-            document.getElementById('conexaoDestino').value = toId;
-            document.getElementById('modalConexao').classList.remove('hidden');
-          }
-          connectingFrom.style.outline = '';
+        if (!connectingFrom) {
+          connectingFrom = card;
+          card.classList.add('connecting-source');
+        } else if (connectingFrom === card) {
+          card.classList.remove('connecting-source');
           connectingFrom = null;
         } else {
-          if (connectingFrom === card) {
-            card.style.outline = '';
-            connectingFrom = null;
-          } else {
-            if (connectingFrom) connectingFrom.style.outline = '';
-            connectingFrom = card;
-            card.style.outline = '3px solid #06b6d4';
-            card.style.outlineOffset = '2px';
-          }
+          var fromId = connectingFrom.dataset.etapaId;
+          document.getElementById('conexaoOrigem').value = fromId;
+          document.getElementById('conexaoDestino').value = etapaId;
+          connectingFrom.classList.remove('connecting-source');
+          connectingFrom = null;
+          document.getElementById('modalConexao').style.display = 'block';
         }
         return;
       }
-      
-      draggingCard = card;
-      var rect = card.getBoundingClientRect();
-      var canvasRect = document.getElementById('fluxoCanvas').getBoundingClientRect();
-      dragOffset.x = e.clientX - rect.left;
-      dragOffset.y = e.clientY - rect.top;
+      dragging = card;
+      var r = card.getBoundingClientRect();
+      dragOffset = {x: e.clientX - r.left, y: e.clientY - r.top};
       card.classList.add('dragging');
       e.preventDefault();
     });
-    
-    card.addEventListener('dblclick', function(e) {
-      if (e.target.closest('button') || e.target.closest('a')) return;
-      if (draggingCard) return;
+
+    card.addEventListener('dblclick', function(e){
+      if (e.target.closest('button,a') || dragging) return;
       var etapa = getEtapa(etapaId);
       if (etapa) openPainel(etapa);
     });
   });
 
-  document.addEventListener('mousemove', function(e) {
-    if (draggingCard) {
-      var canvas = document.getElementById('fluxoCanvas');
-      var canvasRect = canvas.getBoundingClientRect();
-      var x = e.clientX - canvasRect.left - dragOffset.x;
-      var y = e.clientY - canvasRect.top - dragOffset.y;
-      draggingCard.style.left = Math.max(0, x) + 'px';
-      draggingCard.style.top = Math.max(0, y) + 'px';
-      drawConnections();
+  document.addEventListener('mousemove', function(e){
+    if (!dragging) return;
+    var canvas = document.getElementById('fluxoCanvas');
+    var cr = canvas.getBoundingClientRect();
+    var x = e.clientX - cr.left - dragOffset.x + canvas.scrollLeft;
+    var y = e.clientY - cr.top  - dragOffset.y + canvas.scrollTop;
+    dragging.style.left = Math.max(0,x) + 'px';
+    dragging.style.top  = Math.max(0,y) + 'px';
+    drawConnections();
+  });
+
+  document.addEventListener('mouseup', function(){
+    if (!dragging) return;
+    var id = +dragging.dataset.etapaId;
+    var x  = parseInt(dragging.style.left,10);
+    var y  = parseInt(dragging.style.top ,10);
+    fetch('/fluxos/'+fluxoId+'/etapas/'+id+'/posicao',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+      body:JSON.stringify({pos_x:x,pos_y:y})
+    }).catch(function(){});
+    dragging.classList.remove('dragging');
+    dragging = null;
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='Escape' && connectingFrom){
+      connectingFrom.classList.remove('connecting-source');
+      connectingFrom=null;
     }
   });
 
-  document.addEventListener('mouseup', function() {
-    if (draggingCard) {
-      var etapaId = parseInt(draggingCard.getAttribute('data-etapa-id'), 10);
-      var x = parseInt(draggingCard.style.left, 10);
-      var y = parseInt(draggingCard.style.top, 10);
-      saveCardPosition(etapaId, x, y);
-      draggingCard.classList.remove('dragging');
-      draggingCard = null;
-    }
-  });
+  // ── Desenhar conexões SVG ────────────────────────────────────
+  function svgEl(tag){ return document.createElementNS('http://www.w3.org/2000/svg',tag); }
 
-  document.getElementById('btnFecharPainel').addEventListener('click', closePainel);
-  document.getElementById('painelConfigBackdrop').addEventListener('click', closePainel);
-
-  document.getElementById('formConfigEtapa').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var etapaId = document.getElementById('configEtapaId').value;
-    if (!etapaId) return;
-    var nome = document.getElementById('configNome').value.trim();
-    if (!nome) {
-      if (window.showToast) showToast('Informe o nome da etapa.', 'warning');
-      document.getElementById('configNome').focus();
-      return;
-    }
-    var etapa = getEtapa(etapaId);
-    var docTemplates = [];
-    document.querySelectorAll('.config-doc-template:checked').forEach(function(cb) { docTemplates.push(cb.value); });
-    var grupoVal = document.getElementById('configGrupo').value;
-    var body = {
-      nome: nome,
-      codigo: document.getElementById('configCodigo').value || undefined,
-      proprietario_id: grupoVal ? parseInt(grupoVal, 10) : null,
-      tipo_acao: document.getElementById('configTipoAcao').value,
-      prazo_em_dias: document.getElementById('configPrazo').value ? parseInt(document.getElementById('configPrazo').value, 10) : null,
-      exige_assinatura: document.getElementById('configExigeAssinatura').checked ? '1' : '0',
-      eh_inicio: document.getElementById('configEhInicio').checked ? '1' : '0',
-      eh_fim: document.getElementById('configEhFim').checked ? '1' : '0',
-      documento_templates: docTemplates,
-      ordem: etapa ? etapa.ordem : undefined
+  // Retorna os pontos de borda do card (com direção de saída)
+  function cardEdges(card){
+    var canvas = document.getElementById('fluxoCanvas');
+    var cr = canvas.getBoundingClientRect();
+    var r  = card.getBoundingClientRect();
+    var l = r.left - cr.left + canvas.scrollLeft;
+    var t = r.top  - cr.top  + canvas.scrollTop;
+    var w = r.width, h = r.height;
+    return {
+      cx: l + w/2, cy: t + h/2, w: w, h: h,
+      right:  { x: l + w,   y: t + h/2, dir: 'right'  },
+      left:   { x: l,       y: t + h/2, dir: 'left'   },
+      bottom: { x: l + w/2, y: t + h,   dir: 'bottom' },
+      top:    { x: l + w/2, y: t,       dir: 'top'    }
     };
-    var btn = e.target.querySelector('button[type="submit"]');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-    fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify(body)
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          if (window.showToast) showToast('Etapa salva com sucesso!', 'success');
-          closePainel();
-          setTimeout(function() { location.reload(); }, 800);
-        } else {
-          if (window.showToast) showToast(data.message || 'Erro ao salvar.', 'error');
-          if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
-        }
-      })
-      .catch(function() {
-        if (window.showToast) showToast('Erro de conexão ao salvar.', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+  }
+
+  // Caminho ortogonal com GAP para sair pela borda sem cruzar o card
+  function orthoPath(p1, p2) {
+    var GAP = 22;  // afasta o traçado da borda do card
+    // Calcular ponto de saída (fora do card)
+    var ex1x = p1.x + (p1.dir==='right'?GAP : p1.dir==='left'?-GAP : 0);
+    var ex1y = p1.y + (p1.dir==='bottom'?GAP : p1.dir==='top'?-GAP : 0);
+    // Calcular ponto de entrada (fora do card destino)
+    var ex2x = p2.x + (p2.dir==='left'?GAP : p2.dir==='right'?-GAP : 0);
+    var ex2y = p2.y + (p2.dir==='top'?GAP : p2.dir==='bottom'?-GAP : 0);
+
+    if (p1.dir==='right' || p1.dir==='left') {
+      // Sai horizontal → dobra vertical → entra
+      return 'M '+p1.x+' '+p1.y+
+             ' H '+ex1x+
+             ' V '+ex2y+
+             ' H '+p2.x;
+    } else {
+      // Sai vertical → dobra horizontal → entra
+      return 'M '+p1.x+' '+p1.y+
+             ' V '+ex1y+
+             ' H '+ex2x+
+             ' V '+p2.y;
+    }
+  }
+
+  // Ponto médio visual do path para posicionar o label
+  function pathMidPoint(p1, p2) {
+    var GAP = 22;
+    var ex1x = p1.x + (p1.dir==='right'?GAP : p1.dir==='left'?-GAP : 0);
+    var ex1y = p1.y + (p1.dir==='bottom'?GAP : p1.dir==='top'?-GAP : 0);
+    var ex2x = p2.x + (p2.dir==='left'?GAP : p2.dir==='right'?-GAP : 0);
+    var ex2y = p2.y + (p2.dir==='top'?GAP : p2.dir==='bottom'?-GAP : 0);
+    if (p1.dir==='right' || p1.dir==='left') {
+      return { x: ex1x, y: (ex1y + ex2y) / 2 };
+    } else {
+      return { x: (ex1x + ex2x) / 2, y: ex1y };
+    }
+  }
+
+  function drawConnections(){
+    var svg    = document.getElementById('svgConexoes');
+    var canvas = document.getElementById('fluxoCanvas');
+    if (!svg || !canvas) return;
+
+    // Garantir que o SVG cobre toda a área scrollável
+    svg.setAttribute('width',  canvas.scrollWidth  + 'px');
+    svg.setAttribute('height', canvas.scrollHeight + 'px');
+    svg.innerHTML = '';
+
+    // Arrowheads (orient="auto" orienta conforme direção final do path)
+    var defs = svgEl('defs');
+    [['ag','#22c55e'],['ar','#ef4444'],['agy','#6366f1']].forEach(function(pair){
+      var m = svgEl('marker');
+      m.setAttribute('id', pair[0]);
+      m.setAttribute('markerWidth','10'); m.setAttribute('markerHeight','10');
+      m.setAttribute('refX','9'); m.setAttribute('refY','3');
+      m.setAttribute('orient','auto');
+      var p = svgEl('polygon');
+      p.setAttribute('points','0 0,10 3,0 6');
+      p.setAttribute('fill', pair[1]);
+      m.appendChild(p); defs.appendChild(m);
+    });
+    svg.appendChild(defs);
+
+    edgesData.forEach(function(edge){
+      var orig = document.getElementById('node-'+edge.etapa_origem_id);
+      var dest = document.getElementById('node-'+edge.etapa_destino_id);
+      if (!orig||!dest) return;
+
+      var e1 = cardEdges(orig);
+      var e2 = cardEdges(dest);
+
+      // Escolher pontos de saída/entrada conforme posição relativa
+      var p1, p2;
+      var dx = e2.cx - e1.cx, dy = e2.cy - e1.cy;
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        // Mover predominantemente na horizontal
+        p1 = dx >= 0 ? e1.right  : e1.left;
+        p2 = dx >= 0 ? e2.left   : e2.right;
+      } else {
+        // Mover predominantemente na vertical
+        p1 = dy >= 0 ? e1.bottom : e1.top;
+        p2 = dy >= 0 ? e2.top    : e2.bottom;
+      }
+
+      var lbl    = edge.label || 'sempre';
+      var lLow   = lbl.toLowerCase();
+      var color  = lLow.indexOf('não')>=0 || lLow.indexOf('reprov')>=0 ? '#ef4444' :
+                   lLow==='sempre' ? '#6366f1' : '#22c55e';
+      var arrow  = color==='#ef4444'?'ar': color==='#6366f1'?'agy':'ag';
+
+      var d = orthoPath(p1, p2);
+
+      // Ponto médio visual do caminho para o label
+      var mid = pathMidPoint(p1, p2);
+      var lx = mid.x, ly = mid.y;
+
+      var g = svgEl('g');
+      g.setAttribute('class','connection-group');
+      g.setAttribute('data-edge-id', edge.id);
+      g.addEventListener('click', function(){
+        if (!confirm('Remover esta conexão?')) return;
+        var eid = this.getAttribute('data-edge-id');
+        fetch('/fluxos/'+fluxoId+'/edges/'+eid, {
+          method:'DELETE', headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).then(function(r){return r.json();})
+          .then(function(d){
+            if(d.success){ edgesData=edgesData.filter(function(e){return String(e.id)!==String(eid);}); drawConnections(); if(window.showToast)showToast('Conexão removida.','success'); }
+            else if(window.showToast) showToast(d.message||'Erro.','error');
+          }).catch(function(){ if(window.showToast)showToast('Erro.','error'); });
       });
-  });
 
-  document.getElementById('btnRemoverEtapa').addEventListener('click', function() {
-    var etapaId = document.getElementById('configEtapaId').value;
-    if (!etapaId || !confirm('Remover esta etapa? As conexões ligadas a ela serão removidas.')) return;
-    fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          if (window.showToast) showToast('Etapa removida.', 'success');
-          closePainel();
-          setTimeout(function() { location.reload(); }, 800);
-        } else {
-          if (window.showToast) showToast(data.message || 'Erro ao remover.', 'error');
-        }
-      })
-      .catch(function() { if (window.showToast) showToast('Erro ao remover.', 'error'); });
-  });
+      // Linha de hit transparente (facilita clicar)
+      var hit = svgEl('path');
+      hit.setAttribute('d',d); hit.setAttribute('fill','none');
+      hit.setAttribute('stroke','transparent'); hit.setAttribute('stroke-width','14');
+      g.appendChild(hit);
 
-  document.getElementById('btnAdicionarEtapa').addEventListener('click', function() {
-    document.getElementById('modalEtapa').classList.remove('hidden');
-  });
-  document.getElementById('btnFecharModalEtapa').addEventListener('click', function() {
-    document.getElementById('modalEtapa').classList.add('hidden');
-  });
-  document.getElementById('modalEtapaBackdrop').addEventListener('click', function() {
-    document.getElementById('modalEtapa').classList.add('hidden');
-  });
+      // Linha visível
+      var line = svgEl('path');
+      line.setAttribute('d',d); line.setAttribute('fill','none');
+      line.setAttribute('stroke',color); line.setAttribute('stroke-width','2.5');
+      line.setAttribute('stroke-linejoin','round');
+      line.setAttribute('marker-end','url(#'+arrow+')');
+      g.appendChild(line);
 
-  document.getElementById('formConexao').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var origem = document.getElementById('conexaoOrigem').value;
-    var destino = document.getElementById('conexaoDestino').value;
-    var label = document.getElementById('conexaoLabel').value;
-    if (!origem || !destino) return;
-    fetch('/fluxos/' + fluxoId + '/edges', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify({ etapa_origem_id: origem, etapa_destino_id: destino, label: label })
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          document.getElementById('modalConexao').classList.add('hidden');
-          if (window.showToast) showToast('Conexão criada!', 'success');
-          edgesData.push(data.edge);
-          drawConnections();
-        } else {
-          if (window.showToast) showToast(data.message || 'Erro ao criar conexão.', 'error');
-        }
-      })
-      .catch(function() { if (window.showToast) showToast('Erro ao criar conexão.', 'error'); });
-  });
+      // Label background
+      var lblW = Math.max(44, lbl.length*7+10);
+      var bg = svgEl('rect');
+      bg.setAttribute('x', lx-lblW/2); bg.setAttribute('y', ly-9);
+      bg.setAttribute('width', lblW);  bg.setAttribute('height','18');
+      bg.setAttribute('fill','white'); bg.setAttribute('rx','4');
+      bg.setAttribute('stroke',color); bg.setAttribute('stroke-width','1');
+      g.appendChild(bg);
 
-  document.getElementById('btnFecharModalConexao').addEventListener('click', function() {
-    document.getElementById('modalConexao').classList.add('hidden');
-    if (connectingFrom) {
-      connectingFrom.style.outline = '';
-      connectingFrom = null;
+      // Ícone × ao hover
+      var del = svgEl('text');
+      del.setAttribute('x', lx+lblW/2-5); del.setAttribute('y', ly+4);
+      del.setAttribute('text-anchor','middle'); del.setAttribute('font-size','11');
+      del.setAttribute('font-weight','700'); del.setAttribute('fill','#ef4444');
+      del.setAttribute('class','conn-del'); del.textContent='×';
+      g.appendChild(del);
+
+      // Texto do label
+      var txt = svgEl('text');
+      txt.setAttribute('x', lx); txt.setAttribute('y', ly+4);
+      txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','10');
+      txt.setAttribute('font-weight','700'); txt.setAttribute('fill',color);
+      txt.textContent = lbl;
+      g.appendChild(txt);
+
+      svg.appendChild(g);
+    });
+  }
+
+  // ── Estado central do painel ──────────────────────────────────
+  var _currentCampos = {}; // campos da etapa atualmente aberta
+
+  // ── Aplicar tipo — atualiza visuais + área de config ─────────
+  function _applyTipo(tipo, campos) {
+    try {
+      document.querySelectorAll('#tipoGrid .tipo-opt').forEach(function(el){
+        el.classList.toggle('sel', el.dataset.tipo === tipo);
+      });
+      var titles = {
+        questionario: 'PERGUNTAS DO QUESTIONÁRIO',
+        aprovacao:    'CONFIGURAÇÃO DA APROVAÇÃO',
+        parecer:      'CONFIGURAÇÃO DO PARECER'
+      };
+      var titleEl = document.getElementById('tipoConfigTitle');
+      if (titleEl) titleEl.textContent = titles[tipo] || 'CONFIGURAÇÃO';
+      var areaEl = document.getElementById('tipoConfigArea');
+      if (areaEl) areaEl.innerHTML = renderTipoConfig(tipo, campos || {});
+    } catch(e) {
+      console.error('[Fluxo] Erro ao aplicar tipo:', e);
     }
-  });
-  document.getElementById('modalConexaoBackdrop').addEventListener('click', function() {
-    document.getElementById('modalConexao').classList.add('hidden');
-    if (connectingFrom) {
-      connectingFrom.style.outline = '';
-      connectingFrom = null;
-    }
-  });
+  }
 
-  document.getElementById('formAnexoEtapa').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var etapaId = document.getElementById('configEtapaId').value;
-    var input = document.getElementById('inputAnexoEtapa');
-    if (!etapaId || !input.files || !input.files[0]) {
-      if (window.showToast) showToast('Selecione um arquivo.', 'warning');
+  // ── Event delegation: clique nos tipo-opt do painel ──────────
+  var tipoGrid = document.getElementById('tipoGrid');
+  if (tipoGrid) {
+    tipoGrid.addEventListener('click', function(e) {
+      var opt = e.target.closest('.tipo-opt');
+      if (!opt) return;
+      var tipo = opt.dataset.tipo;
+      if (!tipo) return;
+      // Ao mudar tipo manualmente: campos vazios (novo start)
+      _currentCampos = {};
+      _applyTipo(tipo, {});
+    });
+  }
+
+  // Expor para retrocompatibilidade (onclick no modal)
+  window.selecionarTipo = function(tipo) {
+    _currentCampos = {};
+    _applyTipo(tipo, {});
+  };
+
+  // ── Painel configurar ────────────────────────────────────────
+  function openPainel(etapa){
+    document.getElementById('configEtapaId').value = etapa.id;
+    document.getElementById('configNome').value    = etapa.nome||'';
+    document.getElementById('configCodigo').value  = etapa.codigo||'';
+    document.getElementById('configGrupo').value   = etapa.proprietario_id||'';
+    document.getElementById('configPrazo').value   = etapa.prazo_em_dias!=null?etapa.prazo_em_dias:'';
+    document.getElementById('configExigeAssinatura').checked = !!etapa.exige_assinatura;
+    document.getElementById('configEhInicio').checked = !!etapa.eh_inicio;
+    document.getElementById('configEhFim').checked    = !!etapa.eh_fim;
+
+    // Tipo — carrega campos SALVOS ao abrir painel existente
+    var tipo = etapa.tipo_acao||'questionario';
+    _currentCampos = JSON.parse(JSON.stringify(etapa.campos_requeridos || {}));
+    _applyTipo(tipo, _currentCampos);
+
+    // Docs
+    var vinculados = (etapa.documentos_vinculados||[]).map(function(d){return String(d.template_id||'');});
+    document.querySelectorAll('.config-doc-template').forEach(function(cb){ cb.checked=vinculados.indexOf(cb.value)>=0; });
+
+    // Anexos
+    var anexos = anexosPorEtapa[etapa.id]||[];
+    var lista = document.getElementById('configAnexosLista');
+    lista.innerHTML = '';
+    if (!anexos.length) { lista.innerHTML='<li style="font-size:12px;color:#94a3b8;">Nenhum anexo.</li>'; }
+    else anexos.forEach(function(a){
+      var li=document.createElement('li');
+      li.style='display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:#f8fafc;border-radius:6px;font-size:12px;';
+      li.innerHTML='<a href="/fluxos/'+fluxoId+'/etapas/'+etapa.id+'/anexos/'+a.id+'/download" style="color:#6366f1;text-decoration:none;flex:1;truncate;" target="_blank">'+(a.nome_original||a.nome_arquivo)+'</a>'+
+        '<button type="button" class="btnRemoverAnexo" data-anexo-id="'+a.id+'" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:15px;line-height:1;">×</button>';
+      lista.appendChild(li);
+    });
+
+    document.getElementById('painelConfig').classList.add('open');
+    document.getElementById('painelConfigBackdrop').style.display='block';
+  }
+
+  function closePainel(){
+    document.getElementById('painelConfig').classList.remove('open');
+    document.getElementById('painelConfigBackdrop').style.display='none';
+  }
+
+  document.getElementById('btnFecharPainel').addEventListener('click',closePainel);
+  document.getElementById('painelConfigBackdrop').addEventListener('click',closePainel);
+
+  function getSelectedTipo(){
+    var el = document.querySelector('#tipoGrid .tipo-opt.sel');
+    return el ? el.dataset.tipo : 'questionario';
+  }
+
+  // ── Render configuração por tipo ─────────────────────────────
+  function renderTipoConfig(tipo, campos){
+    if (tipo==='questionario') return renderQuestionario(campos);
+    if (tipo==='aprovacao')    return renderAprovacao(campos);
+    return renderParecer(campos);
+  }
+
+  /* Questionário */
+  function renderQuestionario(campos){
+    var perguntas = campos.perguntas||[];
+    var html = '';
+    if (perguntas.length > 0) {
+      html += '<div style="margin-bottom:8px;">';
+      perguntas.forEach(function(p,i){
+        var tipoIcons={texto_curto:'📝',texto_longo:'📄',numero:'🔢',data:'📅',hora:'🕐',radio:'⊙',checkbox:'☑',selecao:'≡',arquivo:'📎',sim_nao:'↕',texto:'📝',textarea:'📄'};
+        var icon = tipoIcons[p.tipo]||'❓';
+        html+='<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:12px;" class="dark:bg-slate-900 dark:border-slate-700">'+
+              '<span>'+icon+'</span>'+
+              '<span style="flex:1;color:#374151;font-weight:500;" class="dark:text-slate-300">'+(p.label||'Sem título')+'</span>'+
+              (p.obrigatorio?'<span style="font-size:9px;color:#ef4444;font-weight:700;">OBRIG.</span>':'')+
+              '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<p style="font-size:12px;color:#94a3b8;text-align:center;padding:10px 0;">Nenhuma pergunta adicionada ainda.</p>';
+    }
+    html+='<button type="button" data-a="open-q" style="width:100%;padding:9px;font-size:12px;font-weight:600;color:#6366f1;background:#eef2ff;border:2px solid #c7d2fe;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+          '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'+
+          'Gerenciar perguntas ('+perguntas.length+')</button>';
+    return html;
+  }
+
+  function renderPergunta(p,i){
+    var tipos=['texto','textarea','numero','data','selecao','sim_nao','arquivo'];
+    var tiposLabel={texto:'Texto curto',textarea:'Texto longo',numero:'Número',data:'Data',selecao:'Seleção',sim_nao:'Sim/Não',arquivo:'Arquivo'};
+    var optsHtml='';
+    if (p.tipo==='selecao'){
+      optsHtml='<div class="qb-opts" id="qb-opts-'+i+'">';
+      (p.opcoes||[]).forEach(function(o,oi){
+        optsHtml+='<div class="qb-opt-row"><input class="qb-opt-inp" type="text" value="'+escHtml(o)+'" placeholder="Opção '+(oi+1)+'">'+
+                  '<span onclick="removeOpt('+i+','+oi+')" style="color:#ef4444;cursor:pointer;font-size:14px;line-height:1;">×</span></div>';
+      });
+      optsHtml+='<button type="button" onclick="addOpt('+i+')" style="font-size:11px;color:#6366f1;background:none;border:none;cursor:pointer;padding:2px 0;">+ Opção</button></div>';
+    }
+    return '<div class="qb-item" id="qb-item-'+i+'" data-pi="'+i+'">'+
+      '<div class="qb-row">'+
+      '<span class="qb-drag">⠿</span>'+
+      '<span class="qb-num">'+(i+1)+'.</span>'+
+      '<input class="qb-label" type="text" value="'+escHtml(p.label||'')+'" placeholder="Texto da pergunta...">'+
+      '<select class="qb-tipo" onchange="changeTipoPergunta('+i+',this.value)">'+
+      tipos.map(function(t){return '<option value="'+t+'"'+(p.tipo===t?' selected':'')+'>'+tiposLabel[t]+'</option>';}).join('')+
+      '</select>'+
+      '<label class="qb-req"><input type="checkbox"'+(p.obrigatorio?' checked':'')+'> Obrig.</label>'+
+      '<span class="qb-del" onclick="removePergunta('+i+')" title="Remover">×</span>'+
+      '</div>'+optsHtml+'</div>';
+  }
+
+  window.addPergunta = function(){
+    var list = collectPerguntas();
+    list.push({label:'',tipo:'texto',obrigatorio:false});
+    document.getElementById('qb-list').innerHTML = list.map(renderPergunta).join('');
+  };
+  window.removePergunta = function(i){
+    var list=collectPerguntas(); list.splice(i,1);
+    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
+  };
+  window.changeTipoPergunta = function(i,tipo){
+    var list=collectPerguntas(); list[i].tipo=tipo; list[i].opcoes=tipo==='selecao'?(list[i].opcoes||['']):undefined;
+    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
+  };
+  window.addOpt = function(pi){
+    var list=collectPerguntas(); list[pi].opcoes=(list[pi].opcoes||[]); list[pi].opcoes.push('');
+    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
+  };
+  window.removeOpt = function(pi,oi){
+    var list=collectPerguntas(); list[pi].opcoes.splice(oi,1);
+    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
+  };
+
+  function collectPerguntas(){
+    var items=document.querySelectorAll('#qb-list .qb-item');
+    return Array.from(items).map(function(item){
+      var tipo=item.querySelector('.qb-tipo').value;
+      var opcoes=null;
+      if(tipo==='selecao'){ opcoes=Array.from(item.querySelectorAll('.qb-opt-inp')).map(function(i){return i.value.trim();}).filter(Boolean); }
+      return {label:item.querySelector('.qb-label').value,tipo:tipo,obrigatorio:item.querySelector('input[type="checkbox"]').checked,opcoes:opcoes};
+    });
+  }
+
+  /* Aprovação */
+  function renderAprovacao(campos){
+    var instrucoes = campos.instrucoes||'';
+    var rejeicoes  = campos.opcoes_rejeicao||['Documentação incompleta','Fora do prazo','Não atende requisitos'];
+    var rejHtml = rejeicoes.map(function(r){
+      return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">'+
+             '<input type="text" value="'+escHtml(r)+'" placeholder="Motivo..." '+
+             'style="flex:1;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;outline:none;" class="rej-input">'+
+             '<button type="button" data-rej-rm style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;">×</button>'+
+             '</div>';
+    }).join('');
+    var html = '<div style="margin-bottom:12px;">'+
+               '<label class="fl-label">Instruções para o aprovador</label>'+
+               '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="Critérios de aprovação...">'+escHtml(instrucoes)+'</textarea>'+
+               '</div>'+
+               '<div>'+
+               '<label class="fl-label">Motivos de rejeição</label>'+
+               '<div id="rej-list">'+rejHtml+'</div>'+
+               '<button type="button" id="btnAddRej" style="font-size:12px;color:#ef4444;background:none;border:2px dashed #fecaca;border-radius:7px;padding:6px 12px;cursor:pointer;width:100%;margin-top:4px;">+ Motivo</button>'+
+               '</div>';
+    return html;
+  }
+
+  // ── Listener único para tipoConfigArea (delegation de tudo) ──
+  document.getElementById('tipoConfigArea').addEventListener('click', function(e) {
+    // Abrir modal de perguntas
+    if (e.target.closest('[data-a="open-q"]')) {
+      abrirModalPerguntasInterno();
       return;
     }
-    var fd = new FormData();
-    fd.append('arquivo', input.files[0]);
-    fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId + '/anexos', {
-      method: 'POST',
-      body: fd,
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          input.value = '';
-          if (window.showToast) showToast('Arquivo anexado!', 'success');
-          location.reload();
-        } else {
-          if (window.showToast) showToast(data.message || 'Erro ao anexar.', 'error');
-        }
-      })
-      .catch(function() { if (window.showToast) showToast('Erro ao anexar.', 'error'); });
-  });
-
-  document.getElementById('configAnexosLista').addEventListener('click', function(e) {
-    var btn = e.target.closest('.btnRemoverAnexo');
-    if (!btn) return;
-    var anexoId = btn.getAttribute('data-anexo-id');
-    var etapaId = document.getElementById('configEtapaId').value;
-    if (!anexoId || !etapaId || !confirm('Remover este anexo?')) return;
-    fetch('/fluxos/' + fluxoId + '/etapas/' + etapaId + '/anexos/' + anexoId, {
-      method: 'DELETE',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          if (window.showToast) showToast('Anexo removido.', 'success');
-          location.reload();
-        } else {
-          if (window.showToast) showToast(data.message || 'Erro ao remover.', 'error');
-        }
-      })
-      .catch(function() { if (window.showToast) showToast('Erro ao remover.', 'error'); });
-  });
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && connectingFrom) {
-      connectingFrom.style.outline = '';
-      connectingFrom = null;
+    // Remover motivo de rejeição
+    if (e.target.closest('[data-rej-rm]')) {
+      e.target.closest('[data-rej-rm]').parentElement.remove();
+      return;
+    }
+    // Adicionar motivo de rejeição
+    if (e.target.closest('#btnAddRej')) {
+      var div = document.createElement('div');
+      div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:5px;';
+      div.innerHTML = '<input type="text" placeholder="Motivo..." '+
+        'style="flex:1;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;outline:none;" class="rej-input">'+
+        '<button type="button" data-rej-rm style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;">×</button>';
+      var rejList = document.getElementById('rej-list');
+      if (rejList) rejList.appendChild(div);
     }
   });
+
+  function collectRejeicoes(){
+    return Array.from(document.querySelectorAll('#rej-list .rej-input'))
+      .map(function(i){ return i.value.trim(); }).filter(Boolean);
+  }
+
+  /* Parecer */
+  function renderParecer(campos){
+    return '<div style="margin-bottom:12px;"><label class="fl-label">Instruções para o parecerista</label>'+
+           '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="O que deve ser avaliado...">'+escHtml(campos.instrucoes||'')+'</textarea></div>'+
+           '<div><label class="fl-label">Texto modelo (opcional)</label>'+
+           '<textarea class="fl-textarea" id="ed-modelo" style="min-height:90px;" placeholder="Considerando os documentos...">'+escHtml(campos.modelo_texto||'')+'</textarea></div>';
+  }
+
+  /* Coletar campos_requeridos — questionario usa _currentCampos */
+  function collectCampos(tipo){
+    if(tipo==='questionario') {
+      // Perguntas gerenciadas pelo modal; _currentCampos.perguntas é a fonte da verdade
+      return { perguntas: _currentCampos.perguntas || [] };
+    }
+    if(tipo==='aprovacao'){
+      var i=document.getElementById('ed-instrucoes');
+      return {instrucoes:i?i.value:'',opcoes_rejeicao:collectRejeicoes()};
+    }
+    var i2=document.getElementById('ed-instrucoes'),m=document.getElementById('ed-modelo');
+    return {instrucoes:i2?i2.value:'',modelo_texto:m?m.value:''};
+  }
+
+  // ── Salvar etapa (via click, não form submit) ─────────────────
+  function doSalvar(){
+    var etapaId=document.getElementById('configEtapaId').value;
+    if(!etapaId){if(window.showToast)showToast('Nenhuma etapa selecionada.','warning');return;}
+    var nome=document.getElementById('configNome').value.trim();
+    if(!nome){if(window.showToast)showToast('Informe o nome da etapa.','warning');document.getElementById('configNome').focus();return;}
+    var tipo=getSelectedTipo();
+    var docs=Array.from(document.querySelectorAll('.config-doc-template:checked')).map(function(cb){return cb.value;});
+    var body={
+      nome:nome,
+      codigo:document.getElementById('configCodigo').value.trim()||undefined,
+      proprietario_id:document.getElementById('configGrupo').value||'',
+      tipo_acao:tipo,
+      prazo_em_dias:document.getElementById('configPrazo').value||'',
+      exige_assinatura:document.getElementById('configExigeAssinatura').checked?'1':'0',
+      eh_inicio:document.getElementById('configEhInicio').checked?'1':'0',
+      eh_fim:document.getElementById('configEhFim').checked?'1':'0',
+      campos_requeridos:JSON.stringify(collectCampos(tipo)),
+      documento_templates:docs
+    };
+    var btn=document.getElementById('btnSalvarEtapa');
+    btn.disabled=true; btn.textContent='Salvando...';
+    fetch('/fluxos/'+fluxoId+'/etapas/'+etapaId,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest','Accept':'application/json'},
+      body:JSON.stringify(body)
+    }).then(function(r){return r.json();})
+      .then(function(d){
+        if(d.success){if(window.showToast)showToast('Etapa salva!','success');closePainel();setTimeout(function(){location.reload();},700);}
+        else{if(window.showToast)showToast(d.message||'Erro ao salvar.','error');btn.disabled=false;btn.textContent='Salvar';}
+      }).catch(function(err){if(window.showToast)showToast('Erro de conexão.','error');console.error(err);btn.disabled=false;btn.textContent='Salvar';});
+  }
+
+  document.getElementById('btnSalvarEtapa').addEventListener('click', doSalvar);
+
+  // ── Remover etapa ─────────────────────────────────────────────
+  document.getElementById('btnRemoverEtapa').addEventListener('click',function(){
+    var id=document.getElementById('configEtapaId').value;
+    if(!id||!confirm('Remover esta etapa? As conexões relacionadas também serão removidas.')) return;
+    fetch('/fluxos/'+fluxoId+'/etapas/'+id,{method:'DELETE',headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.success){if(window.showToast)showToast('Etapa removida.','success');closePainel();setTimeout(function(){location.reload();},700);}
+        else if(window.showToast)showToast(d.message||'Erro.','error');
+      }).catch(function(){if(window.showToast)showToast('Erro.','error');});
+  });
+
+  // ── Modal adicionar etapa ─────────────────────────────────────
+  document.getElementById('btnAdicionarEtapa').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='block';setTimeout(function(){document.getElementById('novaNome').focus();},80);});
+  document.getElementById('btnFecharModalEtapa').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='none';});
+  document.getElementById('modalEtapaBackdrop').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='none';});
+
+  // ── Seletor de tipo do modal "nova etapa" (event delegation) ──
+  var novoTipoGrid = document.getElementById('novoTipoGrid');
+  if (novoTipoGrid) {
+    novoTipoGrid.addEventListener('click', function(e) {
+      var opt = e.target.closest('[data-novo-tipo]');
+      if (!opt) return;
+      var tipo = opt.dataset.novoTipo;
+      // Destacar selecionado
+      novoTipoGrid.querySelectorAll('.tipo-opt').forEach(function(el) {
+        el.classList.toggle('sel', el.dataset.novoTipo === tipo);
+        el.style.borderColor = el.dataset.novoTipo === tipo ? '#6366f1' : '';
+        el.style.background  = el.dataset.novoTipo === tipo ? '#eef2ff' : '';
+      });
+      // Atualizar campo hidden
+      var hidden = document.getElementById('novoTipoValor');
+      if (hidden) hidden.value = tipo;
+    });
+  }
+
+  // ── Modal conexão ─────────────────────────────────────────────
+  document.getElementById('btnFecharModalConexao').addEventListener('click',function(){document.getElementById('modalConexao').style.display='none';});
+  document.getElementById('modalConexaoBackdrop').addEventListener('click',function(){document.getElementById('modalConexao').style.display='none';});
+
+  document.getElementById('formConexao').addEventListener('submit',function(e){
+    e.preventDefault();
+    var origem=document.getElementById('conexaoOrigem').value;
+    var destino=document.getElementById('conexaoDestino').value;
+    var label=document.getElementById('conexaoLabel').value;
+    if(!origem||!destino) return;
+    fetch('/fluxos/'+fluxoId+'/edges',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+      body:JSON.stringify({etapa_origem_id:origem,etapa_destino_id:destino,label:label})
+    }).then(function(r){return r.json();})
+      .then(function(d){
+        if(d.success){document.getElementById('modalConexao').style.display='none';if(window.showToast)showToast('Conexão criada!','success');edgesData.push(d.edge);drawConnections();}
+        else if(window.showToast)showToast(d.message||'Erro.','error');
+      }).catch(function(){if(window.showToast)showToast('Erro.','error');});
+  });
+
+  // ── Anexos ────────────────────────────────────────────────────
+  document.getElementById('formAnexoEtapa').addEventListener('submit',function(e){
+    e.preventDefault();
+    var id=document.getElementById('configEtapaId').value;
+    var input=document.getElementById('inputAnexoEtapa');
+    if(!id||!input.files||!input.files[0]){if(window.showToast)showToast('Selecione um arquivo.','warning');return;}
+    var fd=new FormData(); fd.append('arquivo',input.files[0]);
+    fetch('/fluxos/'+fluxoId+'/etapas/'+id+'/anexos',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d.success){input.value='';if(window.showToast)showToast('Arquivo anexado!','success');location.reload();}else if(window.showToast)showToast(d.message||'Erro.','error');})
+      .catch(function(){if(window.showToast)showToast('Erro.','error');});
+  });
+
+  document.getElementById('configAnexosLista').addEventListener('click',function(e){
+    var btn=e.target.closest('.btnRemoverAnexo'); if(!btn) return;
+    var anexoId=btn.dataset.anexoId, etapaId=document.getElementById('configEtapaId').value;
+    if(!confirm('Remover este anexo?')) return;
+    fetch('/fluxos/'+fluxoId+'/etapas/'+etapaId+'/anexos/'+anexoId,{method:'DELETE',headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d.success){if(window.showToast)showToast('Anexo removido.','success');location.reload();}else if(window.showToast)showToast(d.message||'Erro.','error');})
+      .catch(function(){if(window.showToast)showToast('Erro.','error');});
+  });
+
+  // ── Modal de Perguntas ────────────────────────────────────────
+  var _perguntasTemp = []; // cópia de trabalho no modal
+
+  var TIPO_PERGUNTA_INFO = {
+    texto_curto: { icon:'📝', label:'Texto curto' },
+    texto_longo: { icon:'📄', label:'Texto longo' },
+    numero:      { icon:'🔢', label:'Número' },
+    data:        { icon:'📅', label:'Data' },
+    hora:        { icon:'🕐', label:'Hora' },
+    radio:       { icon:'⊙',  label:'Seleção única (radio)' },
+    checkbox:    { icon:'☑',  label:'Múltipla escolha' },
+    selecao:     { icon:'≡',  label:'Lista suspensa' },
+    arquivo:     { icon:'📎', label:'Anexo/Arquivo' },
+    sim_nao:     { icon:'↕',  label:'Sim ou Não' }
+  };
+
+  // ── Modal de Perguntas ────────────────────────────────────────
+  // Função interna (não precisa ser global)
+  function abrirModalPerguntasInterno() {
+    _perguntasTemp = JSON.parse(JSON.stringify(_currentCampos.perguntas || []));
+    renderModalPerguntas();
+    var modal = document.getElementById('modalPerguntas');
+    if (modal) modal.style.display = 'flex';
+  }
+  // Expor para retrocompatibilidade
+  window.abrirModalPerguntas = abrirModalPerguntasInterno;
+
+  window.fecharModalPerguntas = function() {
+    var modal = document.getElementById('modalPerguntas');
+    if (modal) modal.style.display = 'none';
+  };
+
+  function renderModalPerguntas() {
+    var container = document.getElementById('modalQ-perguntas');
+    if (!container) return;
+
+    var html = '';
+    if (_perguntasTemp.length === 0) {
+      html = '<p style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">Nenhuma pergunta.<br>Use os botões abaixo para adicionar.</p>';
+    } else {
+      _perguntasTemp.forEach(function(p, i) {
+        var info = TIPO_PERGUNTA_INFO[p.tipo] || { icon:'❓', label: p.tipo };
+        var temOpts = p.tipo==='radio' || p.tipo==='checkbox' || p.tipo==='selecao';
+        var optsHtml = '';
+        if (temOpts) {
+          optsHtml += '<div style="margin-top:8px;padding-left:12px;border-left:3px solid #c7d2fe;">';
+          optsHtml += '<div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:4px;">OPÇÕES</div>';
+          (p.opcoes || []).forEach(function(o, oi) {
+            optsHtml += '<div style="display:flex;gap:5px;align-items:center;margin-bottom:4px;">'+
+              '<input type="text" value="'+escHtml(o)+'" placeholder="Opção '+(oi+1)+'" '+
+              'data-mq="opt-val" data-i="'+i+'" data-oi="'+oi+'" '+
+              'style="flex:1;font-size:12px;border:1px solid #e2e8f0;border-radius:5px;padding:5px 8px;outline:none;">'+
+              '<button type="button" data-mq="rm-opt" data-i="'+i+'" data-oi="'+oi+'" '+
+              'style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;">×</button>'+
+              '</div>';
+          });
+          optsHtml += '<button type="button" data-mq="add-opt" data-i="'+i+'" '+
+            'style="font-size:11px;color:#6366f1;background:#eef2ff;border:1px solid #c7d2fe;border-radius:5px;padding:3px 10px;cursor:pointer;margin-top:2px;">+ Opção</button>';
+          optsHtml += '</div>';
+        }
+
+        html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
+          '<span style="font-size:20px;flex-shrink:0;">'+info.icon+'</span>'+
+          '<input type="text" value="'+escHtml(p.label||'')+'" placeholder="Texto da pergunta..." '+
+          'data-mq="lbl" data-i="'+i+'" '+
+          'style="flex:1;min-width:0;font-size:13px;font-weight:600;border:1px solid #e2e8f0;border-radius:7px;padding:6px 10px;outline:none;">'+
+          '<button type="button" data-mq="rm-q" data-i="'+i+'" title="Remover pergunta" '+
+          'style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:5px 9px;cursor:pointer;font-size:14px;font-weight:700;flex-shrink:0;">✕</button>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+          '<select data-mq="tipo" data-i="'+i+'" '+
+          'style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;background:#fff;outline:none;cursor:pointer;">'+
+          Object.keys(TIPO_PERGUNTA_INFO).map(function(t){
+            return '<option value="'+t+'"'+(p.tipo===t?' selected':'')+'>'+TIPO_PERGUNTA_INFO[t].icon+' '+TIPO_PERGUNTA_INFO[t].label+'</option>';
+          }).join('')+
+          '</select>'+
+          '<label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#475569;cursor:pointer;">'+
+          '<input type="checkbox" data-mq="req" data-i="'+i+'"'+(p.obrigatorio?' checked':'')+' style="width:14px;height:14px;cursor:pointer;"> Obrigatório</label>'+
+          '</div>'+
+          optsHtml+'</div>';
+      });
+    }
+
+    container.innerHTML = html;
+    // NÃO adiciona listeners aqui (eles já estão no container, adicionados 1 vez abaixo)
+  }
+
+  // Listeners do modal — adicionados UMA ÚNICA VEZ após a página carregar
+  (function initModalListeners() {
+    var mq = document.getElementById('modalQ-perguntas');
+    if (!mq) return;
+
+    function mqHandle(e) {
+      var el = e.target.closest('[data-mq]');
+      if (!el) return;
+      var a  = el.dataset.mq;
+      var i  = parseInt(el.dataset.i, 10);
+      var oi = parseInt(el.dataset.oi, 10);
+      var tipos3 = ['radio','checkbox','selecao'];
+
+      if (a==='lbl'     && e.type==='input')  { _perguntasTemp[i].label = el.value; return; }
+      if (a==='req'     && e.type==='change') { _perguntasTemp[i].obrigatorio = el.checked; return; }
+      if (a==='opt-val' && e.type==='input')  {
+        if (!_perguntasTemp[i].opcoes) _perguntasTemp[i].opcoes = [];
+        _perguntasTemp[i].opcoes[oi] = el.value;
+        return;
+      }
+      if (a==='tipo' && e.type==='change') {
+        _perguntasTemp[i].tipo = el.value;
+        _perguntasTemp[i].opcoes = (tipos3.indexOf(el.value)>=0) ? (_perguntasTemp[i].opcoes||['']) : undefined;
+        renderModalPerguntas(); return;
+      }
+      if (a==='rm-q'    && e.type==='click') { _perguntasTemp.splice(i,1); renderModalPerguntas(); return; }
+      if (a==='add-opt' && e.type==='click') {
+        if (!_perguntasTemp[i].opcoes) _perguntasTemp[i].opcoes = [];
+        _perguntasTemp[i].opcoes.push('');
+        renderModalPerguntas(); return;
+      }
+      if (a==='rm-opt'  && e.type==='click') {
+        _perguntasTemp[i].opcoes.splice(oi,1);
+        renderModalPerguntas(); return;
+      }
+    }
+
+    mq.addEventListener('input',  mqHandle);
+    mq.addEventListener('change', mqHandle);
+    mq.addEventListener('click',  mqHandle);
+  })();
+
+  // Botões tipo de pergunta no footer do modal
+  (function initAddBtns() {
+    var footer = document.querySelector('#modalPerguntas .mq-add-footer');
+    if (!footer) return;
+    footer.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-tipo-add]');
+      if (!btn) return;
+      var tipo = btn.dataset.tipoAdd;
+      var nova = { label: '', tipo: tipo, obrigatorio: false };
+      if (tipo==='radio'||tipo==='checkbox'||tipo==='selecao') nova.opcoes = ['',''];
+      _perguntasTemp.push(nova);
+      renderModalPerguntas();
+      var content = document.querySelector('#modalPerguntas .mq-content');
+      if (content) setTimeout(function(){ content.scrollTop = content.scrollHeight; }, 50);
+    });
+  })();
+
+  // Botões salvar/fechar do modal (todos por ID, sem inline onclick)
+  (function initModalBtns() {
+    var btnSalvar  = document.getElementById('btnSalvarPerguntas');
+    var btnFechar  = document.getElementById('btnFecharPerguntas');
+    var btnFechar2 = document.getElementById('btnCancelarPerguntas');
+    var backdrop   = document.getElementById('mqBackdrop');
+
+    function salvarQ() {
+      _currentCampos.perguntas = JSON.parse(JSON.stringify(_perguntasTemp));
+      _applyTipo('questionario', _currentCampos);
+      fecharModalPerguntas();
+      if (window.showToast) showToast(_perguntasTemp.length+' pergunta(s). Clique em Salvar para gravar.','success');
+    }
+
+    if (btnSalvar)  btnSalvar.addEventListener('click', salvarQ);
+    if (btnFechar)  btnFechar.addEventListener('click',  fecharModalPerguntas);
+    if (btnFechar2) btnFechar2.addEventListener('click', fecharModalPerguntas);
+    if (backdrop)   backdrop.addEventListener('click',   fecharModalPerguntas);
+  })();
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
   window.addEventListener('resize', drawConnections);
-  setTimeout(drawConnections, 100);
+  var canvas = document.getElementById('fluxoCanvas');
+  if (canvas) canvas.addEventListener('scroll', drawConnections);
+
+  // Desenhar imediatamente E depois do layout completo
+  drawConnections();
+  setTimeout(drawConnections, 200);
+  window.addEventListener('load', drawConnections);
 })();
 </script>
 

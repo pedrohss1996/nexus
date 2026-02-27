@@ -1,348 +1,649 @@
-<%- include('../partials/header') %>
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Editor de Documento', user: typeof user !== 'undefined' ? user : null }) %>
 
-<!-- CKEditor 5 - Classic Build -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
-<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/translations/pt-br.js"></script>
+<!-- Jodit Editor (local) -->
+<link rel="stylesheet" href="/libs/jodit/jodit.min.css">
+<script src="/libs/jodit/jodit.min.js"></script>
 
 <style>
-  /* Remover padding do main e usar tela inteira */
+  /* Remover todo scroll externo */
+  html, body { overflow: hidden !important; height: 100% !important; }
+
+  /* Main sem padding, sem scroll */
   main {
-    max-width: 100% !important;
     padding: 0 !important;
-    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* altura = 100vh menos a navbar fixa de 7.5rem (120px) */
+    height: calc(100vh - 7.5rem) !important;
+    min-height: unset !important;
+    background: #e8eaed !important;
   }
-  
-  body {
-    overflow-x: hidden;
+
+  /* ── Cabeçalho do editor ── */
+  #ed-header {
+    height: 52px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    background: #fff;
+    border-bottom: 1px solid #dadde1;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    z-index: 10;
+    flex-shrink: 0;
   }
-  
-  /* Estilo do CKEditor */
-  .ck-editor__editable {
-    height: calc(100vh - 360px) !important;
+  .dark #ed-header { background: #1e293b; border-color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+
+  .ed-title-input {
+    flex: 1 1 auto; min-width: 0;
+    font-size: 16px; font-weight: 600;
+    color: #202124;
+    background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    outline: none; padding: 2px 4px;
+    transition: border-color .15s;
+    font-family: 'Google Sans', Arial, sans-serif;
+  }
+  .ed-title-input:focus { border-color: #1a73e8; }
+  .dark .ed-title-input { color: #f1f5f9; }
+  .ed-title-input::placeholder { color: #9aa0a6; }
+
+  .ed-select {
+    font-size: 12px;
+    border: 1px solid #dadde1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: #3c4043;
+    background: #f8f9fa;
+    outline: none; cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'Google Sans', Arial, sans-serif;
+  }
+  .ed-select:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.2); }
+  .dark .ed-select { background: #334155; border-color: #475569; color: #cbd5e1; }
+
+  .ed-input-desc {
+    font-size: 12px;
+    border: 1px solid #dadde1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: #3c4043;
+    background: #f8f9fa;
+    outline: none; width: 180px; flex-shrink: 0;
+  }
+  .ed-input-desc:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.2); }
+  .dark .ed-input-desc { background: #334155; border-color: #475569; color: #cbd5e1; }
+
+  .btn-preview-ed {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    color: #3c4043; background: #f8f9fa;
+    border: 1px solid #dadde1; border-radius: 6px;
+    cursor: pointer; transition: background .15s, box-shadow .15s;
+    white-space: nowrap;
+  }
+  .btn-preview-ed:hover { background: #f1f3f4; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .dark .btn-preview-ed { color: #cbd5e1; background: #334155; border-color: #475569; }
+
+  .btn-save-ed {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 18px; font-size: 13px; font-weight: 600;
+    color: #fff; background: #1a73e8;
+    border: none; border-radius: 6px;
+    cursor: pointer; transition: background .15s, box-shadow .15s;
+    box-shadow: 0 1px 3px rgba(26,115,232,.4);
+    white-space: nowrap;
+  }
+  .btn-save-ed:hover { background: #1765cc; box-shadow: 0 2px 6px rgba(26,115,232,.5); }
+  .btn-save-ed:disabled { background: #9aa0a6; box-shadow: none; cursor: not-allowed; }
+
+  #ed-status {
+    display: none; align-items: center; gap: 4px;
+    font-size: 11px; color: #34a853; white-space: nowrap;
+  }
+
+  /* ── Jodit – fazendo preencher o espaço restante ── */
+  #jodit-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Container do Jodit */
+  .jodit-container {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* Barra de ferramentas */
+  .jodit-toolbar__box {
+    flex-shrink: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #dadde1 !important;
+    border-top: none !important;
+    padding: 3px 6px !important;
+  }
+  .dark .jodit-toolbar__box { background: #0f172a !important; border-color: #1e293b !important; }
+
+  /* Área de trabalho = fundo cinza */
+  .jodit-workplace {
+    flex: 1 !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
+    overflow-x: auto !important;
+    background: #e8eaed !important;
+    padding: 24px 20px 60px !important;
   }
-  
-  /* Variáveis destacadas */
-  .variavel {
-    background-color: #f3e8ff;
-    color: #9333ea;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
+  .dark .jodit-workplace { background: #1e293b !important; }
+
+  /* ── Página A4 ── */
+  .jodit-wysiwyg {
+    width: 794px !important;
+    min-height: 1123px !important;  /* 297mm em 96dpi */
+    max-width: 100% !important;
+    padding: 96px 90px !important;
+    margin: 0 auto !important;
+    display: block !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.16), 0 4px 20px rgba(0,0,0,.12) !important;
+    border: none !important;
+    border-radius: 1px !important;
+    font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: #1a1a1a !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    caret-color: #1a73e8;
+    word-wrap: break-word !important;
+    overflow: visible !important;
   }
+  .jodit-wysiwyg:focus {
+    box-shadow: 0 1px 4px rgba(0,0,0,.16), 0 4px 20px rgba(0,0,0,.12), 0 0 0 2px rgba(26,115,232,.35) !important;
+  }
+
+  /* Esconder status bar */
+  .jodit-status-bar { display: none !important; }
+
+  /* Botões toolbar mais arredondados */
+  .jodit-toolbar-button__button {
+    border-radius: 4px !important;
+    transition: background .1s !important;
+  }
+
+  /* ── Dropdown de variáveis ── */
+  #vars-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 330px;
+    background: #fff;
+    border: 1px solid #dadde1;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    z-index: 9999;
+    padding: 14px;
+  }
+  .dark #vars-dropdown { background: #1e293b; border-color: #334155; }
+  #vars-dropdown.open { display: block; }
+
+  .vd-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #9aa0a6; margin-bottom: 7px;
+  }
+  .dark .vd-title { color: #64748b; }
+
+  .vd-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+
+  .vchip {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-family: 'Courier New', monospace; font-weight: 700;
+    color: #5b21b6; background: #ede9fe; border: 1px solid #c4b5fd;
+    cursor: pointer; transition: background .12s, transform .1s;
+    white-space: nowrap; user-select: none;
+  }
+  .vchip:hover { background: #ddd6fe; transform: translateY(-1px); }
+  .dark .vchip { color: #a78bfa; background: #1e1b4b; border-color: #4c1d95; }
+  .dark .vchip:hover { background: #2e1065; }
+
+  .vd-custom-row {
+    display: flex; gap: 6px; align-items: center;
+    border-top: 1px solid #f1f3f4; padding-top: 10px;
+  }
+  .dark .vd-custom-row { border-color: #334155; }
+
+  #input-custom-var {
+    flex: 1; font-size: 12px; font-family: 'Courier New', monospace;
+    border: 1px solid #dadde1; border-radius: 6px;
+    padding: 5px 9px; outline: none; background: #f8f9fa; color: #202124;
+    transition: border-color .15s;
+  }
+  #input-custom-var:focus { border-color: #1a73e8; background: #fff; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+  .dark #input-custom-var { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+
+  #btn-inserir-custom {
+    padding: 5px 12px; font-size: 12px; font-weight: 600;
+    color: #fff; background: #4f46e5; border: none;
+    border-radius: 6px; cursor: pointer; white-space: nowrap;
+    transition: background .15s;
+  }
+  #btn-inserir-custom:hover { background: #4338ca; }
+
+  /* Responsivo */
+  @media (max-width: 900px) {
+    .jodit-wysiwyg { width: 100% !important; min-height: auto !important; padding: 40px 24px !important; }
+    .ed-input-desc { display: none; }
+  }
+
+  /* ── Modal prévia ── */
+  #modal-preview {
+    display: none; position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,.6);
+    align-items: flex-start; justify-content: center;
+    padding: 24px 16px 40px; overflow-y: auto;
+  }
+  #modal-preview.open { display: flex; }
+  #preview-doc {
+    background: #fff; width: 794px; max-width: 100%;
+    min-height: 1123px; padding: 96px 90px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.3); border-radius: 2px;
+    font-family: 'Arial', sans-serif; font-size: 11pt;
+    line-height: 1.5; color: #1a1a1a; margin: auto;
+  }
+  .preview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 16px;
+  }
+
+  /* Spin animation */
+  @keyframes df-spin { to { transform: rotate(360deg); } }
+  .df-spin { animation: df-spin 1s linear infinite; }
 </style>
 
-<div class="w-full">
-  <!-- Cabeçalho -->
-  <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-2">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-          </svg>
-          Voltar para Templates
-        </a>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          <%= template ? 'Editar Template DataFlow' : 'Novo Template DataFlow' %>
-        </h1>
-      </div>
-      <div class="flex gap-3">
-        <button 
-          type="button"
-          id="btnInserirImagem"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center"
-        >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          Inserir Imagem
-        </button>
-        <button 
-          type="button"
-          id="btnInserirVariavel"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center"
-        >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-          </svg>
-          Inserir Variável
-        </button>
-        <input type="file" id="inputImagem" accept="image/*" style="display: none;">
-        <a 
-          href="/documentos-pdf"
-          class="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
-        >
-          Cancelar
-        </a>
-        <button 
-          type="submit"
-          form="formTemplate"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center"
-        >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-          <%= template ? 'Atualizar' : 'Criar Template' %>
-        </button>
-      </div>
-    </div>
-  </div>
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EDITOR                                         -->
+<!-- ═══════════════════════════════════════════════ -->
 
-  <!-- Formulário -->
-  <form action="<%= action %>" method="POST" id="formTemplate">
-    <!-- Informações Básicas - Barra superior -->
-    <div class="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Nome -->
-        <div>
-          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Nome do Template *
-          </label>
-          <input 
-            type="text" 
-            id="nome" 
-            name="nome" 
-            required
-            value="<%= template ? template.nome : '' %>"
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-            placeholder="Ex: Comunicação de Abono"
-          >
-        </div>
+<!-- Cabeçalho do documento -->
+<div id="ed-header">
+  <a href="/documentos-pdf"
+    style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:#5f6368;text-decoration:none;transition:background .15s;flex-shrink:0;"
+    onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background=''"
+    title="Voltar para lista">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+  </a>
 
-        <!-- Tipo de Documento -->
-        <div>
-          <label for="tipo_documento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tipo de Documento *
-          </label>
-          <select 
-            id="tipo_documento" 
-            name="tipo_documento" 
-            required
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-          >
-            <option value="">Selecione...</option>
-            <option value="termo" <%= template && template.tipo_documento === 'termo' ? 'selected' : '' %>>Termo</option>
-            <option value="oficio" <%= template && template.tipo_documento === 'oficio' ? 'selected' : '' %>>Ofício</option>
-            <option value="declaracao" <%= template && template.tipo_documento === 'declaracao' ? 'selected' : '' %>>Declaração</option>
-            <option value="contrato" <%= template && template.tipo_documento === 'contrato' ? 'selected' : '' %>>Contrato</option>
-            <option value="relatorio" <%= template && template.tipo_documento === 'relatorio' ? 'selected' : '' %>>Relatório</option>
-            <option value="comunicacao" <%= template && template.tipo_documento === 'comunicacao' ? 'selected' : '' %>>Comunicação</option>
-            <option value="atestado" <%= template && template.tipo_documento === 'atestado' ? 'selected' : '' %>>Atestado</option>
-            <option value="solicitacao" <%= template && template.tipo_documento === 'solicitacao' ? 'selected' : '' %>>Solicitação</option>
-            <option value="parecer" <%= template && template.tipo_documento === 'parecer' ? 'selected' : '' %>>Parecer</option>
-            <option value="outro" <%= template && template.tipo_documento === 'outro' ? 'selected' : '' %>>Outro</option>
-          </select>
-        </div>
+  <svg width="20" height="20" fill="none" stroke="#1a73e8" viewBox="0 0 24 24" style="flex-shrink:0;">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+  </svg>
 
-        <!-- Descrição -->
-        <div>
-          <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Descrição
-          </label>
-          <input 
-            type="text" 
-            id="descricao" 
-            name="descricao" 
-            value="<%= template ? template.descricao : '' %>"
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-            placeholder="Breve descrição"
-          >
-        </div>
-      </div>
-    </div>
+  <form id="form-editor" action="<%= action %>" method="POST" style="display:contents;">
+    <input type="text" class="ed-title-input" name="nome" required
+      value="<%= template ? template.nome : '' %>"
+      placeholder="Título do documento...">
 
-    <!-- Editor e Preview - Lado a lado -->
-    <div class="grid grid-cols-2 gap-0" style="height: calc(100vh - 240px);">
-      <!-- Editor CKEditor -->
-      <div class="bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 px-6 py-6 overflow-hidden">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Editor</h3>
-        <textarea id="editor" name="conteudo_html"><%= template ? template.conteudo_html : '' %></textarea>
-      </div>
+    <select class="ed-select" name="tipo_documento" required>
+      <option value="">Tipo...</option>
+      <% [['termo','Termo'],['oficio','Ofício'],['declaracao','Declaração'],['contrato','Contrato'],
+          ['relatorio','Relatório'],['comunicacao','Comunicação'],['atestado','Atestado'],
+          ['solicitacao','Solicitação'],['parecer','Parecer'],['edital','Edital'],['outro','Outro']].forEach(function(op) { %>
+        <option value="<%= op[0] %>" <%= template && template.tipo_documento === op[0] ? 'selected' : '' %>><%= op[1] %></option>
+      <% }) %>
+    </select>
 
-      <!-- Preview -->
-      <div class="bg-gray-50 dark:bg-slate-900 px-6 py-6 overflow-y-auto">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview do PDF</h3>
-        <div class="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-inner min-h-full">
-          <div id="preview" class="prose dark:prose-invert max-w-none">
-            <!-- Preview será atualizado aqui -->
-          </div>
-        </div>
-        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-          <strong>Variáveis detectadas:</strong>
-          <span id="variaveisDetectadas" class="text-purple-600 dark:text-purple-400 font-medium">Nenhuma</span>
-        </div>
-      </div>
-    </div>
+    <input type="text" class="ed-input-desc" name="descricao"
+      value="<%= template ? (template.descricao || '') : '' %>"
+      placeholder="Descrição...">
+
+    <!-- Campos ocultos -->
+    <textarea name="conteudo_html" id="conteudo_html" style="display:none;"></textarea>
+    <input type="hidden" name="configuracoes" id="configuracoes"
+      value="<%= template && template.configuracoes ? (typeof template.configuracoes === 'string' ? template.configuracoes : JSON.stringify(template.configuracoes)) : '{}' %>">
   </form>
+
+  <!-- Ações à direita -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;">
+    <span id="ed-status">
+      <svg width="13" height="13" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+      </svg>
+      Salvo
+    </span>
+
+    <!-- Botão inserir variável -->
+    <div style="position:relative;" id="vars-wrapper">
+      <button type="button" id="btn-vars" class="btn-preview-ed" title="Inserir campo variável no documento">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+        </svg>
+        { } Campo
+      </button>
+
+      <!-- Dropdown de variáveis -->
+      <div id="vars-dropdown">
+        <p class="vd-title">Campos predefinidos</p>
+        <div class="vd-chips" id="vd-chips-list">
+          <% var defaultCampos = ['NOME','DATA','DATA_EMISSAO','NR_PROTOCOLO','NUMERO',
+            'UNIDADE','CARGO','CPF','MATRICULA','RESPONSAVEL',
+            'ASSINATURA','CIDADE','ESTADO','ENDERECO','TELEFONE',
+            'EMAIL','PROCESSO','SETOR','DEPARTAMENTO']; %>
+          <% defaultCampos.forEach(function(c) { %>
+            <span class="vchip" data-campo="<%= c %>"><%=c%></span>
+          <% }) %>
+        </div>
+        <div class="vd-custom-row">
+          <input type="text" id="input-custom-var" placeholder="MINHA_VARIAVEL" maxlength="40">
+          <button type="button" id="btn-inserir-custom">Inserir</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="btn-preview" class="btn-preview-ed">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+      </svg>
+      Visualizar
+    </button>
+
+    <button type="submit" form="form-editor" id="btn-salvar" class="btn-save-ed">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+      </svg>
+      <%= template ? 'Salvar' : 'Criar modelo' %>
+    </button>
+  </div>
 </div>
 
+<!-- Wrapper do editor -->
+<div id="jodit-wrapper">
+  <textarea id="the-editor"><%- template && template.conteudo_html ? template.conteudo_html : '' %></textarea>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: PRÉVIA                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="modal-preview">
+  <div style="width:100%;max-width:860px;margin:0 auto;">
+    <div class="preview-header">
+      <div>
+        <h2 style="font-size:16px;font-weight:700;color:#fff;margin:0;">Prévia do documento</h2>
+        <p style="font-size:12px;color:rgba(255,255,255,.7);margin:4px 0 0;">Campos <code style="background:rgba(255,255,255,.15);padding:1px 5px;border-radius:3px;">{{variavel}}</code> destacados em amarelo</p>
+      </div>
+      <button id="btn-fechar-preview"
+        style="padding:7px 18px;font-size:13px;font-weight:500;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:8px;cursor:pointer;transition:background .15s;">
+        ✕ Fechar
+      </button>
+    </div>
+    <div id="preview-doc"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SCRIPTS                                        -->
+<!-- ═══════════════════════════════════════════════ -->
 <script>
-let editorInstance;
+(function() {
+  'use strict';
 
-// Função para atualizar preview
-function atualizarPreview() {
-  if (!editorInstance) return;
-  
-  const html = editorInstance.getData();
-  document.getElementById('preview').innerHTML = html;
-  
-  // Detectar variáveis
-  const regex = /{{(\w+)}}/g;
-  const variaveis = new Set();
-  let match;
-  
-  while ((match = regex.exec(html)) !== null) {
-    variaveis.add(match[1]);
-  }
-  
-  const variaveisSpan = document.getElementById('variaveisDetectadas');
-  if (variaveis.size === 0) {
-    variaveisSpan.textContent = 'Nenhuma';
-    variaveisSpan.className = 'text-gray-500 dark:text-gray-400 font-medium';
-  } else {
-    variaveisSpan.textContent = Array.from(variaveis).join(', ');
-    variaveisSpan.className = 'text-purple-600 dark:text-purple-400 font-medium';
-  }
-}
+  var jodit = null;
 
-ClassicEditor
-  .create(document.querySelector('#editor'), {
-    language: 'pt-br',
-    
-    // Toolbar COMPLETA
-    toolbar: {
-      items: [
-        'heading', '|',
-        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-        'bold', 'italic', 'underline', 'strikethrough', '|',
-        'alignment', '|',
-        'numberedList', 'bulletedList', '|',
-        'outdent', 'indent', '|',
-        'link', 'insertTable', 'blockQuote', '|',
-        'undo', 'redo', '|',
-        'sourceEditing'
-      ],
-      shouldNotGroupWhenFull: false
-    },
-    
-    // Configuração de tabelas
-    table: {
-      contentToolbar: [
-        'tableColumn', 'tableRow', 'mergeTableCells',
-        'tableProperties', 'tableCellProperties'
-      ]
-    },
-    
-    // Tamanhos de fonte
-    fontSize: {
-      options: [
-        'tiny',
-        'small',
-        'default',
-        'big',
-        'huge'
-      ]
-    },
-    
-    // Fontes disponíveis
-    fontFamily: {
-      options: [
-        'default',
-        'Arial, Helvetica, sans-serif',
-        'Courier New, Courier, monospace',
-        'Georgia, serif',
-        'Times New Roman, Times, serif',
-        'Verdana, Geneva, sans-serif'
-      ]
-    },
-    
-    // Headings
-    heading: {
-      options: [
-        { model: 'paragraph', title: 'Parágrafo', class: 'ck-heading_paragraph' },
-        { model: 'heading1', view: 'h1', title: 'Título 1', class: 'ck-heading_heading1' },
-        { model: 'heading2', view: 'h2', title: 'Título 2', class: 'ck-heading_heading2' },
-        { model: 'heading3', view: 'h3', title: 'Título 3', class: 'ck-heading_heading3' }
-      ]
+  // ── Inicializar editor ──────────────────────────────────────
+  function initEditor() {
+    // Checar se Jodit carregou
+    if (typeof Jodit === 'undefined') {
+      console.error('[Editor] Jodit não foi carregado.');
+      var wrapper = document.getElementById('jodit-wrapper');
+      if (wrapper) {
+        wrapper.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:#6b7280;gap:12px;">' +
+          '<svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>' +
+          '<p style="font-size:14px;font-weight:500;">Erro ao carregar o editor</p>' +
+          '<p style="font-size:12px;text-align:center;">Verifique que o arquivo <code>/libs/jodit/jodit.min.js</code> existe.</p>' +
+          '<button onclick="location.reload()" style="padding:8px 20px;background:#4f46e5;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Recarregar página</button>' +
+          '</div>';
+      }
+      return;
     }
-  })
-  .then(editor => {
-    editorInstance = editor;
-    console.log('✅ CKEditor 5 carregado com sucesso!');
-    
-    // Atualizar preview em tempo real
-    editor.model.document.on('change:data', () => {
-      atualizarPreview();
+
+    // Altura disponível = viewport − navbar fixa (7.5rem = 120px) − cabeçalho do editor
+    var navbarH = 120;
+    var headerH = document.getElementById('ed-header').offsetHeight || 52;
+    var joditH  = Math.max(400, window.innerHeight - navbarH - headerH);
+
+    var botoes = [
+      'undo', 'redo', '|',
+      'bold', 'italic', 'underline', 'strikethrough', 'eraser', '|',
+      'superscript', 'subscript', '|',
+      'font', 'fontsize', '|',
+      'brush', '|',
+      'paragraph', '|',
+      'align', 'lineHeight', '|',
+      'ul', 'ol', '|',
+      'outdent', 'indent', '|',
+      'table', 'image', 'link', 'hr', '|',
+      'symbol', 'copyformat', '|',
+      'source', 'fullsize', 'print'
+    ];
+
+    // Jodit v4: fontes e tamanhos via controls
+    var fontMap = Jodit.atom({
+      '':                                    'Padrão',
+      'Arial,Helvetica,sans-serif':          'Arial',
+      'Times New Roman,Times,serif':         'Times New Roman',
+      'Calibri,sans-serif':                  'Calibri',
+      'Verdana,Geneva,sans-serif':           'Verdana',
+      'Courier New,Courier,monospace':       'Courier New',
+      'Georgia,serif':                       'Georgia',
+      'Tahoma,Geneva,sans-serif':            'Tahoma',
+      'Trebuchet MS,sans-serif':             'Trebuchet MS',
+      'Garamond,serif':                      'Garamond',
     });
-    
-    // Preview inicial
-    setTimeout(() => {
-      atualizarPreview();
-    }, 500);
-  })
-  .catch(error => {
-    console.error('Erro ao carregar CKEditor:', error);
-    alert('Erro ao carregar o editor. Verifique sua conexão com a internet.');
+
+    var sizeList = Jodit.atom(
+      ['8','9','10','11','12','14','16','18','20','22','24','26','28','36','48','72']
+    );
+
+    try {
+      jodit = Jodit.make('#the-editor', {
+        /* dimensões */
+        height:          joditH,
+        width:           '100%',
+
+        /* toolbar */
+        toolbarAdaptive: false,
+        toolbarButtonSize: 'middle',
+        buttons:         botoes,
+        buttonsMD:       botoes,
+        buttonsSM:       botoes,
+
+        /* status bar */
+        showCharsCounter:     false,
+        showWordsCounter:     false,
+        showXPathInStatusbar: false,
+
+        /* desativar plugin mobile */
+        disablePlugins: ['mobile'],
+
+        /* fonte padrão do conteúdo */
+        defaultFontSizePoints: 'pt',
+        style: {
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontSize:   '11pt',
+          lineHeight: '1.5',
+          color:      '#1a1a1a',
+        },
+
+        /* listas de fontes/tamanhos (API v4) */
+        controls: {
+          font:     { list: fontMap },
+          fontsize: { list: sizeList },
+        },
+
+        /* imagens como base64 */
+        uploader: {
+          insertImageAsBase64URI:  true,
+          imagesExtensions: ['jpg','jpeg','png','gif','webp','svg'],
+        },
+
+        /* colar */
+        askBeforePasteHTML:           false,
+        askBeforePasteFromWord:       false,
+        defaultActionOnPaste:         'insert_clear_html',
+        defaultActionOnPasteFromWord: 'insert_as_html',
+
+        /* eventos */
+        events: {
+          change: function(val) {
+            document.getElementById('conteudo_html').value = val;
+            var el = document.getElementById('ed-status');
+            el.style.display = 'inline-flex';
+            clearTimeout(window._edSaveTimer);
+            window._edSaveTimer = setTimeout(function() {
+              el.style.display = 'none';
+            }, 2500);
+          }
+        }
+      });
+
+      // Sincronizar valor inicial
+      document.getElementById('conteudo_html').value = jodit.value;
+
+      // Redimensionar janela
+      window.addEventListener('resize', function() {
+        var nh = Math.max(400,
+          window.innerHeight - 120 - (document.getElementById('ed-header').offsetHeight || 52)
+        );
+        if (jodit && jodit.container) {
+          jodit.container.style.height = nh + 'px';
+          var wp = jodit.container.querySelector('.jodit-workplace');
+          if (wp) {
+            var tbH = jodit.container.querySelector('.jodit-toolbar__box');
+            wp.style.height = (nh - (tbH ? tbH.offsetHeight : 45)) + 'px';
+          }
+        }
+      });
+
+    } catch (err) {
+      console.error('[Editor] Falha ao inicializar Jodit:', err);
+      if (window.showToast) showToast('Erro no editor: ' + err.message, 'error');
+    }
+  }
+
+  // ── Inserção de variáveis ───────────────────────────────────
+  function inserirVar(nome) {
+    nome = nome.trim().toUpperCase().replace(/\s+/g,'_').replace(/[^A-Z0-9_]/g,'');
+    if (!nome) return;
+    if (jodit) {
+      jodit.selection.insertHTML('{{' + nome + '}}');
+      jodit.focus();
+    }
+    // Fechar dropdown
+    document.getElementById('vars-dropdown').classList.remove('open');
+    // Feedback visual
+    if (window.showToast) showToast('Campo {{' + nome + '}} inserido.', 'success');
+  }
+
+  // Toggle dropdown
+  document.getElementById('btn-vars').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var dd = document.getElementById('vars-dropdown');
+    dd.classList.toggle('open');
+    if (dd.classList.contains('open')) {
+      setTimeout(function() { document.getElementById('input-custom-var').focus(); }, 80);
+    }
   });
 
-// Botão Inserir Imagem
-document.getElementById('btnInserirImagem').addEventListener('click', () => {
-  document.getElementById('inputImagem').click();
-});
-
-// Processar imagem selecionada
-document.getElementById('inputImagem').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (file && editorInstance) {
-    // Validar tipo
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione apenas imagens!');
-      return;
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', function(e) {
+    var w = document.getElementById('vars-wrapper');
+    if (w && !w.contains(e.target)) {
+      document.getElementById('vars-dropdown').classList.remove('open');
     }
-    
-    // Validar tamanho (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('A imagem deve ter no máximo 5MB!');
-      return;
+  });
+
+  // Clicar em chip predefinido
+  document.getElementById('vd-chips-list').addEventListener('click', function(e) {
+    var chip = e.target.closest('.vchip');
+    if (!chip) return;
+    inserirVar(chip.dataset.campo);
+    // Pulso visual
+    chip.style.background = '#c4b5fd';
+    setTimeout(function() { chip.style.background = ''; }, 350);
+  });
+
+  // Inserir campo customizado
+  function inserirCustom() {
+    var v = document.getElementById('input-custom-var').value;
+    inserirVar(v);
+    document.getElementById('input-custom-var').value = '';
+  }
+  document.getElementById('btn-inserir-custom').addEventListener('click', inserirCustom);
+  document.getElementById('input-custom-var').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); inserirCustom(); }
+    if (e.key === 'Escape') {
+      document.getElementById('vars-dropdown').classList.remove('open');
     }
-    
-    // Converter para Base64
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const base64 = event.target.result;
-      
-      // Inserir no editor
-      const viewFragment = editorInstance.data.processor.toView(
-        `<img src="${base64}" alt="Imagem" style="max-width: 100%; height: auto;" />`
-      );
-      const modelFragment = editorInstance.data.toModel(viewFragment);
-      editorInstance.model.insertContent(modelFragment);
-      
-      // Limpar input
-      e.target.value = '';
-    };
-    reader.readAsDataURL(file);
-  }
-});
+  });
 
-// Botão Inserir Variável
-document.getElementById('btnInserirVariavel').addEventListener('click', () => {
-  const nomeVariavel = prompt('Nome da variável (ex: nome_servidor, data_emissao):');
-  if (nomeVariavel && editorInstance) {
-    const viewFragment = editorInstance.data.processor.toView(
-      `<span class="variavel">{{${nomeVariavel}}}</span>&nbsp;`
-    );
-    const modelFragment = editorInstance.data.toModel(viewFragment);
-    editorInstance.model.insertContent(modelFragment);
-  }
-});
+  // ── Salvar ──────────────────────────────────────────────────
+  document.getElementById('form-editor').addEventListener('submit', function() {
+    if (jodit) document.getElementById('conteudo_html').value = jodit.value;
+    var btn = document.getElementById('btn-salvar');
+    btn.disabled = true;
+    btn.innerHTML =
+      '<svg width="13" height="13" class="df-spin" fill="none" viewBox="0 0 24 24">' +
+        '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>' +
+        '<path fill="currentColor" opacity=".75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>' +
+      '</svg> Salvando...';
+  });
 
-// Salvar conteúdo antes de submeter
-document.getElementById('formTemplate').addEventListener('submit', function(e) {
-  // CKEditor já sincroniza automaticamente
-});
+  // ── Prévia ──────────────────────────────────────────────────
+  var modalPreview = document.getElementById('modal-preview');
+
+  document.getElementById('btn-preview').addEventListener('click', function() {
+    var html = jodit ? jodit.value : document.getElementById('conteudo_html').value;
+    html = html.replace(/\{\{(\w+)\}\}/g,
+      '<mark style="background:#fef08a;padding:0 4px;border-radius:3px;font-weight:700;font-family:monospace;font-size:10pt;">{{$1}}</mark>');
+    document.getElementById('preview-doc').innerHTML =
+      html || '<p style="color:#9aa0a6;text-align:center;padding:80px">Documento vazio</p>';
+    modalPreview.classList.add('open');
+    document.body.style.overflow = '';
+  });
+
+  document.getElementById('btn-fechar-preview').addEventListener('click', function() {
+    modalPreview.classList.remove('open');
+    document.body.style.overflow = 'hidden';
+  });
+  modalPreview.addEventListener('click', function(e) {
+    if (e.target === modalPreview) {
+      modalPreview.classList.remove('open');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+
+  // ── Iniciar após DOM pronto ─────────────────────────────────
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEditor);
+  } else {
+    initEditor();
+  }
+
+})();
 </script>
 
 <%- include('../partials/footer') %>

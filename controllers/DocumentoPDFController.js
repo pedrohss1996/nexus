@@ -53,11 +53,15 @@ class DocumentoPDFController {
       // Extrair variáveis automaticamente do HTML
       const variaveis = extrairVariaveis(conteudo_html);
 
-      // Parse das configurações se vier como string
-      let config = configuracoes;
-      if (typeof configuracoes === 'string') {
-        config = JSON.parse(configuracoes);
-      }
+      // Parse robusto das configurações
+      let config = {};
+      try {
+        if (configuracoes && typeof configuracoes === 'string' && configuracoes.trim()) {
+          config = JSON.parse(configuracoes);
+        } else if (configuracoes && typeof configuracoes === 'object') {
+          config = configuracoes;
+        }
+      } catch (_) { config = {}; }
 
       const resultado = await query(
         `INSERT INTO templates_pdf 
@@ -117,11 +121,15 @@ class DocumentoPDFController {
       // Extrair variáveis automaticamente do HTML
       const variaveis = extrairVariaveis(conteudo_html);
 
-      // Parse das configurações se vier como string
-      let config = configuracoes;
-      if (typeof configuracoes === 'string') {
-        config = JSON.parse(configuracoes);
-      }
+      // Parse robusto das configurações
+      let config = {};
+      try {
+        if (configuracoes && typeof configuracoes === 'string' && configuracoes.trim()) {
+          config = JSON.parse(configuracoes);
+        } else if (configuracoes && typeof configuracoes === 'object') {
+          config = configuracoes;
+        }
+      } catch (_) { config = {}; }
 
       await query(
         `UPDATE templates_pdf 
@@ -199,11 +207,11 @@ class DocumentoPDFController {
     }
   }
 
-  // Gerar PDF a partir do template e variáveis
+  // Gerar PDF e enviar diretamente para download
   static async gerar(req, res) {
     try {
       const { id } = req.params;
-      const variaveis = req.body;
+      const variaveis = req.body || {};
 
       // Buscar template
       const templateResult = await query(
@@ -217,55 +225,49 @@ class DocumentoPDFController {
 
       const template = templateResult.rows[0];
 
-      // Gerar nome do arquivo
+      // Gerar nome para o arquivo de download
       const timestamp = Date.now();
-      const nomeArquivo = `${template.tipo_documento}_${timestamp}.pdf`;
-      const uploadsDir = path.join(__dirname, '..', 'uploads', 'documentos-gerados');
-      const outputPath = path.join(uploadsDir, nomeArquivo);
+      const nomeArquivo = `${(template.nome || 'documento').replace(/[^a-z0-9]/gi, '_')}_${timestamp}.pdf`;
 
-      // Criar diretório se não existir
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-
-      // Gerar PDF
+      // Gerar PDF em memória (buffer) com Puppeteer
       const resultado = await gerarPDF({
         templateHTML: template.conteudo_html,
         variaveis: variaveis,
-        outputPath: outputPath,
-        configuracoes: template.configuracoes
+        retornarBuffer: true
       });
 
-      // Salvar registro no banco
-      await query(
-        `INSERT INTO documentos_gerados 
-         (template_id, nome_arquivo, titulo, dados_variaveis, caminho_arquivo, tamanho_bytes, gerado_por, unidade_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          template.id,
-          nomeArquivo,
-          variaveis.titulo || template.nome,
-          JSON.stringify(variaveis),
-          resultado.caminho,
-          resultado.tamanho,
-          req.user.id,
-          req.user.unidade_id || null
-        ]
-      );
+      // Salvar registro no banco (sem caminho físico)
+      try {
+        await query(
+          `INSERT INTO documentos_gerados
+           (template_id, nome_arquivo, titulo, dados_variaveis, caminho_arquivo, tamanho_bytes, gerado_por, unidade_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            template.id,
+            nomeArquivo,
+            variaveis.titulo || template.nome,
+            JSON.stringify(variaveis),
+            nomeArquivo,
+            resultado.tamanho,
+            req.user.id,
+            req.user.unidade_id || null
+          ]
+        );
+      } catch (dbErr) {
+        console.warn('Aviso: não foi possível registrar o documento gerado:', dbErr.message);
+      }
 
-      res.json({
-        success: true,
-        message: 'PDF gerado com sucesso',
-        arquivo: nomeArquivo,
-        downloadUrl: `/documentos-pdf/download/${nomeArquivo}`
-      });
+      // Enviar PDF diretamente para download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
+      res.setHeader('Content-Length', resultado.buffer.length);
+      res.send(resultado.buffer);
 
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Erro ao gerar PDF',
-        erro: error.message 
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar PDF: ' + error.message
       });
     }
   }

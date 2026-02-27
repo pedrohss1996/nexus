@@ -12,14 +12,12 @@ const authenticateToken = async (req, res, next) => {
     const cookieToken = req.cookies?.token || token;
 
     if (!cookieToken) {
-      // Se for requisição de API, retornar JSON
-      if (req.path.startsWith('/api/')) {
+      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
         return res.status(401).json({
           success: false,
-          message: 'Token de autenticação não fornecido'
+          message: 'Sessão expirada. Faça login novamente.'
         });
       }
-      // Se for view, redirecionar para login
       return res.redirect('/auth/login');
     }
 
@@ -27,9 +25,8 @@ const authenticateToken = async (req, res, next) => {
     const jwtSecret = process.env.JWT_SECRET || 'mock-secret-key-for-development-only';
     const decoded = jwt.verify(cookieToken, jwtSecret);
 
-    // Token com flag mock não é mais aceito - exige novo login no banco
     if (decoded.mock) {
-      if (req.path.startsWith('/api/')) {
+      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
         return res.status(401).json({
           success: false,
           message: 'Sessão inválida. Faça login novamente.'

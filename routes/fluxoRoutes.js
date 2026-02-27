@@ -17,6 +17,7 @@ router.post('/:id/grupos', requireRole(['admin', 'gestor']), FluxoController.upd
 router.get('/:id', (req, res) => res.redirect('/fluxos/' + req.params.id + '/configurar'));
 
 router.post('/:id/etapas', requireRole(['admin', 'gestor']), FluxoController.storeEtapa);
+router.patch('/:id/etapas/reorder', requireRole(['admin', 'gestor']), FluxoController.reorderEtapas);
 router.post('/:id/etapas/:etapaId', requireRole(['admin', 'gestor']), FluxoController.updateEtapa);
 router.patch('/:id/etapas/:etapaId/area', requireRole(['admin', 'gestor']), FluxoController.updateEtapaArea);
 router.patch('/:id/etapas/:etapaId/posicao', requireRole(['admin', 'gestor']), FluxoController.updateEtapaPosicao);

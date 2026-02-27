@@ -1,194 +1,293 @@
-<%- include('../partials/header') %>
+<%- include('../partials/header', { title: 'Gerar Documento - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<div class="w-full px-8 py-8">
+<div class="w-full px-6 py-6">
+
   <!-- Cabeçalho -->
-  <div class="mb-6">
-    <a href="/documentos-pdf" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mb-4">
-      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-      </svg>
-      Voltar para Templates
-    </a>
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Gerar Documento</h1>
-    <p class="text-gray-600 dark:text-gray-400 mt-2">Template: <strong><%= template.nome %></strong></p>
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-3">
+      <a href="/documentos-pdf" class="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      </a>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Gerar Documento PDF</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Modelo: <strong class="text-gray-700 dark:text-gray-300"><%= template.nome %></strong></p>
+      </div>
+    </div>
+    <% var tipoLabels = { termo:'Termo', oficio:'Ofício', declaracao:'Declaração', contrato:'Contrato',
+      relatorio:'Relatório', comunicacao:'Comunicação', atestado:'Atestado',
+      solicitacao:'Solicitação', parecer:'Parecer', outro:'Outro' };
+    var tipo = (template.tipo_documento || 'outro').toLowerCase(); %>
+    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+      <%= tipoLabels[tipo] || 'Documento' %>
+    </span>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
     <!-- Formulário de Variáveis -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Preencher Variáveis</h2>
-      
-      <form id="formGerar">
-        <% 
-          const variaveis = typeof template.variaveis === 'string' 
-            ? JSON.parse(template.variaveis) 
-            : template.variaveis;
-        %>
-        <% if (!Array.isArray(variaveis) || variaveis.length === 0) { %>
-          <p class="text-gray-500 dark:text-gray-400">Este template não possui variáveis.</p>
-        <% } else { %>
-          <% variaveis.forEach(variavel => { %>
-            <div class="mb-4">
-              <label for="<%= variavel %>" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
-                <%= variavel.replace(/_/g, ' ') %>
-              </label>
-              <% if (variavel.includes('data')) { %>
-                <input 
-                  type="date" 
-                  id="<%= variavel %>" 
-                  name="<%= variavel %>"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
-                  data-variavel="<%= variavel %>"
-                >
-              <% } else if (variavel.includes('valor') || variavel.includes('preco')) { %>
-                <input 
-                  type="number" 
-                  id="<%= variavel %>" 
-                  name="<%= variavel %>"
-                  step="0.01"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
-                  data-variavel="<%= variavel %>"
-                  placeholder="0.00"
-                >
-              <% } else if (variavel.includes('texto') || variavel.includes('descricao') || variavel.includes('corpo')) { %>
-                <textarea 
-                  id="<%= variavel %>" 
-                  name="<%= variavel %>"
-                  rows="4"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
-                  data-variavel="<%= variavel %>"
-                ></textarea>
-              <% } else { %>
-                <input 
-                  type="text" 
-                  id="<%= variavel %>" 
-                  name="<%= variavel %>"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white variavel-input"
-                  data-variavel="<%= variavel %>"
-                >
-              <% } %>
+    <div class="lg:col-span-2">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-slate-700">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Preencher Dados</h2>
+          <% var varList = [];
+          try { varList = Array.isArray(template.variaveis) ? template.variaveis : (template.variaveis ? JSON.parse(template.variaveis) : []); } catch(e) {} %>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <%= varList.length > 0 ? varList.length + ' campo' + (varList.length > 1 ? 's' : '') + ' para preencher' : 'Nenhuma variável neste modelo' %>
+          </p>
+        </div>
+
+        <form id="formGerar" class="p-5 space-y-4">
+          <% if (!Array.isArray(varList) || varList.length === 0) { %>
+            <div class="flex flex-col items-center py-8 text-center">
+              <svg class="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Este modelo não possui variáveis.</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">O documento será gerado diretamente.</p>
             </div>
-          <% }); %>
-        <% } %>
+          <% } else { %>
+            <% varList.forEach(function(variavel) {
+              var labelFormatado = variavel.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+            %>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <%= labelFormatado %>
+                  <span class="text-gray-400 dark:text-gray-500 font-normal font-mono ml-1">{{<%= variavel %>}}</span>
+                </label>
+                <% if (variavel.match(/data/)) { %>
+                  <input type="date" name="<%= variavel %>" data-variavel="<%= variavel %>"
+                    class="variavel-input w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <% } else if (variavel.match(/valor|preco|total|salario/)) { %>
+                  <input type="text" name="<%= variavel %>" data-variavel="<%= variavel %>"
+                    placeholder="0,00"
+                    class="variavel-input w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <% } else if (variavel.match(/observacao|descricao|obs|texto|corpo|detalhe/)) { %>
+                  <textarea name="<%= variavel %>" data-variavel="<%= variavel %>" rows="3"
+                    class="variavel-input w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                <% } else { %>
+                  <input type="text" name="<%= variavel %>" data-variavel="<%= variavel %>"
+                    placeholder="<%= labelFormatado %>..."
+                    class="variavel-input w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <% } %>
+              </div>
+            <% }) %>
+          <% } %>
 
-        <button 
-          type="submit"
-          id="btnGerar"
-          class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-        >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-          </svg>
-          Gerar PDF
-        </button>
-      </form>
+          <!-- Botão Gerar -->
+          <div class="pt-2">
+            <button type="submit" id="btnGerar"
+              class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Gerar e Baixar PDF
+            </button>
+          </div>
+        </form>
 
-      <!-- Mensagem de sucesso -->
-      <div id="mensagemSucesso" class="hidden mt-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg">
-        <p class="font-medium">PDF gerado com sucesso!</p>
-        <a id="linkDownload" href="#" class="text-green-800 dark:text-green-300 underline font-semibold mt-2 inline-block">
-          Clique aqui para baixar
-        </a>
-      </div>
-
-      <!-- Mensagem de erro -->
-      <div id="mensagemErro" class="hidden mt-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-        <p class="font-medium">Erro ao gerar PDF</p>
-        <p id="textoErro" class="text-sm mt-1"></p>
       </div>
     </div>
 
-    <!-- Preview do Template -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Preview do Documento</h2>
-      
-      <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-slate-900 max-h-[600px] overflow-y-auto">
-        <div id="preview" class="prose dark:prose-invert max-w-none">
-          <%- template.conteudo_html.replace(/{{(\w+)}}/g, '<span class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded font-semibold text-yellow-900 dark:text-yellow-200">{{$1}}</span>') %>
+    <!-- Preview do documento -->
+    <div class="lg:col-span-3">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden sticky top-4">
+        <div class="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Preview do Documento</h2>
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+              <span class="inline-block w-5 h-0.5 border-t-2 border-dashed border-red-400"></span>
+              Quebra de página
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Atualiza ao digitar</span>
+          </div>
+        </div>
+        <!-- Área de preview com scroll -->
+        <div id="preview-scroll" class="bg-gray-200 dark:bg-slate-900 p-5 max-h-[75vh] overflow-y-auto">
+          <!-- Página simulada -->
+          <div id="preview-page-wrap" class="relative mx-auto shadow-lg"
+            style="max-width:620px; background:#fff; font-family:Arial,Helvetica,sans-serif; font-size:11pt; line-height:1.5; color:#1a1a1a; padding:40px 48px; overflow:visible;">
+            <div id="preview"></div>
+            <!-- Marcadores de quebra de página inseridos por JS -->
+          </div>
+        </div>
+        <!-- Legenda de páginas -->
+        <div id="page-count-bar" class="px-5 py-2 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-400 dark:text-gray-500 hidden">
+          Aproximadamente <span id="page-count" class="font-semibold text-gray-600 dark:text-gray-300">1</span> página(s) A4
         </div>
       </div>
-
-      <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-        <strong>Nota:</strong> As variáveis destacadas serão substituídas pelos valores que você inserir.
-      </div>
     </div>
+
   </div>
 </div>
 
 <script>
-document.getElementById('formGerar').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const btnGerar = document.getElementById('btnGerar');
-  const mensagemSucesso = document.getElementById('mensagemSucesso');
-  const mensagemErro = document.getElementById('mensagemErro');
-  const linkDownload = document.getElementById('linkDownload');
-  const textoErro = document.getElementById('textoErro');
-  
-  // Ocultar mensagens
-  mensagemSucesso.classList.add('hidden');
-  mensagemErro.classList.add('hidden');
-  
-  // Desabilitar botão
-  btnGerar.disabled = true;
-  btnGerar.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Gerando PDF...';
-  
-  // Coletar dados do formulário
-  const formData = new FormData(e.target);
-  const dados = {};
-  for (const [key, value] of formData.entries()) {
-    dados[key] = value;
-  }
-  
-  try {
-    const response = await fetch('/documentos-pdf/<%= template.id %>/gerar', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dados)
-    });
-    
-    const resultado = await response.json();
-    
-    if (resultado.success) {
-      linkDownload.href = resultado.downloadUrl;
-      mensagemSucesso.classList.remove('hidden');
-    } else {
-      textoErro.textContent = resultado.message || 'Erro desconhecido';
-      mensagemErro.classList.remove('hidden');
+(function() {
+  var rawHtml = <%- JSON.stringify(template.conteudo_html || '') %>;
+
+  // ── Marcadores de quebra de página ─────────────────────────────────────
+  function adicionarMarcasQuebraPagina() {
+    var wrap = document.getElementById('preview-page-wrap');
+    var previewEl = document.getElementById('preview');
+
+    // Remover marcadores anteriores
+    wrap.querySelectorAll('.pg-break-marker').forEach(function(el) { el.remove(); });
+
+    // Largura do conteúdo no preview (excluindo padding do wrap)
+    var wrapStyle = window.getComputedStyle(wrap);
+    var paddingH = parseFloat(wrapStyle.paddingLeft) + parseFloat(wrapStyle.paddingRight);
+    var contentWidthPx = wrap.offsetWidth - paddingH;
+
+    // A4 com margens 25mm laterais e 20mm topo/fundo:
+    // Área de conteúdo: 160mm x 257mm → razão altura/largura = 257/160 ≈ 1.60625
+    var pageHeightPx = Math.round(contentWidthPx * (257 / 160));
+
+    var totalHeight = previewEl.scrollHeight;
+    var numPages = Math.max(1, Math.ceil(totalHeight / pageHeightPx));
+
+    // Inserir linhas de quebra
+    for (var i = 1; i < numPages; i++) {
+      var top = pageHeightPx * i;
+
+      var marker = document.createElement('div');
+      marker.className = 'pg-break-marker';
+      marker.style.cssText = [
+        'position:absolute',
+        'left:-48px',           // Sai até a borda do padding
+        'right:-48px',
+        'top:' + top + 'px',
+        'height:0',
+        'border-top:2px dashed #f87171',
+        'pointer-events:none',
+        'z-index:10',
+      ].join(';');
+
+      // Etiqueta "Página X / Y"
+      var label = document.createElement('span');
+      label.style.cssText = [
+        'position:absolute',
+        'left:50%',
+        'transform:translateX(-50%)',
+        'top:-9px',
+        'font-size:10px',
+        'font-weight:700',
+        'color:#ef4444',
+        'background:#fff',
+        'border:1px solid #fca5a5',
+        'border-radius:4px',
+        'padding:0 7px',
+        'white-space:nowrap',
+        'font-family:Arial,sans-serif',
+        'letter-spacing:.02em',
+      ].join(';');
+      label.textContent = '── Fim da página ' + i + ' ──';
+      marker.appendChild(label);
+
+      wrap.appendChild(marker);
     }
-  } catch (error) {
-    console.error('Erro:', error);
-    textoErro.textContent = error.message;
-    mensagemErro.classList.remove('hidden');
-  } finally {
-    // Reabilitar botão
-    btnGerar.disabled = false;
-    btnGerar.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>Gerar PDF';
+
+    // Atualizar contagem
+    var bar = document.getElementById('page-count-bar');
+    var countEl = document.getElementById('page-count');
+    if (bar && countEl) {
+      countEl.textContent = numPages;
+      bar.classList.toggle('hidden', numPages <= 1);
+    }
   }
-});
 
-// Atualizar preview em tempo real
-document.querySelectorAll('.variavel-input').forEach(input => {
-  input.addEventListener('input', () => {
-    atualizarPreview();
-  });
-});
+  // ── Atualizar preview e marcadores ─────────────────────────────────────
+  function atualizarPreview() {
+    var html = rawHtml;
+    document.querySelectorAll('.variavel-input').forEach(function(input) {
+      var v = input.dataset.variavel;
+      var val = input.value ||
+        '<mark style="background:#fef08a;padding:0 3px;border-radius:3px;font-weight:700;">{{' + v + '}}</mark>';
+      html = html.replace(new RegExp('\\{\\{' + v + '\\}\\}', 'g'), val);
+    });
+    html = html.replace(/\{\{(\w+)\}\}/g,
+      '<mark style="background:#fef08a;padding:0 3px;border-radius:3px;font-weight:700;">{{$1}}</mark>');
 
-function atualizarPreview() {
-  const preview = document.getElementById('preview');
-  let html = `<%- template.conteudo_html %>`;
-  
-  document.querySelectorAll('.variavel-input').forEach(input => {
-    const variavel = input.dataset.variavel;
-    const valor = input.value || `<span class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded font-semibold text-yellow-900 dark:text-yellow-200">{{${variavel}}}</span>`;
-    const regex = new RegExp(`{{${variavel}}}`, 'g');
-    html = html.replace(regex, valor);
+    document.getElementById('preview').innerHTML = html;
+
+    // Recalcular marcadores após renderização
+    requestAnimationFrame(function() {
+      requestAnimationFrame(adicionarMarcasQuebraPagina);
+    });
+  }
+
+  // Reposicionar marcadores ao redimensionar
+  window.addEventListener('resize', adicionarMarcasQuebraPagina);
+
+  document.querySelectorAll('.variavel-input').forEach(function(input) {
+    input.addEventListener('input', atualizarPreview);
   });
-  
-  preview.innerHTML = html;
-}
+
+  atualizarPreview();
+
+  // Gerar PDF e baixar automaticamente
+  document.getElementById('formGerar').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('btnGerar');
+    btn.disabled = true;
+    btn.innerHTML =
+      '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">' +
+        '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>' +
+        '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>' +
+      '</svg> Gerando PDF...';
+
+    var dados = {};
+    new FormData(e.target).forEach(function(v, k) { dados[k] = v; });
+
+    try {
+      var r = await fetch('/documentos-pdf/<%= template.id %>/gerar', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+
+      if (!r.ok) {
+        // Tentar ler erro JSON
+        var errData;
+        try { errData = await r.json(); } catch(ex) { errData = { message: 'Erro HTTP ' + r.status }; }
+        throw new Error(errData.message || 'Erro ao gerar PDF');
+      }
+
+      // Verificar se a resposta é PDF (download direto) ou JSON (erro)
+      var contentType = r.headers.get('content-type') || '';
+      if (contentType.includes('application/pdf')) {
+        // Obter nome do arquivo do header
+        var disposition = r.headers.get('content-disposition') || '';
+        var nomeMatch = disposition.match(/filename="?([^";\n]+)"?/);
+        var nomeArquivo = nomeMatch ? nomeMatch[1] : '<%= (template.nome || "documento").replace(/[^a-zA-Z0-9]/g, "_") %>.pdf';
+
+        // Criar blob e disparar download automático
+        var blob = await r.blob();
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = nomeArquivo;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+
+        if (window.showToast) showToast('PDF baixado com sucesso!', 'success');
+      } else {
+        // Resposta JSON inesperada
+        var result = await r.json();
+        if (!result.success) throw new Error(result.message || 'Erro ao gerar PDF');
+      }
+
+    } catch(err) {
+      console.error(err);
+      if (window.showToast) showToast('Erro: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>' +
+        '</svg> Gerar e Baixar PDF';
+    }
+  });
+})();
 </script>
 
 <%- include('../partials/footer') %>

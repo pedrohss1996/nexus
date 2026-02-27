@@ -109,7 +109,7 @@ class UnidadeController {
         criado_por: req.user.id
       });
 
-      await auditLog('UNIDADE_CRIADA', req.user.id, { unidade_id: unidade.id, nome, cd_tipo });
+      try { auditLog('UNIDADE_CRIADA', req.user.id, { unidade_id: unidade.id, nome, cd_tipo }); } catch (_) {}
 
       res.redirect(`/unidades/${unidade.id}`);
     } catch (error) {
@@ -163,14 +163,14 @@ class UnidadeController {
         });
       }
 
-      await auditLog('UNIDADE_ATUALIZADA', req.user.id, { unidade_id: id, nome, cd_tipo });
+      try { auditLog('UNIDADE_ATUALIZADA', req.user.id, { unidade_id: id, nome, cd_tipo }); } catch (_) {}
 
       res.redirect(`/unidades/${id}`);
     } catch (error) {
-      console.error('Erro ao atualizar unidade:', error);
+      console.error('Erro ao atualizar unidade:', error.message, error.stack);
       res.status(500).render('error', {
         title: 'Erro - DataFlow',
-        message: 'Erro ao atualizar unidade'
+        message: process.env.NODE_ENV !== 'production' ? `Erro ao atualizar unidade: ${error.message}` : 'Erro ao atualizar unidade'
       });
     }
   }
@@ -222,7 +222,7 @@ class UnidadeController {
         valor: valor != null ? (typeof valor === 'number' ? valor : parseFloat(valor)) : undefined,
         criado_por: req.user.id
       });
-      await auditLog('CONTA_CONTABIL_CRIADA', req.user.id, { unidade_id: unidadeId, conta_id: node.id, codigo: node.codigo });
+      try { auditLog('CONTA_CONTABIL_CRIADA', req.user.id, { unidade_id: unidadeId, conta_id: node.id, codigo: node.codigo }); } catch (_) {}
       return res.status(201).json({ success: true, conta: node });
     } catch (error) {
       if (error.code === 'TETO_EXCEDIDO') {
@@ -280,7 +280,7 @@ class UnidadeController {
       if (!ok) {
         return res.status(404).json({ success: false, message: 'Conta não encontrada' });
       }
-      await auditLog('CONTA_CONTABIL_EXCLUIDA', req.user.id, { unidade_id: unidadeId, conta_id: contaId });
+      try { auditLog('CONTA_CONTABIL_EXCLUIDA', req.user.id, { unidade_id: unidadeId, conta_id: contaId }); } catch (_) {}
       return res.json({ success: true, message: 'Conta e subcontas excluídas' });
     } catch (error) {
       console.error('Erro ao excluir conta:', error);
@@ -306,7 +306,7 @@ class UnidadeController {
         criado_por: req.user.id
       });
 
-      await auditLog('CONTA_CONTABIL_CRIADA', req.user.id, { unidade_id: id, codigo, nome });
+      try { auditLog('CONTA_CONTABIL_CRIADA', req.user.id, { unidade_id: id, codigo, nome }); } catch (_) {}
       res.redirect(`/unidades/${id}`);
     } catch (error) {
       if (error.code === '23505') {
@@ -334,7 +334,7 @@ class UnidadeController {
         criado_por: req.user.id
       });
 
-      await auditLog('GRUPO_CRIADO', req.user.id, { grupo_id: grupo.id, unidade_id: id, nome: grupo.nome });
+      try { auditLog('GRUPO_CRIADO', req.user.id, { grupo_id: grupo.id, unidade_id: id, nome: grupo.nome }); } catch (_) {}
       res.redirect(`/unidades/${id}`);
     } catch (error) {
       console.error('Erro ao criar grupo:', error);
@@ -360,11 +360,7 @@ class UnidadeController {
         req.user.id
       );
 
-      await auditLog('USUARIO_VINCULADO_GRUPO', req.user.id, {
-        unidade_id: unidadeId,
-        grupo_id,
-        usuario_id
-      });
+      try { auditLog('USUARIO_VINCULADO_GRUPO', req.user.id, { unidade_id: unidadeId, grupo_id, usuario_id }); } catch (_) {}
       res.redirect(`/unidades/${unidadeId}`);
     } catch (error) {
       if (error.code === '23505') {
@@ -386,12 +382,12 @@ class UnidadeController {
         return res.status(404).json({ success: false, message: 'Unidade não encontrada' });
       }
 
-      await auditLog('UNIDADE_DESATIVADA', req.user.id, { unidade_id: id });
+      try { auditLog('UNIDADE_DESATIVADA', req.user.id, { unidade_id: id }); } catch (_) {}
 
       res.json({ success: true, message: 'Unidade desativada com sucesso' });
     } catch (error) {
       console.error('Erro ao desativar unidade:', error);
-      res.status(500).json({ success: false, message: 'Erro ao desativar unidade' });
+      res.status(500).json({ success: false, message: error.message || 'Erro ao desativar unidade' });
     }
   }
 }

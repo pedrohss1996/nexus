@@ -316,10 +316,25 @@ class FluxoController {
     }
   }
 
+  static async reorderEtapas(req, res) {
+    try {
+      const { id: fluxoId } = req.params;
+      const { ordens } = req.body;
+      if (!Array.isArray(ordens)) return res.status(400).json({ success: false, message: 'Formato inválido' });
+      for (const item of ordens) {
+        await query('UPDATE fluxo_etapas SET ordem = $1 WHERE id = $2 AND fluxo_id = $3', [item.ordem, item.id, fluxoId]);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Erro ao reordenar etapas:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async updateEtapa(req, res) {
     try {
       const { id: fluxoId, etapaId } = req.params;
-      const { nome, codigo, ordem, eh_inicio, eh_fim, proprietario_id, tipo_acao, documentos_vinculados, prazo_em_dias, exige_assinatura } = req.body;
+      const { nome, codigo, ordem, eh_inicio, eh_fim, proprietario_id, tipo_acao, documentos_vinculados, prazo_em_dias, exige_assinatura, campos_requeridos } = req.body;
       const etapa = await query('SELECT id FROM fluxo_etapas WHERE id = $1 AND fluxo_id = $2', [etapaId, fluxoId]);
       if (etapa.rows.length === 0) {
         if (req.xhr || req.headers.accept?.includes('application/json')) return res.status(404).json({ success: false, message: 'Etapa não encontrada.' });
@@ -341,6 +356,7 @@ class FluxoController {
       if (ei) {
         await query('UPDATE fluxo_etapas SET eh_inicio = false WHERE fluxo_id = $1 AND id != $2', [fluxoId, etapaId]);
       }
+      const camposReq = campos_requeridos ? tryParseJSON(campos_requeridos) : null;
       await query(
         `UPDATE fluxo_etapas SET
           nome = COALESCE($1, nome),
@@ -353,9 +369,10 @@ class FluxoController {
           tipo_acao = COALESCE($7, tipo_acao),
           documentos_vinculados = COALESCE($8, documentos_vinculados),
           prazo_em_dias = $9,
-          exige_assinatura = $10
-         WHERE id = $11 AND fluxo_id = $12`,
-        [nome && String(nome).trim() ? String(nome).trim() : null, cod, ord, ei, ef, pid, tipo_acao || undefined, JSON.stringify(docs), prazo, assinatura, etapaId, fluxoId]
+          exige_assinatura = $10,
+          campos_requeridos = COALESCE($11, campos_requeridos)
+         WHERE id = $12 AND fluxo_id = $13`,
+        [nome && String(nome).trim() ? String(nome).trim() : null, cod, ord, ei, ef, pid, tipo_acao || undefined, JSON.stringify(docs), prazo, assinatura, camposReq ? JSON.stringify(camposReq) : null, etapaId, fluxoId]
       );
       const updated = await query('SELECT * FROM fluxo_etapas WHERE id = $1', [etapaId]);
       auditLog('FLUXO_ETAPA_ATUALIZADA', req.user.id, { fluxo_id: fluxoId, etapa_id: etapaId, ip: req.ip });
