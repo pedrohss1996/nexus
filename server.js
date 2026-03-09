@@ -26,6 +26,7 @@ const tramitacaoRoutes = require('./routes/tramitacaoRoutes');
 const grupoRoutes = require('./routes/grupoRoutes');
 const unidadeRoutes = require('./routes/unidadeRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
+const contratoRoutes = require('./routes/contratoRoutes');
 
 // Importar middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -51,7 +52,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.ckeditor.com", "https://ckeditor.com", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "http:"],
       fontSrc: ["'self'", "data:", "https://cdn.ckeditor.com", "https://ckeditor.com"],
       connectSrc: ["'self'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
@@ -140,6 +141,7 @@ app.use('/tramitacao', authenticateToken, loadUnidades, tramitacaoRoutes);
 app.use('/grupos', authenticateToken, loadUnidades, grupoRoutes);
 app.use('/unidades', authenticateToken, loadUnidades, unidadeRoutes);
 app.use('/cadastros/usuarios', authenticateToken, loadUnidades, usuarioRoutes);
+app.use('/contratos', authenticateToken, loadUnidades, contratoRoutes);
 
 // Rota raiz
 app.get('/', (req, res) => {
