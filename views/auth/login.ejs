@@ -3,152 +3,449 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acesso ao Sistema - DataFlow</title>
+  <title>Acesso ao Sistema - Datacare</title>
   <link rel="icon" type="image/png" href="/imgs/favicon.png" sizes="192x192">
   <link rel="icon" type="image/png" href="/imgs/favicon.png" sizes="any">
   <link rel="apple-touch-icon" href="/imgs/favicon.png">
   <link href="/css/output.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #262626;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ── Overlay de transição de saída ── */
+    #loginTransition {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    #loginTransition.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    #loginTransition img {
+      height: 80px;
+      width: auto;
+      animation: logoFloat 1.4s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    .lt-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #2860AB;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .lt-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: #9ca3af;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Esquerda: canvas interativo ── */
+    .left-panel {
+      flex: 1;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: #eef3fc;
+    }
+    #bgCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+    /* Textos centralizados sobre o canvas */
+    .left-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 52px;
+      pointer-events: none;
+    }
+    .left-title {
+      font-size: clamp(28px, 3.2vw, 46px);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -1px;
+      color: #1a2a42;
+      margin-bottom: 16px;
+      text-shadow: 0 1px 24px rgba(255,255,255,.8);
+    }
+    .left-title em {
+      font-style: normal;
+      color: #2860AB;
+    }
+    .left-sub {
+      font-size: 15px;
+      color: #6b7a94;
+      line-height: 1.6;
+      max-width: 380px;
+      text-shadow: 0 1px 12px rgba(255,255,255,.9);
+    }
+
+    /* ── Direita: formulário ── */
+    .right-form {
+      width: 40%;
+      flex-shrink: 0;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 64px 40px;
+      box-shadow: -4px 0 24px rgba(0,0,0,.06);
+    }
+    .form-box { width: 100%; max-width: 420px; }
+
+    .logo-wrap { text-align: center; margin-bottom: 48px; }
+    .logo-wrap img { height: 140px; width: auto; max-width: 100%; display: inline-block; }
+
+    .form-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #262626;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .input-light {
+      width: 100%;
+      background: #fafafa;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #262626;
+      outline: none;
+      margin-bottom: 10px;
+      transition: border-color .15s;
+    }
+    .input-light::placeholder { color: #8e8e8e; }
+    .input-light:focus { border-color: #2860AB; background: #fff; }
+
+    .input-wrap { position: relative; }
+    .input-wrap .input-light { padding-right: 48px; }
+    .btn-eye {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none;
+      color: #737373; cursor: pointer; border-radius: 6px;
+    }
+    .btn-eye:hover { color: #262626; background: rgba(0,0,0,.04); }
+    .btn-eye svg { width: 20px; height: 20px; }
+    .btn-eye .icon-hidden { display: none; }
+    .btn-eye.show-password .icon-visible { display: none; }
+    .btn-eye.show-password .icon-hidden  { display: block; }
+
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .btn-entrar {
+      width: 100%;
+      background: #2860AB;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .2s, box-shadow .2s;
+    }
+    .btn-entrar:hover { background: #1e4d8c; box-shadow: 0 4px 16px rgba(40,96,171,.3); }
+    .btn-entrar:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+    .link-forgot {
+      display: block; text-align: center;
+      margin-top: 16px; font-size: 13px;
+      color: #737373; text-decoration: none;
+    }
+    .link-forgot:hover { color: #262626; text-decoration: underline; }
+
+    .footer-brand {
+      margin-top: 32px; text-align: center;
+      font-size: 12px; color: #8e8e8e;
+    }
+    .footer-brand strong { font-weight: 600; color: #262626; }
+
+    @media (max-width: 900px) {
+      .left-panel { display: none; }
+      .right-form  { width: 100%; padding: 48px 32px 32px; box-shadow: none; }
+    }
+  </style>
 </head>
-<body class="h-screen overflow-hidden">
-  <div class="flex flex-col lg:flex-row h-full">
-    <!-- Left Section - Gradiente Azul Escuro -->
-    <div class="hidden lg:flex lg:w-2/3 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 items-center p-16 relative overflow-hidden">
-      <div class="text-left z-10 max-w-2xl">
-        <h1 class="text-7xl font-bold mb-6 leading-tight">
-          <span class="bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-400 bg-clip-text text-transparent">Documentação</span>
-          <span class="text-white block mt-3">Inteligente.</span>
-        </h1>
-        <p class="text-white text-xl mt-10 font-light leading-relaxed max-w-lg">
-          Acesso exclusivo para colaboradores. Gerencie processos hospitalares com segurança e agilidade.
-        </p>
-      </div>
-      <!-- Decorative elements -->
-      <div class="absolute inset-0 opacity-20">
-        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-500 rounded-full blur-3xl"></div>
-      </div>
-      <!-- Overlay gradient para melhor contraste -->
-      <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-transparent to-transparent"></div>
+<body>
+
+  <!-- ── Overlay de transição de login ── -->
+  <div id="loginTransition">
+    <img src="/imgs/logo-dataflow.png" alt="Datacare" />
+    <div class="lt-spinner"></div>
+    <p class="lt-text">Entrando no sistema…</p>
+  </div>
+
+  <!-- ── Esquerda: visualização interativa ── -->
+  <div class="left-panel">
+    <canvas id="bgCanvas"></canvas>
+    <div class="left-content">
+      <h1 class="left-title">Plataforma Integrada de<br/><em>Gestão Institucional.</em></h1>
+      <p class="left-sub">Ambiente para gestão de processos, contratos, fluxos de trabalho, comunicação institucional e ferramentas administrativas.</p>
     </div>
+  </div>
 
-    <!-- Right Section - Formulário de Login -->
-    <div class="w-full lg:w-1/3 bg-gray-100 flex items-center justify-center p-4 sm:p-8 relative min-h-screen lg:min-h-0">
-      <!-- Card de Login -->
-      <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <!-- Logo -->
-        <div class="flex items-center justify-center mb-8">
-          <img src="/imgs/logo-dataflow.png" alt="DataFlow" class="h-24 w-auto max-w-[280px]" />
-        </div>
-
-        <!-- Título e Subtítulo -->
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">Acesso ao Sistema</h2>
-          <p class="text-sm text-gray-500">Entre com seu usuário corporativo.</p>
-        </div>
-
-        <!-- Formulário -->
-        <form action="/auth/login" method="POST" class="space-y-6">
-          <% if (error) { %>
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              <%= error %>
-            </div>
-          <% } %>
-
-          <!-- Campo Usuário -->
-          <div>
-            <label for="email" class="block text-sm font-medium text-blue-600 mb-2">Usuário</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-              </div>
-              <input 
-                type="text" 
-                id="email" 
-                name="email" 
-                required
-                class="block w-full pl-10 pr-3 py-3 border border-blue-100 rounded-lg bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 transition-all"
-                placeholder="PEDRO"
-                autocomplete="username"
-              >
-            </div>
-          </div>
-
-          <!-- Campo Senha -->
-          <div>
-            <label for="senha" class="block text-sm font-medium text-blue-600 mb-2">Senha</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-              </div>
-              <input 
-                type="password" 
-                id="senha" 
-                name="senha" 
-                required
-                class="block w-full pl-10 pr-12 py-3 border border-blue-100 rounded-lg bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 transition-all"
-                placeholder="••••••"
-                autocomplete="current-password"
-              >
-              <button 
-                type="button" 
-                id="btnToggleSenha"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center justify-center w-12 cursor-pointer text-gray-400 hover:text-gray-600 focus:outline-none focus:text-blue-600"
-                title="Mostrar/ocultar senha"
-                aria-label="Alternar visibilidade da senha"
-              >
-                <svg id="eye-icon" class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-                <svg id="eye-off-icon" class="h-5 w-5 pointer-events-none hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Botão Entrar -->
-          <button 
-            type="submit" 
-            class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-          >
-            Entrar
-          </button>
-        </form>
+  <!-- ── Direita: formulário ── -->
+  <div class="right-form">
+    <div class="form-box">
+      <div class="logo-wrap">
+        <img src="/imgs/logo-dataflow.png" alt="Datacare" />
       </div>
+
+      <p class="form-title">Acesso ao sistema</p>
+
+      <% if (error) { %>
+        <div class="error-msg"><%= error %></div>
+      <% } %>
+
+      <form action="/auth/login" method="POST" id="loginForm">
+        <input
+          type="text"
+          name="email"
+          id="email"
+          required
+          class="input-light"
+          placeholder="Nome de usuário ou e-mail"
+          autocomplete="username"
+        />
+
+        <div class="input-wrap">
+          <input
+            type="password"
+            name="senha"
+            id="senha"
+            required
+            class="input-light"
+            placeholder="Senha"
+            autocomplete="current-password"
+          />
+          <button type="button" id="btnEye" class="btn-eye" title="Mostrar senha" aria-label="Mostrar ou ocultar senha">
+            <svg class="icon-visible" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <svg class="icon-hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" class="btn-entrar" id="btnEntrar">Entrar</button>
+      </form>
+
+      <a href="#" class="link-forgot">Esqueceu a senha?</a>
+
+      <p class="footer-brand">
+        <strong>Datacare</strong> &copy; <%= new Date().getFullYear() %>
+      </p>
     </div>
   </div>
 
   <script>
-    (function() {
-      const senhaInput = document.getElementById('senha');
-      const btnToggle = document.getElementById('btnToggleSenha');
-      const eyeIcon = document.getElementById('eye-icon');
-      const eyeOffIcon = document.getElementById('eye-off-icon');
+  /* ── Formulário + transição de saída ── */
+  (function () {
+    var email     = document.getElementById('email');
+    var senha     = document.getElementById('senha');
+    var btnEye    = document.getElementById('btnEye');
+    var btnEntrar = document.getElementById('btnEntrar');
+    var form      = document.getElementById('loginForm');
+    var overlay   = document.getElementById('loginTransition');
 
-      if (!senhaInput || !btnToggle) return;
+    email.addEventListener('input', function () {});
+    senha.addEventListener('input', function () {});
 
-      function togglePassword() {
-        if (senhaInput.type === 'password') {
-          senhaInput.type = 'text';
-          if (eyeIcon) eyeIcon.classList.add('hidden');
-          if (eyeOffIcon) eyeOffIcon.classList.remove('hidden');
-        } else {
-          senhaInput.type = 'password';
-          if (eyeIcon) eyeIcon.classList.remove('hidden');
-          if (eyeOffIcon) eyeOffIcon.classList.add('hidden');
+    if (btnEye) {
+      btnEye.addEventListener('click', function () {
+        var isPass = senha.type === 'password';
+        senha.type = isPass ? 'text' : 'password';
+        btnEye.classList.toggle('show-password', isPass);
+        btnEye.setAttribute('title', isPass ? 'Ocultar senha' : 'Mostrar senha');
+      });
+    }
+
+    /* Intercepta o submit: anima saída, depois envia */
+    if (form && overlay) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        overlay.classList.add('active');
+        setTimeout(function () { form.submit(); }, 200);
+      });
+    }
+  })();
+
+  /* ── Canvas interativo: grade de pontos com onda no mouse ── */
+  (function () {
+    var canvas = document.getElementById('bgCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+
+    var W, H;
+    var mouse = { x: -9999, y: -9999, active: false };
+    var SPACING = 38;
+    var WAVE_R  = 130;   /* raio de influência do mouse */
+    var MAX_LIFT = 12;   /* quanto o ponto sobe/cresce */
+    var t = 0;           /* tempo para onda idle */
+    var dots = [];
+
+    /* Mapa de cor interpolado: azul (#2860AB) → verde (#82CA5D) */
+    function lerpColor(t) {
+      var r = Math.round(40  + (130-40 ) * t);
+      var g = Math.round(96  + (202-96 ) * t);
+      var b = Math.round(171 + (93 -171) * t);
+      return { r: r, g: g, b: b };
+    }
+
+    function resize() {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+      buildDots();
+    }
+
+    function buildDots() {
+      dots = [];
+      var cols = Math.ceil(W / SPACING) + 1;
+      var rows = Math.ceil(H / SPACING) + 1;
+      var offX = (W - (cols - 1) * SPACING) / 2;
+      var offY = (H - (rows - 1) * SPACING) / 2;
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          dots.push({
+            bx: offX + c * SPACING,   /* posição base */
+            by: offY + r * SPACING,
+            phase: (r + c) * 0.28,    /* fase da onda idle */
+            scale: 1,
+            alpha: 0.18
+          });
         }
       }
+    }
 
-      btnToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        togglePassword();
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      /* Fundo */
+      var bg = ctx.createLinearGradient(0, 0, W * .6, H);
+      bg.addColorStop(0, '#eaf0fb');
+      bg.addColorStop(1, '#f3f7fd');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      t += 0.018;
+
+      for (var i = 0; i < dots.length; i++) {
+        var d = dots[i];
+
+        /* Onda idle: seno suave em cada ponto */
+        var idle = Math.sin(t + d.phase) * 0.5 + 0.5; /* 0..1 */
+
+        /* Influência do mouse */
+        var dx   = mouse.x - d.bx;
+        var dy   = mouse.y - d.by;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        var mInfluence = 0;
+        if (mouse.active && dist < WAVE_R) {
+          mInfluence = Math.pow(1 - dist / WAVE_R, 2);
+        }
+
+        /* Tamanho final do ponto */
+        var base = 1.5 + idle * 0.8;
+        var lift  = mInfluence * MAX_LIFT;
+        var radius = base + lift * 0.35;
+
+        /* Cor: quanto mais influenciado, mais azul; idle → mix com verde */
+        var colorT = idle * 0.5 + mInfluence * 0.5;
+        var col = lerpColor(colorT);
+
+        /* Opacidade: base baixa + mouse amplifica */
+        var alpha = 0.12 + idle * 0.07 + mInfluence * 0.55;
+
+        /* Ponto levemente deslocado no eixo Y pelo mouse */
+        var py = d.by - lift * 0.5;
+
+        /* Glow suave quando mouse perto */
+        if (mInfluence > 0.15) {
+          var grd = ctx.createRadialGradient(d.bx, py, 0, d.bx, py, radius * 5);
+          grd.addColorStop(0, 'rgba('+col.r+','+col.g+','+col.b+','+(mInfluence*.18)+')');
+          grd.addColorStop(1, 'rgba('+col.r+','+col.g+','+col.b+',0)');
+          ctx.beginPath();
+          ctx.arc(d.bx, py, radius * 5, 0, Math.PI*2);
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
+
+        /* Ponto */
+        ctx.beginPath();
+        ctx.arc(d.bx, py, radius, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba('+col.r+','+col.g+','+col.b+','+alpha+')';
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+
+    var lp = document.querySelector('.left-panel');
+    if (lp) {
+      lp.addEventListener('mousemove', function (e) {
+        var rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        mouse.active = true;
       });
-    })();
+      lp.addEventListener('mouseleave', function () {
+        mouse.active = false;
+      });
+    }
+
+    resize();
+    draw();
+  })();
   </script>
 </body>
 </html>

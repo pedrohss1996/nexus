@@ -5,10 +5,14 @@ const { validateLogin } = require('../middlewares/validation');
 const { auditLog } = require('../utils/logger');
 class AuthController {
   // Mostrar página de login
+  // Para exibir uma imagem à esquerda: coloque o arquivo em public/imgs/login-banner.jpg
+  // ou defina process.env.LOGIN_IMAGE_PATH com o caminho desejado
   static showLogin(req, res) {
-    res.render('auth/login', { 
+    const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
+    res.render('auth/login', {
       title: 'Login - DataFlow',
-      error: null 
+      error: null,
+      loginImage
     });
   }
 
@@ -40,9 +44,11 @@ class AuthController {
 
       // Verificar se usuário está ativo
       if (!user.ativo) {
+        const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
         return res.render('auth/login', {
           title: 'Login - DataFlow',
-          error: 'Usuário inativo. Entre em contato com o administrador.'
+          error: 'Usuário inativo. Entre em contato com o administrador.',
+          loginImage
         });
       }
 
@@ -50,9 +56,11 @@ class AuthController {
       const senhaValida = await bcrypt.compare(senha, user.senha);
       if (!senhaValida) {
         auditLog('TENTATIVA_LOGIN_INVALIDA', null, { email, ip: req.ip });
+        const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
         return res.render('auth/login', {
           title: 'Login - DataFlow',
-          error: 'Email ou senha inválidos'
+          error: 'Email ou senha inválidos',
+          loginImage
         });
       }
 
@@ -81,9 +89,11 @@ class AuthController {
       res.redirect('/inicio');
     } catch (error) {
       console.error('Erro no login:', error);
+      const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
       res.render('auth/login', {
         title: 'Login - DataFlow',
-        error: 'Erro ao processar login. Tente novamente.'
+        error: 'Erro ao processar login. Tente novamente.',
+        loginImage
       });
     }
   }
