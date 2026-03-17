@@ -7,18 +7,36 @@ class Unidade {
   // Criar nova unidade
   static async criar(dados) {
     const sql = `
-      INSERT INTO unidades (nome, cd_tipo, descricao, endereco, telefone, email, criado_por)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO unidades (
+        nome, cd_tipo, descricao, endereco, telefone, email, criado_por,
+        cnpj, razao_social, inscricao_estadual, inscricao_municipal,
+        responsavel_legal, codigo_unidade, site,
+        cep, numero, complemento, bairro, cidade, estado
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
       RETURNING *
     `;
     const valores = [
       dados.nome,
       dados.cd_tipo || 1,
-      dados.descricao || null,
-      dados.endereco || null,
-      dados.telefone || null,
-      dados.email || null,
-      dados.criado_por
+      dados.descricao       || null,
+      dados.endereco        || null,
+      dados.telefone        || null,
+      dados.email           || null,
+      dados.criado_por,
+      dados.cnpj            || null,
+      dados.razao_social    || null,
+      dados.inscricao_estadual  || null,
+      dados.inscricao_municipal || null,
+      dados.responsavel_legal   || null,
+      dados.codigo_unidade  || null,
+      dados.site            || null,
+      dados.cep             || null,
+      dados.numero          || null,
+      dados.complemento     || null,
+      dados.bairro          || null,
+      dados.cidade          || null,
+      dados.estado          || null,
     ];
     const resultado = await query(sql, valores);
     return resultado.rows[0];
@@ -61,34 +79,23 @@ class Unidade {
     const valores = [];
     let n = 1;
 
-    if (dados.nome !== undefined) {
-      sets.push(`nome = $${n++}`);
-      valores.push(dados.nome);
+    const campos = ['nome','descricao','endereco','telefone','email',
+                    'cnpj','razao_social','inscricao_estadual','inscricao_municipal',
+                    'responsavel_legal','codigo_unidade','site',
+                    'cep','numero','complemento','bairro','cidade','estado'];
+
+    for (const c of campos) {
+      if (dados[c] !== undefined) {
+        sets.push(`${c} = $${n++}`);
+        valores.push(dados[c] || null);
+      }
     }
     if (dados.cd_tipo !== undefined) {
       sets.push(`cd_tipo = $${n++}`);
       valores.push(parseInt(dados.cd_tipo, 10) || 1);
     }
-    if (dados.descricao !== undefined) {
-      sets.push(`descricao = $${n++}`);
-      valores.push(dados.descricao || null);
-    }
-    if (dados.endereco !== undefined) {
-      sets.push(`endereco = $${n++}`);
-      valores.push(dados.endereco || null);
-    }
-    if (dados.telefone !== undefined) {
-      sets.push(`telefone = $${n++}`);
-      valores.push(dados.telefone || null);
-    }
-    if (dados.email !== undefined) {
-      sets.push(`email = $${n++}`);
-      valores.push(dados.email || null);
-    }
 
-    if (sets.length === 0) {
-      return this.buscarPorId(id);
-    }
+    if (sets.length === 0) return this.buscarPorId(id);
 
     valores.push(id);
     const sql = `UPDATE unidades SET ${sets.join(', ')} WHERE id = $${n} AND ativo = true RETURNING *`;

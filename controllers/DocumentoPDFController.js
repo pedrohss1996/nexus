@@ -1,7 +1,32 @@
+const crypto = require('crypto');
 const { query } = require('../config/database');
-const { gerarPDF, extrairVariaveis } = require('../utils/pdfGeneratorAdvanced');
+const { gerarPDF, extrairVariaveis, extrairVariaveisAssinatura, substituirVariaveis } = require('../utils/pdfGeneratorAdvanced');
 const path = require('path');
 const fs = require('fs');
+// Import lazy para evitar dependência circular
+function getNotifController() {
+  try { return require('./NotificacaoController'); } catch(_) { return null; }
+}
+
+// Remove wrapper visual do editor (tabela ou parágrafo) ao redor de {{ASSINATURA:X}},
+// garantindo que o placeholder fique solto no HTML para substituição posterior.
+function unwrapAssinaturaVars(html) {
+  // 1. Remover <p> wrapper (novo estilo do editor)
+  html = html.replace(
+    /<p\b[^>]*>(?:<[^>]+>)*\s*(\{\{ASSINATURA:\d+\}\})\s*(?:<\/[^>]+>)*<\/p>/gi,
+    '\n$1\n'
+  );
+  // 2. Remover <table> wrapper (estilos anteriores — lilás, cinza etc.)
+  let prev;
+  do {
+    prev = html;
+    html = html.replace(
+      /<table\b[^>]*>(?:(?!<table\b)[\s\S])*?(\{\{ASSINATURA:\d+\}\})(?:(?!<table\b)[\s\S])*?<\/table>/gi,
+      '\n$1\n'
+    );
+  } while (html !== prev);
+  return html;
+}
 
 class DocumentoPDFController {
   // Listar todos os templates
@@ -29,11 +54,13 @@ class DocumentoPDFController {
   // Mostrar formulário de novo template
   static async novo(req, res) {
     try {
+      const grupos = await query('SELECT id, nome FROM grupos WHERE ativo = true ORDER BY nome');
       res.render('documentos-pdf/form-ckeditor', {
         title: 'Novo Template - DataFlow',
         user: req.user,
         template: null,
-        action: '/documentos-pdf/criar'
+        action: '/documentos-pdf/criar',
+        grupos: grupos.rows
       });
     } catch (error) {
       console.error('Erro ao mostrar formulário:', error);
@@ -83,10 +110,10 @@ class DocumentoPDFController {
     try {
       const { id } = req.params;
 
-      const resultado = await query(
-        'SELECT * FROM templates_pdf WHERE id = $1 AND ativo = true',
-        [id]
-      );
+      const [resultado, grupos] = await Promise.all([
+        query('SELECT * FROM templates_pdf WHERE id = $1 AND ativo = true', [id]),
+        query('SELECT id, nome FROM grupos WHERE ativo = true ORDER BY nome')
+      ]);
 
       if (resultado.rows.length === 0) {
         return res.status(404).render('error', {
@@ -100,7 +127,8 @@ class DocumentoPDFController {
         title: 'Editar Template - DataFlow',
         user: req.user,
         template: resultado.rows[0],
-        action: `/documentos-pdf/${id}/atualizar`
+        action: `/documentos-pdf/${id}/atualizar`,
+        grupos: grupos.rows
       });
     } catch (error) {
       console.error('Erro ao buscar template:', error);
@@ -225,42 +253,134 @@ class DocumentoPDFController {
 
       const template = templateResult.rows[0];
 
+      // Detectar variáveis de assinatura no template
+      const varAssinaturas = extrairVariaveisAssinatura(template.conteudo_html || '');
+      const requerAssinatura = varAssinaturas.length > 0;
+
+      // HTML com variáveis comuns substituídas — {{ASSINATURA:X}} PERMANECEM intactos
+      // unwrapAssinaturaVars remove o wrapper visual (tabela do editor) ao redor dos placeholders
+      const htmlParaSalvar = unwrapAssinaturaVars(substituirVariaveis(template.conteudo_html, variaveis));
+
+      // Para o PDF de prévia, substituir {{ASSINATURA:X}} pelo bloco "Aguardando"
+      let htmlPreview = htmlParaSalvar;
+      if (requerAssinatura) {
+        for (const va of varAssinaturas) {
+          const blocoAguardando = `<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border-top:2px solid #aaa;border-bottom:1px solid #aaa;margin:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#555;page-break-inside:avoid;"><tr><td style="padding:6px 0;"><p style="margin:0 0 2px;font-size:7pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#888;">Assinatura Eletrônica Pendente</p><p style="margin:0;color:#666;">Esta área será preenchida após a assinatura eletrônica.</p></td></tr></table>`;
+          htmlPreview = htmlPreview.replace(
+            new RegExp(`\\{\\{ASSINATURA:${va.grupo_id}\\}\\}`, 'g'),
+            blocoAguardando
+          );
+        }
+      }
+
       // Gerar nome para o arquivo de download
       const timestamp = Date.now();
       const nomeArquivo = `${(template.nome || 'documento').replace(/[^a-z0-9]/gi, '_')}_${timestamp}.pdf`;
 
-      // Gerar PDF em memória (buffer) com Puppeteer
-      const resultado = await gerarPDF({
-        templateHTML: template.conteudo_html,
-        variaveis: variaveis,
-        retornarBuffer: true
-      });
+      // Gerar token único de assinatura
+      const tokenAssinatura = requerAssinatura
+        ? crypto.randomBytes(24).toString('hex')
+        : null;
 
-      // Salvar registro no banco (sem caminho físico)
+      // Salvar no banco: htmlParaSalvar mantém {{ASSINATURA:X}} para substituição posterior
+      let docId = null;
       try {
-        await query(
+        const ins = await query(
           `INSERT INTO documentos_gerados
-           (template_id, nome_arquivo, titulo, dados_variaveis, caminho_arquivo, tamanho_bytes, gerado_por, unidade_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           (template_id, nome_arquivo, titulo, dados_variaveis, caminho_arquivo, tamanho_bytes,
+            gerado_por, unidade_id, conteudo_html, token_assinatura, status_assinatura)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           RETURNING id`,
           [
             template.id,
             nomeArquivo,
             variaveis.titulo || template.nome,
             JSON.stringify(variaveis),
             nomeArquivo,
-            resultado.tamanho,
+            0,
             req.user.id,
-            req.user.unidade_id || null
+            req.user.unidade_id || null,
+            htmlParaSalvar,     // variáveis preenchidas, {{ASSINATURA:X}} intactos para assinar depois
+            tokenAssinatura,
+            requerAssinatura ? 'pendente' : 'nao_requer'
           ]
         );
+        docId = ins.rows[0].id;
+
+        // Criar registros de assinatura pendentes com token individual por grupo
+        if (requerAssinatura && docId) {
+          for (const va of varAssinaturas) {
+            const tokenIndividual = crypto.randomBytes(24).toString('hex');
+            va._tokenIndividual = tokenIndividual; // guardar para o header de resposta
+            await query(
+              `INSERT INTO assinaturas_documentos
+               (documento_gerado_id, template_id, grupo_id, placeholder_key, status, token_individual)
+               VALUES ($1, $2, $3, $4, 'pendente', $5)`,
+              [docId, template.id, va.grupo_id, `ASSINATURA:${va.grupo_id}`, tokenIndividual]
+            );
+          }
+        }
       } catch (dbErr) {
         console.warn('Aviso: não foi possível registrar o documento gerado:', dbErr.message);
       }
 
-      // Enviar PDF diretamente para download
+      // Gerar PDF de prévia com o bloco "Aguardando assinatura"
+      const resultado = await gerarPDF({
+        templateHTML: htmlPreview,
+        variaveis: {},
+        retornarBuffer: true
+      });
+
+      // Atualizar tamanho no banco
+      if (docId) {
+        query('UPDATE documentos_gerados SET tamanho_bytes = $1 WHERE id = $2',
+          [resultado.tamanho, docId]).catch(() => {});
+      }
+
+      // Buscar nomes dos grupos para montar os links individuais
+      let assinaturasLinks = [];
+      if (requerAssinatura && varAssinaturas.length > 0) {
+        for (const va of varAssinaturas) {
+          if (!va._tokenIndividual) continue;
+          try {
+            const g = await query('SELECT nome FROM grupos WHERE id = $1', [va.grupo_id]);
+            const grupoNome = g.rows[0] ? g.rows[0].nome : `Grupo ${va.grupo_id}`;
+            assinaturasLinks.push({
+              grupo_id: va.grupo_id,
+              grupo_nome: grupoNome,
+              token_individual: va._tokenIndividual,
+              link: `/assinaturas-doc/i/${va._tokenIndividual}`,
+            });
+          } catch (_) {}
+        }
+      }
+
+      // Criar notificações automáticas para os grupos que precisam assinar
+      if (requerAssinatura && varAssinaturas.length > 0) {
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const NC = getNotifController();
+        if (NC) {
+          const grupoIds = varAssinaturas.map(va => va.grupo_id);
+          NC.criarNotificacaoDocPendente(
+            variaveis.titulo || template.nome,
+            grupoIds,
+            tokenAssinatura,
+            baseUrl
+          ).catch(() => {});
+        }
+      }
+
+      // Enviar PDF com metadados de assinatura nos headers
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
       res.setHeader('Content-Length', resultado.buffer.length);
+      if (requerAssinatura && tokenAssinatura) {
+        res.setHeader('X-Assinatura-Token', tokenAssinatura);
+        res.setHeader('X-Assinatura-Link', `/assinaturas-doc/assinar/${tokenAssinatura}`);
+        if (assinaturasLinks.length > 0) {
+          res.setHeader('X-Assinaturas-JSON', JSON.stringify(assinaturasLinks));
+        }
+      }
       res.send(resultado.buffer);
 
     } catch (error) {

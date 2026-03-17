@@ -14,9 +14,21 @@ function substituirVariaveis(template, variaveis) {
     const regex = new RegExp(`\\{\\{${chave}\\}\\}`, 'g');
     resultado = resultado.replace(regex, valor || '');
   }
-  // Remover variáveis não preenchidas
-  resultado = resultado.replace(/\{\{\w+\}\}/g, '');
+  // Manter variáveis ASSINATURA:X intactas (serão processadas separadamente)
+  // Remover apenas variáveis comuns não preenchidas
+  resultado = resultado.replace(/\{\{(?!ASSINATURA:)\w+\}\}/g, '');
   return resultado;
+}
+
+// ── Detecta variáveis de assinatura no template ────────────────────────────
+function extrairVariaveisAssinatura(templateHTML) {
+  const regex = /\{\{ASSINATURA:(\d+)\}\}/g;
+  const grupos = [];
+  let match;
+  while ((match = regex.exec(templateHTML)) !== null) {
+    grupos.push({ placeholder: match[0], grupo_id: parseInt(match[1], 10) });
+  }
+  return grupos;
 }
 
 // ── Montar HTML completo da página A4 ─────────────────────────────────────
@@ -149,9 +161,9 @@ async function gerarPDF({ templateHTML, variaveis = {}, outputPath, retornarBuff
   }
 }
 
-// ── Extrai variáveis {{nome}} do HTML ──────────────────────────────────────
+// ── Extrai variáveis {{nome}} do HTML (exceto assinaturas) ─────────────────
 function extrairVariaveis(templateHTML) {
-  const regex = /\{\{(\w+)\}\}/g;
+  const regex = /\{\{((?!ASSINATURA:)\w+)\}\}/g;
   const variaveis = new Set();
   let match;
   while ((match = regex.exec(templateHTML)) !== null) {
@@ -160,4 +172,4 @@ function extrairVariaveis(templateHTML) {
   return Array.from(variaveis);
 }
 
-module.exports = { gerarPDF, substituirVariaveis, extrairVariaveis };
+module.exports = { gerarPDF, substituirVariaveis, extrairVariaveis, extrairVariaveisAssinatura };

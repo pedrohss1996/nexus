@@ -86,64 +86,50 @@ class UsuarioController {
   // Criar novo usuário
   static async criar(req, res) {
     try {
-      const { nome, email, senha, confirmar_senha, perfil } = req.body;
+      const { nome, email, senha, confirmar_senha, perfil,
+              cpf, telefone, cargo, matricula,
+              cep, logradouro, numero, complemento, bairro, cidade, estado } = req.body;
 
-      // Validações
       if (!nome || !email || !senha || !confirmar_senha) {
         return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow',
-          user: req.user,
-          usuario: { nome, email, perfil },
-          erro: 'Todos os campos são obrigatórios'
+          title: 'Novo Usuário - DataFlow', user: req.user,
+          usuario: req.body, erro: 'Nome, e-mail e senha são obrigatórios'
         });
       }
-
       if (senha !== confirmar_senha) {
         return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow',
-          user: req.user,
-          usuario: { nome, email, perfil },
-          erro: 'As senhas não coincidem'
+          title: 'Novo Usuário - DataFlow', user: req.user,
+          usuario: req.body, erro: 'As senhas não coincidem'
         });
       }
-
       if (senha.length < 6) {
         return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow',
-          user: req.user,
-          usuario: { nome, email, perfil },
-          erro: 'A senha deve ter no mínimo 6 caracteres'
+          title: 'Novo Usuário - DataFlow', user: req.user,
+          usuario: req.body, erro: 'A senha deve ter no mínimo 6 caracteres'
         });
       }
 
-      // Verificar se email já existe
       const emailExiste = await Usuario.emailExiste(email);
       if (emailExiste) {
         return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow',
-          user: req.user,
-          usuario: { nome, email, perfil },
-          erro: 'Este email já está cadastrado'
+          title: 'Novo Usuário - DataFlow', user: req.user,
+          usuario: req.body, erro: 'Este email já está cadastrado'
         });
       }
 
       const usuario = await Usuario.criar({
-        nome,
-        email,
-        senha,
-        perfil: perfil || 'usuario'
+        nome, email, senha, perfil: perfil || 'usuario',
+        cpf, telefone, cargo, matricula,
+        cep, logradouro, numero, complemento, bairro, cidade, estado
       });
 
       await auditLog('USUARIO_CRIADO', req.user.id, { usuario_id: usuario.id, nome, email, perfil });
-
       res.redirect(`/cadastros/usuarios/${usuario.id}`);
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
       res.render('usuarios/form', {
-        title: 'Novo Usuário - DataFlow',
-        user: req.user,
-        usuario: req.body,
-        erro: 'Erro ao criar usuário. Tente novamente.'
+        title: 'Novo Usuário - DataFlow', user: req.user,
+        usuario: req.body, erro: 'Erro ao criar usuário. Tente novamente.'
       });
     }
   }
@@ -180,57 +166,49 @@ class UsuarioController {
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
-      const { nome, email, perfil } = req.body;
+      const { nome, email, perfil,
+              cpf, telefone, cargo, matricula,
+              cep, logradouro, numero, complemento, bairro, cidade, estado } = req.body;
 
-      // Validações
       if (!nome || !email) {
         const usuario = await Usuario.buscarPorId(id);
         return res.render('usuarios/form', {
-          title: `Editar ${usuario.nome} - DataFlow`,
-          user: req.user,
-          usuario: { ...usuario, nome, email, perfil },
-          erro: 'Nome e email são obrigatórios'
+          title: `Editar ${usuario.nome} - DataFlow`, user: req.user,
+          usuario: { ...usuario, ...req.body }, erro: 'Nome e email são obrigatórios'
         });
       }
 
-      // Verificar se email já existe (excluindo o próprio usuário)
       const emailExiste = await Usuario.emailExiste(email, id);
       if (emailExiste) {
         const usuario = await Usuario.buscarPorId(id);
         return res.render('usuarios/form', {
-          title: `Editar ${usuario.nome} - DataFlow`,
-          user: req.user,
-          usuario: { ...usuario, nome, email, perfil },
-          erro: 'Este email já está cadastrado'
+          title: `Editar ${usuario.nome} - DataFlow`, user: req.user,
+          usuario: { ...usuario, ...req.body }, erro: 'Este email já está cadastrado'
         });
       }
 
-      // Usuário não-admin editando a si mesmo não pode alterar o perfil
-      const isSelf = parseInt(id, 10) === req.user.id;
+      const isSelf  = parseInt(id, 10) === req.user.id;
       const isAdmin = req.user.perfil === 'admin';
-      const dados = { nome, email };
+      const dados   = {
+        nome, email,
+        cpf, telefone, cargo, matricula,
+        cep, logradouro, numero, complemento, bairro, cidade, estado
+      };
       if (isAdmin && !isSelf) dados.perfil = perfil;
 
       const usuario = await Usuario.atualizar(id, dados);
-
       if (!usuario) {
-        return res.status(404).render('error', {
-          title: 'Erro - DataFlow',
-          message: 'Usuário não encontrado'
-        });
+        return res.status(404).render('error', { title: 'Erro', message: 'Usuário não encontrado' });
       }
 
       await auditLog('USUARIO_ATUALIZADO', req.user.id, { usuario_id: id, nome, email, perfil });
-
       res.redirect(`/cadastros/usuarios/${id}`);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      const usuario = await Usuario.buscarPorId(req.params.id);
+      const usuario = await Usuario.buscarPorId(req.params.id).catch(() => ({}));
       res.render('usuarios/form', {
-        title: `Editar ${usuario.nome} - DataFlow`,
-        user: req.user,
-        usuario: { ...usuario, ...req.body },
-        erro: 'Erro ao atualizar usuário. Tente novamente.'
+        title: `Editar Usuário - DataFlow`, user: req.user,
+        usuario: { ...usuario, ...req.body }, erro: 'Erro ao atualizar usuário. Tente novamente.'
       });
     }
   }

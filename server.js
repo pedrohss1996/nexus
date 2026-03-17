@@ -27,6 +27,12 @@ const grupoRoutes = require('./routes/grupoRoutes');
 const unidadeRoutes = require('./routes/unidadeRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
+const assinaturaRoutes = require('./routes/assinaturaRoutes');
+const assinaturaDocRoutes = require('./routes/assinaturaDocRoutes');
+const centroCustoRoutes = require('./routes/centroCustoRoutes');
+const notificacaoRoutes = require('./routes/notificacaoRoutes');
+const AssinaturaDocController = require('./controllers/AssinaturaDocController');
+const NotificacaoController = require('./controllers/NotificacaoController');
 
 // Importar middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -55,7 +61,8 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.ckeditor.com", "https://ckeditor.com", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "http:"],
       fontSrc: ["'self'", "data:", "https://cdn.ckeditor.com", "https://ckeditor.com"],
-      connectSrc: ["'self'", "https://cdn.ckeditor.com", "https://ckeditor.com"],
+      connectSrc: ["'self'", "https://cdn.ckeditor.com", "https://ckeditor.com", "https://assinatura-api.staging.iti.br", "https://assinatura-api.iti.br"],
+      formAction: ["'self'", "https://cas.staging.iti.br", "https://cas.iti.br"],
     },
   },
 }));
@@ -124,8 +131,16 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
+// Servir uploads (imagens de notificações, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Rotas públicas
 app.use('/auth', authRoutes);
+// Verificação de assinatura (pública — sem autenticação)
+app.get('/verificar', (req, res) => res.render('assinatura/verificar', {
+  hash: '', valido: false, assinatura: null, baseUrl: `${req.protocol}://${req.get('host')}`
+}));
+app.get('/verificar/:hash', AssinaturaDocController.verificar);
 
 // Rotas protegidas (com autenticação e carregamento de unidades)
 app.use('/api', authenticateToken, loadUnidades, apiRoutes);
@@ -142,6 +157,11 @@ app.use('/grupos', authenticateToken, loadUnidades, grupoRoutes);
 app.use('/unidades', authenticateToken, loadUnidades, unidadeRoutes);
 app.use('/cadastros/usuarios', authenticateToken, loadUnidades, usuarioRoutes);
 app.use('/contratos', authenticateToken, loadUnidades, contratoRoutes);
+app.use('/assinaturas', authenticateToken, loadUnidades, assinaturaRoutes);
+app.use('/assinaturas-doc', authenticateToken, loadUnidades, assinaturaDocRoutes);
+app.use('/centros-custo',  authenticateToken, loadUnidades, centroCustoRoutes);
+app.use('/notificacoes', authenticateToken, loadUnidades, notificacaoRoutes);
+app.get('/api/notificacoes/nao-lidas', authenticateToken, NotificacaoController.contarNaoLidas);
 
 // Rota raiz
 app.get('/', (req, res) => {
@@ -174,6 +194,10 @@ app.get('/test-css', (req, res) => {
 
 // Socket.io
 socketHandler(io);
+
+// ── Verificador de aniversários (roda no boot + a cada 24h) ─────────────────
+NotificacaoController.verificarAniversarios();
+setInterval(() => NotificacaoController.verificarAniversarios(), 24 * 60 * 60 * 1000);
 
 // Error handler (deve ser o último middleware)
 app.use(errorHandler);

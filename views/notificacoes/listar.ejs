@@ -1,0 +1,163 @@
+<%- include('../partials/header', { title: title, user: user }) %>
+
+<div class="w-full max-w-3xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Notificações</h1>
+        <% var naoLidas = notificacoes.filter(function(n){ return !n.lida; }).length; %>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          <% if (naoLidas > 0) { %><strong class="text-blue-600"><%= naoLidas %> não lida<%= naoLidas > 1 ? 's' : '' %></strong><% } else { %>Tudo em dia<% } %>
+        </p>
+      </div>
+    </div>
+    <% if (naoLidas > 0) { %>
+    <button id="btn-marcar-todas"
+      class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+      Marcar todas como lidas
+    </button>
+    <% } %>
+  </div>
+
+  <% if (notificacoes.length === 0) { %>
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-12 text-center">
+    <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+    </div>
+    <p class="font-medium text-gray-500 dark:text-gray-400">Nenhuma notificação ainda</p>
+  </div>
+  <% } else { %>
+  <div class="space-y-3" id="lista-notificacoes">
+    <% notificacoes.forEach(function(n) {
+      var tipoIcon = {
+        manual:           'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
+        aniversario:      'M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z',
+        doc_pendente:     'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        processo_pendente:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+      };
+      var tipoColor = {
+        manual:           'text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-400',
+        aniversario:      'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/40 dark:text-yellow-400',
+        doc_pendente:     'text-purple-600 bg-purple-100 dark:bg-purple-900/40 dark:text-purple-400',
+        processo_pendente:'text-orange-600 bg-orange-100 dark:bg-orange-900/40 dark:text-orange-400',
+      };
+      var ico   = tipoIcon[n.tipo]   || tipoIcon.manual;
+      var color = tipoColor[n.tipo] || tipoColor.manual;
+    %>
+    <div id="notif-<%= n.id %>"
+      class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-opacity <%= n.lida ? 'opacity-60' : '' %>">
+
+      <!-- Cabeçalho -->
+      <div class="flex items-start gap-3 p-4">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 <%= color %>">
+          <svg class="w-4.5 h-4.5 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= ico %>"/>
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-gray-900 dark:text-white text-sm leading-snug">
+              <%= n.titulo %>
+              <% if (!n.lida) { %>
+                <span class="inline-block w-2 h-2 rounded-full bg-blue-500 ml-1 align-middle"></span>
+              <% } %>
+            </p>
+            <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0">
+              <%= new Date(n.criado_em).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) %>
+            </span>
+          </div>
+          <% if (n.mensagem) { %>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line line-clamp-3"><%= n.mensagem %></p>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (n.imagem_url) { %>
+      <div class="px-4 pb-3">
+        <img src="<%= n.imagem_url %>" alt="Imagem da notificação"
+          class="rounded-lg max-h-48 object-cover w-full border border-gray-100 dark:border-slate-700">
+      </div>
+      <% } %>
+
+      <% if (!n.lida) { %>
+      <div class="border-t border-gray-100 dark:border-slate-700 px-4 py-2.5 flex justify-end">
+        <button data-id="<%= n.id %>"
+          class="btn-marcar-lida text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+          Marcar como visualizada
+        </button>
+      </div>
+      <% } else { %>
+      <div class="border-t border-gray-100 dark:border-slate-700 px-4 py-2 flex justify-end">
+        <span class="text-xs text-gray-400 dark:text-gray-500">
+          Visualizada em <%= new Date(n.lida_em).toLocaleDateString('pt-BR') %>
+        </span>
+      </div>
+      <% } %>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+
+</div>
+
+<script>
+(function() {
+  // Marcar como lida individualmente
+  document.querySelectorAll('.btn-marcar-lida').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.dataset.id;
+      fetch('/notificacoes/' + id + '/lida', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          var card = document.getElementById('notif-' + id);
+          if (card) {
+            card.classList.add('opacity-60');
+            var footer = btn.closest('.border-t');
+            if (footer) footer.innerHTML = '<span class="text-xs text-gray-400">Visualizada agora</span>';
+            var dot = card.querySelector('.bg-blue-500');
+            if (dot) dot.remove();
+          }
+          // Atualizar badge
+          var badge = document.getElementById('notif-badge');
+          if (badge) {
+            var v = parseInt(badge.textContent) || 0;
+            v = Math.max(0, v - 1);
+            if (v > 0) { badge.textContent = v; } else { badge.classList.add('hidden'); }
+          }
+        }
+      }).catch(function() {});
+    });
+  });
+
+  // Marcar todas como lidas
+  var btnTodas = document.getElementById('btn-marcar-todas');
+  if (btnTodas) {
+    btnTodas.addEventListener('click', function() {
+      fetch('/notificacoes/todas-lidas', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) window.location.reload();
+      });
+    });
+  }
+})();
+</script>
+
+<%- include('../partials/footer') %>

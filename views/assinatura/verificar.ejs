@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificação de Assinatura Eletrônica</title>
+  <link rel="icon" href="/imgs/favicon.png">
+  <link rel="stylesheet" href="/css/output.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .vf-header {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0;
+    }
+    .vf-header-inner {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .vf-header-logo img {
+      height: 44px;
+      display: block;
+    }
+    .vf-header-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 20px;
+      padding: 5px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #15803d;
+      letter-spacing: .02em;
+    }
+    .vf-header-badge svg { width: 14px; height: 14px; }
+
+    /* ── Main container ── */
+    .vf-main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px 60px;
+    }
+    .vf-card {
+      width: 100%;
+      max-width: 780px;
+    }
+
+    /* ── Título de status ── */
+    .vf-status {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .vf-status-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .vf-status-icon svg { width: 36px; height: 36px; }
+    .vf-status-icon.valid   { background: #dcfce7; }
+    .vf-status-icon.invalid { background: #fee2e2; }
+    .vf-status-icon.pending { background: #fef9c3; }
+
+    .vf-status h1 {
+      font-size: 22px; font-weight: 700; margin: 0 0 6px;
+    }
+    .vf-status p {
+      font-size: 14px; color: #64748b; margin: 0;
+    }
+
+    /* ── Registro card ── */
+    .vf-registro {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .vf-registro-head {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .vf-registro-head svg { width: 15px; height: 15px; color: #94a3b8; }
+    .vf-registro-head span {
+      font-size: 11px; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: #94a3b8;
+    }
+
+    /* ── Bloco de assinatura oficial ── */
+    .vf-assin-block {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .vf-assin-inner {
+      border-top: 2px solid #1e293b;
+      border-bottom: 1px solid #94a3b8;
+      padding: 14px 0 10px;
+    }
+    .vf-assin-label {
+      font-size: 9px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: #64748b;
+      margin-bottom: 10px;
+    }
+    .vf-assin-cols {
+      display: flex;
+      gap: 0;
+    }
+    .vf-assin-col-left {
+      flex: 1;
+      padding-right: 20px;
+    }
+    .vf-assin-col-right {
+      flex: 1;
+      border-left: 1px solid #e2e8f0;
+      padding-left: 20px;
+    }
+    .vf-assin-nome {
+      font-size: 15px; font-weight: 700; color: #0f172a;
+      margin: 0 0 3px;
+    }
+    .vf-assin-info {
+      font-size: 12.5px; color: #475569;
+      margin: 0 0 3px;
+    }
+    .vf-assin-info strong { color: #334155; }
+    .vf-assin-foot {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #94a3b8;
+      word-break: break-all;
+    }
+    .mono { font-family: 'Courier New', monospace; letter-spacing: .03em; }
+
+    /* ── Detalhes técnicos ── */
+    .vf-details {
+      padding: 16px 24px;
+    }
+    .vf-details-title {
+      font-size: 10px; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .vf-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+    }
+    @media (max-width: 540px) {
+      .vf-details-grid { grid-template-columns: 1fr; }
+      .vf-assin-cols { flex-direction: column; gap: 12px; }
+      .vf-assin-col-right { border-left: none; border-top: 1px solid #e2e8f0; padding-left: 0; padding-top: 12px; }
+    }
+    .vf-detail-label {
+      font-size: 11px; color: #94a3b8; margin-bottom: 2px;
+    }
+    .vf-detail-value {
+      font-size: 13px; font-weight: 600; color: #334155;
+      word-break: break-all;
+    }
+    .vf-detail-value.small {
+      font-size: 11px; font-family: 'Courier New', monospace; font-weight: 400;
+    }
+
+    /* ── Formulário ── */
+    .vf-form-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .vf-form-title {
+      font-size: 13px; font-weight: 600; color: #475569;
+      margin-bottom: 12px;
+    }
+    .vf-form-row {
+      display: flex;
+      gap: 8px;
+    }
+    .vf-form-input {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: #1e293b;
+      outline: none;
+      font-family: 'Courier New', monospace;
+      letter-spacing: .03em;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .vf-form-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .vf-form-btn {
+      background: #1e293b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .vf-form-btn:hover { background: #334155; }
+
+    /* ── Footer ── */
+    .vf-footer {
+      text-align: center;
+      padding: 20px 0 28px;
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      .vf-header { box-shadow: none; }
+      .vf-registro, .vf-form-card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="vf-header no-print">
+    <div class="vf-header-inner">
+      <div class="vf-header-logo">
+        <img src="/imgs/logo-dataflow.png" alt="Sistema">
+      </div>
+      <div class="vf-header-badge">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+        </svg>
+        Portal de Verificação
+      </div>
+    </div>
+  </header>
+
+  <main class="vf-main">
+    <div class="vf-card">
+
+      <!-- Status -->
+      <div class="vf-status">
+        <% if (valido) { %>
+          <div class="vf-status-icon valid">
+            <svg fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h1 style="color:#15803d;">Assinatura Válida</h1>
+          <p>Esta assinatura eletrônica é autêntica e o documento está íntegro.</p>
+        <% } else if (assinatura && assinatura.status === 'pendente') { %>
+          <div class="vf-status-icon pending">
+            <svg fill="none" stroke="#b45309" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h1 style="color:#b45309;">Assinatura Pendente</h1>
+          <p>Este documento ainda aguarda assinatura eletrônica.</p>
+        <% } else { %>
+          <div class="vf-status-icon invalid">
+            <svg fill="none" stroke="#dc2626" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h1 style="color:#dc2626;">Não Encontrado</h1>
+          <p>O código informado não corresponde a nenhuma assinatura registrada.</p>
+        <% } %>
+      </div>
+
+      <% if (assinatura && valido) { %>
+      <!-- Registro da assinatura -->
+      <div class="vf-registro">
+        <div class="vf-registro-head">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+          <span>Registro de Assinatura Eletrônica</span>
+        </div>
+
+        <!-- Bloco estilo documento -->
+        <div class="vf-assin-block">
+          <div class="vf-assin-inner">
+            <p class="vf-assin-label">Assinado Eletronicamente</p>
+            <div class="vf-assin-cols">
+              <div class="vf-assin-col-left">
+                <p class="vf-assin-nome"><%= assinatura.nome_assinante %></p>
+                <% if (assinatura.cargo_assinante) { %>
+                  <p class="vf-assin-info"><%= assinatura.cargo_assinante %></p>
+                <% } %>
+                <p class="vf-assin-info">
+                  CPF: <span class="mono"><%= assinatura.cpf_assinante || '***.***.***-**' %></span>
+                </p>
+                <p class="vf-assin-info">
+                  Grupo: <strong><%= assinatura.grupo_nome %></strong>
+                </p>
+              </div>
+              <div class="vf-assin-col-right">
+                <p class="vf-assin-info">
+                  Data/Hora: <strong><%= new Date(assinatura.data_hora).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).replace(',','') %></strong>
+                </p>
+                <p class="vf-assin-info">
+                  IP de origem: <span class="mono"><%= assinatura.ip_assinante || '—' %></span>
+                </p>
+                <p class="vf-assin-info">
+                  Cód. verificador: <strong class="mono"><%= assinatura.hash_assinatura %></strong>
+                </p>
+              </div>
+            </div>
+            <div class="vf-assin-foot">
+              Verificar autenticidade: <%= baseUrl %>/verificar/<%= assinatura.hash_assinatura %>
+              &nbsp;|&nbsp; Hash: <span class="mono"><%= assinatura.hash_documento %></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalhes técnicos -->
+        <div class="vf-details">
+          <p class="vf-details-title">Detalhes técnicos</p>
+          <div class="vf-details-grid">
+            <div>
+              <p class="vf-detail-label">Documento</p>
+              <p class="vf-detail-value"><%= assinatura.doc_titulo || assinatura.template_nome || assinatura.nome_arquivo || '—' %></p>
+            </div>
+            <div>
+              <p class="vf-detail-label">Data e hora</p>
+              <p class="vf-detail-value"><%= new Date(assinatura.data_hora).toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).replace(',','') %></p>
+            </div>
+            <div>
+              <p class="vf-detail-label">Hash do documento (integridade)</p>
+              <p class="vf-detail-value small"><%= assinatura.hash_documento %></p>
+            </div>
+            <div>
+              <p class="vf-detail-label">Hash da assinatura</p>
+              <p class="vf-detail-value small"><%= assinatura.hash_assinatura %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Formulário de busca -->
+      <div class="vf-form-card no-print">
+        <p class="vf-form-title">Verificar outro código</p>
+        <form class="vf-form-row" onsubmit="return irVerificar(event)">
+          <input
+            type="text"
+            id="input-hash"
+            class="vf-form-input"
+            placeholder="Cole o código verificador aqui..."
+            value="<%= hash %>"
+            autocomplete="off"
+            spellcheck="false">
+          <button type="submit" class="vf-form-btn">Verificar</button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="vf-footer no-print">
+    Portal de Verificação de Assinaturas Eletrônicas
+  </footer>
+
+  <script>
+    function irVerificar(e) {
+      e.preventDefault();
+      var h = document.getElementById('input-hash').value.trim().toUpperCase();
+      if (h) window.location.href = '/verificar/' + encodeURIComponent(h);
+      return false;
+    }
+  </script>
+</body>
+</html>

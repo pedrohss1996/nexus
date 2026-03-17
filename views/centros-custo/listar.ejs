@@ -1,0 +1,114 @@
+<%- include('../partials/header', { title: 'Centros de Custo - DataFlow', user: user }) %>
+
+<div class="w-full px-6 py-6">
+  <!-- Cabeçalho -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Centros de Custo</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= centros.length %> registro(s) encontrado(s)</p>
+    </div>
+    <a href="/centros-custo/novo" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Novo centro de custo
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <form method="GET" action="/centros-custo" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 mb-6 flex flex-col sm:flex-row gap-3">
+    <input type="text" name="busca" value="<%= filtros.busca || '' %>" placeholder="Buscar por nome ou código..."
+      class="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
+    <select name="unidade_id" class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
+      <option value="">Todas as unidades</option>
+      <% unidades.forEach(function(u) { %>
+        <option value="<%= u.id %>" <%= filtros.unidade_id == u.id ? 'selected' : '' %>><%= u.nome %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      Filtrar
+    </button>
+    <% if (filtros.busca || filtros.unidade_id) { %>
+      <a href="/centros-custo" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-3 py-2 transition-colors">
+        Limpar
+      </a>
+    <% } %>
+  </form>
+
+  <!-- Tabela -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <% if (centros.length === 0) { %>
+      <div class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+        <svg class="w-12 h-12 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <p class="font-medium">Nenhum centro de custo encontrado</p>
+        <a href="/centros-custo/novo" class="mt-3 text-cyan-600 hover:text-cyan-700 text-sm font-medium">Criar primeiro</a>
+      </div>
+    <% } else { %>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 dark:bg-slate-700/50 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-3 text-left">Código</th>
+          <th class="px-4 py-3 text-left">Nome</th>
+          <th class="px-4 py-3 text-left hidden sm:table-cell">Unidade</th>
+          <th class="px-4 py-3 text-left hidden md:table-cell">Tipo</th>
+          <th class="px-4 py-3 text-right hidden md:table-cell">Orçamento</th>
+          <th class="px-4 py-3 text-right hidden md:table-cell">Utilizado</th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+        <% centros.forEach(function(c) { %>
+        <% const pct = c.valor_total > 0 ? Math.min(100, Math.round((c.valor_utilizado / c.valor_total) * 100)) : 0; %>
+        <% const corBar = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'; %>
+        <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+          <td class="px-4 py-3">
+            <span class="font-mono text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded"><%= c.codigo || '—' %></span>
+          </td>
+          <td class="px-4 py-3">
+            <p class="font-medium text-gray-900 dark:text-white"><%= c.nome %></p>
+            <% if (c.responsavel) { %><p class="text-xs text-gray-500 dark:text-gray-400">Resp: <%= c.responsavel %></p><% } %>
+          </td>
+          <td class="px-4 py-3 hidden sm:table-cell text-gray-500 dark:text-gray-400"><%= c.unidade_nome || '—' %></td>
+          <td class="px-4 py-3 hidden md:table-cell">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              <%= c.tipo === 'operacional' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                  c.tipo === 'investimento' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                  'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' %>">
+              <%= c.tipo || 'operacional' %>
+            </span>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell text-right">
+            <div class="text-xs font-medium text-gray-900 dark:text-white">
+              R$ <%= parseFloat(c.valor_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}) %>
+            </div>
+            <div class="mt-1 h-1.5 w-20 ml-auto bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+              <div class="h-full <%= corBar %> rounded-full" style="width:<%= pct %>%"></div>
+            </div>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell text-right text-xs text-gray-500 dark:text-gray-400">
+            R$ <%= parseFloat(c.valor_utilizado || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}) %>
+            <span class="ml-1 text-gray-400">(<%= pct %>%)</span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <a href="/centros-custo/<%= c.id %>/editar" title="Editar"
+                class="p-1.5 rounded-lg text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <form method="POST" action="/centros-custo/<%= c.id %>/excluir" class="inline"
+                onsubmit="return confirm('Excluir o centro de custo <%= c.nome %>?')">
+                <button type="submit" title="Excluir"
+                  class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

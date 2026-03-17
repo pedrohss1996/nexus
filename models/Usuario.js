@@ -10,16 +10,30 @@ class Usuario {
     const senhaHash = await bcrypt.hash(dados.senha, 10);
     
     const sql = `
-      INSERT INTO usuarios (nome, email, senha, perfil, ativo)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, nome, email, perfil, ativo, criado_em
+      INSERT INTO usuarios
+        (nome, email, senha, perfil, ativo,
+         cpf, telefone, cargo, matricula,
+         cep, logradouro, numero, complemento, bairro, cidade, estado)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      RETURNING id, nome, email, perfil, ativo, criado_em,
+                cpf, telefone, cargo, matricula,
+                cep, logradouro, numero, complemento, bairro, cidade, estado
     `;
     const valores = [
-      dados.nome,
-      dados.email,
-      senhaHash,
+      dados.nome, dados.email, senhaHash,
       dados.perfil || 'usuario',
-      dados.ativo !== undefined ? dados.ativo : true
+      dados.ativo !== undefined ? dados.ativo : true,
+      dados.cpf       || null,
+      dados.telefone  || null,
+      dados.cargo     || null,
+      dados.matricula || null,
+      dados.cep       || null,
+      dados.logradouro|| null,
+      dados.numero    || null,
+      dados.complemento||null,
+      dados.bairro    || null,
+      dados.cidade    || null,
+      dados.estado    || null,
     ];
     const resultado = await query(sql, valores);
     return resultado.rows[0];
@@ -28,7 +42,9 @@ class Usuario {
   // Buscar todos os usuários
   static async buscarTodos(filtros = {}) {
     let sql = `
-      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em
+      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em,
+             cpf, telefone, cargo, matricula,
+             cep, logradouro, numero, complemento, bairro, cidade, estado
       FROM usuarios
       WHERE 1=1
     `;
@@ -62,7 +78,9 @@ class Usuario {
   // Buscar usuário por ID
   static async buscarPorId(id) {
     const sql = `
-      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em
+      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em,
+             cpf, telefone, cargo, matricula,
+             cep, logradouro, numero, complemento, bairro, cidade, estado
       FROM usuarios
       WHERE id = $1
     `;
@@ -85,44 +103,32 @@ class Usuario {
   static async atualizar(id, dados) {
     const campos = [];
     const valores = [];
-    let contador = 1;
+    let n = 1;
 
-    if (dados.nome) {
-      campos.push(`nome = $${contador}`);
-      valores.push(dados.nome);
-      contador++;
+    const simples = ['nome','email','perfil','cpf','telefone','cargo','matricula',
+                     'cep','logradouro','numero','complemento','bairro','cidade','estado'];
+    for (const campo of simples) {
+      if (dados[campo] !== undefined) {
+        campos.push(`${campo} = $${n++}`);
+        valores.push(dados[campo] || null);
+      }
     }
-
-    if (dados.email) {
-      campos.push(`email = $${contador}`);
-      valores.push(dados.email);
-      contador++;
-    }
-
-    if (dados.perfil) {
-      campos.push(`perfil = $${contador}`);
-      valores.push(dados.perfil);
-      contador++;
-    }
-
     if (dados.ativo !== undefined) {
-      campos.push(`ativo = $${contador}`);
+      campos.push(`ativo = $${n++}`);
       valores.push(dados.ativo);
-      contador++;
     }
 
-    if (campos.length === 0) {
-      throw new Error('Nenhum campo para atualizar');
-    }
+    if (campos.length === 0) throw new Error('Nenhum campo para atualizar');
 
     valores.push(id);
     const sql = `
       UPDATE usuarios 
       SET ${campos.join(', ')}, atualizado_em = CURRENT_TIMESTAMP
-      WHERE id = $${contador}
-      RETURNING id, nome, email, perfil, ativo, criado_em, atualizado_em
+      WHERE id = $${n}
+      RETURNING id, nome, email, perfil, ativo, criado_em, atualizado_em,
+                cpf, telefone, cargo, matricula,
+                cep, logradouro, numero, complemento, bairro, cidade, estado
     `;
-
     const resultado = await query(sql, valores);
     return resultado.rows[0];
   }

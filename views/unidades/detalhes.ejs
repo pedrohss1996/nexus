@@ -1,219 +1,815 @@
-<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Detalhes da Unidade - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../layout', { body: ` ` }) %>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/output.css">
+  <style>
+    .tab-btn { transition: all .15s; }
+    .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .status-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .progress-bar-track { background:#e5e7eb; border-radius:9999px; height:6px; overflow:hidden; }
+    .progress-bar-fill  { height:100%; border-radius:9999px; transition:width .3s; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; width:100%; max-width:540px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+    .dark .modal-box { background:#1e293b; }
+    .form-input { width:100%; border:1px solid #d1d5db; border-radius:8px; padding:8px 12px; font-size:14px; outline:none; transition:border-color .15s; }
+    .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+    .dark .form-input { background:#0f172a; border-color:#334155; color:#e2e8f0; }
+    .form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:4px; }
+    .dark .form-label { color:#94a3b8; }
+    .btn-primary   { background:#3b82f6; color:#fff; border-radius:8px; padding:8px 18px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:background .15s; }
+    .btn-primary:hover { background:#2563eb; }
+    .btn-danger    { background:#ef4444; color:#fff; border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:background .15s; }
+    .btn-danger:hover { background:#dc2626; }
+    .btn-ghost     { background:transparent; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:6px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+    .btn-ghost:hover { background:#f9fafb; }
+    .dark .btn-ghost { border-color:#334155; color:#94a3b8; }
+    .dark .btn-ghost:hover { background:#1e293b; }
+    .card { background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; }
+    .dark .card { background:#1e293b; border-color:#334155; }
+    .item-row { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid #f1f5f9; }
+    .item-row:last-child { border-bottom:none; }
+    .dark .item-row { border-bottom-color:#1e293b; }
+    .timeline-item { display:flex; gap:12px; padding:10px 0; }
+    .timeline-dot  { flex-shrink:0; width:10px; height:10px; border-radius:50%; margin-top:5px; }
+    .timeline-line { position:relative; }
+    .timeline-line::before { content:''; position:absolute; left:4px; top:15px; bottom:-10px; width:2px; background:#e5e7eb; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 min-h-screen">
+<%- include('../partials/header') %>
 
-<div class="space-y-6">
+<div class="max-w-7xl mx-auto px-4 py-6">
+
   <!-- Breadcrumb -->
-  <nav class="flex text-sm text-gray-600">
-    <a href="/unidades" class="hover:text-teal-600">Unidades</a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900"><%= unidade.nome %></span>
+  <nav class="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+    <a href="/unidades" class="hover:text-blue-500">Unidades</a>
+    <span>/</span>
+    <span class="text-gray-800 dark:text-gray-200 font-medium"><%= unidade.nome %></span>
   </nav>
 
-  <% if (typeof erro !== 'undefined' && erro) { %>
-    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
-      <% if (erro === 'conta_duplicada') { %>Código de conta contábil já existe nesta unidade.<% } %>
-      <% if (erro === 'grupo_nome_obrigatorio') { %>Nome do grupo é obrigatório.<% } %>
-      <% if (erro === 'grupo_usuario_obrigatorio') { %>Selecione grupo e usuário.<% } %>
-      <% if (erro === 'usuario_ja_no_grupo') { %>Este usuário já está neste grupo.<% } %>
+  <!-- Header card -->
+  <div class="card mb-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+    <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+      <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+      </svg>
     </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white"><%= unidade.nome %></h1>
+        <% if (unidade.cd_tipo) { %>
+        <span class="status-badge bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"><%= unidade.cd_tipo %></span>
+        <% } %>
+        <% if (unidade.codigo_unidade) { %>
+        <span class="text-xs text-gray-400 font-mono">Cód: <%= unidade.codigo_unidade %></span>
+        <% } %>
+      </div>
+      <% if (unidade.razao_social) { %><p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= unidade.razao_social %></p><% } %>
+      <div class="flex gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <span><strong class="text-gray-700 dark:text-gray-300"><%= estatisticas.total_grupos || 0 %></strong> grupos</span>
+        <span><strong class="text-gray-700 dark:text-gray-300"><%= estatisticas.total_usuarios || 0 %></strong> usuários</span>
+        <span><strong class="text-gray-700 dark:text-gray-300"><%= centrosCusto.length %></strong> centros de custo</span>
+        <span><strong class="text-gray-700 dark:text-gray-300"><%= metas.length %></strong> metas</span>
+      </div>
+    </div>
+    <% if (user && user.perfil === 'admin') { %>
+    <a href="/unidades/<%= unidade.id %>/editar" class="btn-ghost flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Editar
+    </a>
+    <% } %>
+  </div>
+
+  <!-- Alertas -->
+  <% if (erro) { %>
+  <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+    <% const erroMsgs = {
+      conta_duplicada: 'Já existe uma conta com este código.',
+      grupo_nome_obrigatorio: 'Nome do grupo é obrigatório.',
+      usuario_ja_no_grupo: 'Usuário já está neste grupo.',
+      cc_nome_obrigatorio: 'Nome do centro de custo é obrigatório.',
+      meta_titulo_obrigatorio: 'Título da meta é obrigatório.',
+      obrig_titulo_obrigatorio: 'Título da obrigação é obrigatório.',
+      anexo_arquivo_obrigatorio: 'Selecione um arquivo para upload.',
+      aditivo_titulo_obrigatorio: 'Título do aditivo é obrigatório.',
+    }; %>
+    <%= erroMsgs[erro] || 'Ocorreu um erro.' %>
+  </div>
+  <% } %>
+  <% if (sucesso) { %>
+  <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+    Operação realizada com sucesso.
+  </div>
   <% } %>
 
-  <!-- Cabeçalho -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-start">
-      <div class="flex-1">
-        <div class="flex items-center mb-2">
-          <% if (unidade.cd_tipo == 4) { %>
-            <svg class="w-8 h-8 text-amber-500 mr-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-          <% } else if (unidade.cd_tipo == 1) { %>
-            <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-            </svg>
-          <% } else if (unidade.cd_tipo == 2) { %>
-            <svg class="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          <% } else { %>
-            <svg class="w-8 h-8 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-          <% } %>
-          <span class="text-sm font-semibold <%= unidade.cd_tipo == 4 ? 'text-amber-600' : 'text-gray-500' %> uppercase">
-            <%= unidade.cd_tipo == 4 ? '★ Principal' : unidade.cd_tipo == 1 ? 'Hospital' : unidade.cd_tipo == 2 ? 'Clínica' : 'Departamento' %>
-          </span>
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-4"><%= unidade.nome %></h1>
-        
-        <!-- Estatísticas -->
-        <div class="grid grid-cols-3 gap-4">
-          <div class="bg-blue-50 rounded-lg p-4">
-            <div class="text-2xl font-bold text-blue-600"><%= estatisticas.total_grupos %></div>
-            <div class="text-sm text-gray-600">Grupos</div>
-          </div>
-          <div class="bg-green-50 rounded-lg p-4">
-            <div class="text-2xl font-bold text-green-600"><%= estatisticas.total_usuarios %></div>
-            <div class="text-sm text-gray-600">Usuários</div>
-          </div>
-          <div class="bg-purple-50 rounded-lg p-4">
-            <div class="text-2xl font-bold text-purple-600"><%= estatisticas.total_processos %></div>
-            <div class="text-sm text-gray-600">Processos</div>
-          </div>
-        </div>
+  <!-- Abas -->
+  <div class="border-b border-gray-200 dark:border-slate-700 mb-5 overflow-x-auto">
+    <nav class="flex gap-0 min-w-max" id="tab-nav">
+      <% const abas = [
+        {id:'geral',        label:'Visão Geral'},
+        {id:'centros-custo',label:'Centros de Custo'},
+        {id:'metas',        label:'Metas'},
+        {id:'obrigacoes',   label:'Obrigações'},
+        {id:'anexos',       label:'Anexos'},
+        {id:'aditivos',     label:'Aditivos'},
+        {id:'grupos',       label:'Grupos & Usuários'},
+        {id:'historico',    label:'Histórico'},
+      ]; %>
+      <% abas.forEach(function(a) { %>
+      <button type="button" class="tab-btn px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white whitespace-nowrap <%= abaAtiva === a.id ? 'active' : '' %>"
+        data-tab="<%= a.id %>"><%= a.label %></button>
+      <% }); %>
+    </nav>
+  </div>
+
+  <!-- ═══════════════════ ABA: VISÃO GERAL ═══════════════════════════════ -->
+  <div id="tab-geral" class="tab-panel <%= abaAtiva === 'geral' ? 'active' : '' %>">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Dados Cadastrais -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-4">Dados Cadastrais</h2>
+        <dl class="space-y-2 text-sm">
+          <% if (unidade.cnpj) { %><div class="flex justify-between"><dt class="text-gray-500">CNPJ</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.cnpj %></dd></div><% } %>
+          <% if (unidade.razao_social) { %><div class="flex justify-between"><dt class="text-gray-500">Razão Social</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.razao_social %></dd></div><% } %>
+          <% if (unidade.inscricao_estadual) { %><div class="flex justify-between"><dt class="text-gray-500">Insc. Estadual</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.inscricao_estadual %></dd></div><% } %>
+          <% if (unidade.inscricao_municipal) { %><div class="flex justify-between"><dt class="text-gray-500">Insc. Municipal</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.inscricao_municipal %></dd></div><% } %>
+          <% if (unidade.responsavel_legal) { %><div class="flex justify-between"><dt class="text-gray-500">Responsável Legal</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.responsavel_legal %></dd></div><% } %>
+          <% if (unidade.site) { %><div class="flex justify-between"><dt class="text-gray-500">Site</dt><dd><a href="<%= unidade.site %>" class="text-blue-500 hover:underline" target="_blank"><%= unidade.site %></a></dd></div><% } %>
+          <% if (unidade.telefone) { %><div class="flex justify-between"><dt class="text-gray-500">Telefone</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.telefone %></dd></div><% } %>
+          <% if (unidade.email) { %><div class="flex justify-between"><dt class="text-gray-500">E-mail</dt><dd class="font-medium text-gray-900 dark:text-white"><%= unidade.email %></dd></div><% } %>
+        </dl>
       </div>
-      <% if (user.perfil === 'admin') { %>
-        <a href="/unidades/<%= unidade.id %>/editar" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium flex items-center">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-          </svg>
-          Editar
-        </a>
-      <% } %>
-    </div>
-  </div>
 
-  <!-- Detalhamento de Orçamento (card como na tela inicial) -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Plano de Contas</h2>
-    <%- include('../partials/detalhamento-orcamento', { planoTree: typeof planoTree !== 'undefined' ? planoTree : [], unidade: typeof unidade !== 'undefined' ? unidade : null, showLink: true }) %>
-  </div>
-
-  <!-- Cadastro do Plano de Contas (na própria tela da unidade) -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-gray-900">Cadastro do Plano de Contas</h2>
-      <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-        <a href="/unidades/<%= unidade.id %>/plano-contas" class="text-cyan-600 hover:text-cyan-700 text-sm font-medium">Abrir em tela cheia</a>
-      <% } %>
-    </div>
-    <div id="plano-alerta-unidade" class="hidden rounded-lg p-3 text-xs border bg-amber-50 border-amber-200 text-amber-800 mb-3"></div>
-    <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-      <div id="plano-add-raiz-wrap" class="mb-3"></div>
-    <% } %>
-    <div id="plano-contas-tree" class="space-y-2"></div>
-  </div>
-  <script>
-    window.__PLANO_TREE__ = <%- JSON.stringify(typeof planoTree !== 'undefined' ? planoTree : []) %>;
-    window.__UNIDADE_ID__ = '<%= unidade.id %>';
-    window.__CAN_EDIT__ = <%= (user && (user.perfil === 'admin' || user.perfil === 'gestor')) ? 'true' : 'false' %>;
-    window.__CONTAINER_ALERT_ID__ = 'plano-alerta-unidade';
-  </script>
-  <script src="/js/plano-contas.js"></script>
-
-  <!-- Grupos da Unidade -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-gray-900">Grupos</h2>
-      <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-        <a href="/grupos/novo?unidade_id=<%= unidade.id %>" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          Novo Grupo (página completa)
-        </a>
-      <% } %>
-    </div>
-    <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-      <form method="POST" action="/unidades/<%= unidade.id %>/grupos" class="flex flex-wrap items-end gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
-        <div class="flex-1 min-w-[200px]">
-          <label for="grupo_nome" class="block text-xs font-medium text-gray-600 mb-1">Nome do grupo</label>
-          <input type="text" id="grupo_nome" name="nome" required placeholder="Ex: Farmácia, TI..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
-        </div>
-        <div class="flex-[2] min-w-[200px]">
-          <label for="grupo_descricao" class="block text-xs font-medium text-gray-600 mb-1">Descrição (opcional)</label>
-          <input type="text" id="grupo_descricao" name="descricao" placeholder="Breve descrição" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
-        </div>
-        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Criar grupo</button>
-      </form>
-    <% } %>
-    
-    <% if (grupos.length === 0) { %>
-      <div class="text-center py-8">
-        <p class="text-gray-600">Nenhum grupo cadastrado nesta unidade.</p>
+      <!-- Endereço -->
+      <div class="card">
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-4">Endereço</h2>
+        <% const temEndereco = unidade.cep || unidade.endereco || unidade.cidade; %>
+        <% if (temEndereco) { %>
+        <address class="not-italic text-sm text-gray-700 dark:text-gray-300 space-y-0.5">
+          <% if (unidade.endereco) { %><p><%= unidade.endereco %><% if (unidade.numero) { %>, <%= unidade.numero %><% } %><% if (unidade.complemento) { %> — <%= unidade.complemento %><% } %></p><% } %>
+          <% if (unidade.bairro) { %><p><%= unidade.bairro %></p><% } %>
+          <% if (unidade.cidade || unidade.estado) { %><p><%= [unidade.cidade, unidade.estado].filter(Boolean).join(' — ') %></p><% } %>
+          <% if (unidade.cep) { %><p class="text-gray-400">CEP: <%= unidade.cep %></p><% } %>
+        </address>
+        <% } else { %>
+        <p class="text-sm text-gray-400">Endereço não cadastrado.</p>
+        <% } %>
+        <% if (unidade.descricao) { %>
+        <hr class="my-3 border-gray-100 dark:border-slate-700">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Descrição</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400"><%= unidade.descricao %></p>
+        <% } %>
       </div>
+
+      <!-- Plano de Contas resumido -->
+      <% if (planoTree && planoTree.length > 0) { %>
+      <div class="card md:col-span-2">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Plano de Contas</h2>
+          <a href="/unidades/<%= unidade.id %>/plano-contas" class="text-sm text-blue-500 hover:underline">Ver em tela cheia →</a>
+        </div>
+        <p class="text-sm text-gray-500"><%= planoTree.length %> conta(s) raiz cadastrada(s).</p>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ABA: CENTROS DE CUSTO ══════════════════════════ -->
+  <div id="tab-centros-custo" class="tab-panel <%= abaAtiva === 'centros-custo' ? 'active' : '' %>">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-900 dark:text-white">Centros de Custo</h2>
+      <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <button type="button" onclick="abrirModal('modal-cc')" class="btn-primary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo Centro de Custo
+      </button>
+      <% } %>
+    </div>
+
+    <% if (centrosCusto.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">
+      <svg class="w-10 h-10 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      Nenhum centro de custo cadastrado.
+    </div>
     <% } else { %>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <% grupos.forEach(grupo => { %>
-          <a href="/grupos/<%= grupo.id %>" class="border border-gray-200 rounded-lg p-4 hover:border-teal-500 hover:shadow-sm transition-all">
-            <h3 class="font-semibold text-gray-900 mb-1"><%= grupo.nome %></h3>
-            <p class="text-sm text-gray-600 mb-2 line-clamp-2"><%= grupo.descricao || 'Sem descrição' %></p>
-            <div class="flex items-center text-sm text-gray-500">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-              </svg>
-              <%= grupo.total_membros %> membro<%= grupo.total_membros != 1 ? 's' : '' %>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% centrosCusto.forEach(function(cc) {
+        const utilizado = parseFloat(cc.valor_utilizado || 0);
+        const total     = parseFloat(cc.valor_total || 0);
+        const pct       = total > 0 ? Math.min(100, Math.round(utilizado / total * 100)) : 0;
+        const cor       = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#22c55e';
+      %>
+      <div class="card">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <p class="font-semibold text-gray-900 dark:text-white text-sm"><%= cc.nome %></p>
+            <% if (cc.codigo) { %><p class="text-xs text-gray-400 font-mono">Cód: <%= cc.codigo %></p><% } %>
+          </div>
+          <div class="flex items-center gap-1">
+            <a href="/centros-custo/<%= cc.id %>/editar" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-500 transition-colors" title="Editar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </a>
+            <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+            <button type="button" onclick="excluirCC(<%= cc.id %>)" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors" title="Remover">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <% } %>
+          </div>
+        </div>
+        <span class="status-badge mb-2 <%= cc.tipo === 'operacional' ? 'bg-blue-100 text-blue-700' : cc.tipo === 'investimento' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600' %>"><%= cc.tipo || 'operacional' %></span>
+        <% if (total > 0) { %>
+        <div class="mt-2">
+          <div class="flex justify-between text-xs text-gray-500 mb-1">
+            <span>R$ <%= Number(utilizado).toLocaleString('pt-BR',{minimumFractionDigits:2}) %></span>
+            <span><%= pct %>%</span>
+            <span>R$ <%= Number(total).toLocaleString('pt-BR',{minimumFractionDigits:2}) %></span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width:<%= pct %>%; background:<%= cor %>;"></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ═══════════════════ ABA: METAS ════════════════════════════════════ -->
+  <div id="tab-metas" class="tab-panel <%= abaAtiva === 'metas' ? 'active' : '' %>">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-900 dark:text-white">Metas</h2>
+      <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <button type="button" onclick="abrirModal('modal-meta')" class="btn-primary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nova Meta
+      </button>
+      <% } %>
+    </div>
+
+    <% if (metas.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">Nenhuma meta cadastrada.</div>
+    <% } else { %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <% metas.forEach(function(m) {
+        const vAtual = parseFloat(m.valor_atual || 0);
+        const vMeta  = parseFloat(m.valor_meta || 0);
+        const pct    = vMeta > 0 ? Math.min(100, Math.round(vAtual / vMeta * 100)) : 0;
+        const statusCor = {atingida:'bg-green-100 text-green-700', em_andamento:'bg-blue-100 text-blue-700', pendente:'bg-yellow-100 text-yellow-700', nao_atingida:'bg-red-100 text-red-700', cancelada:'bg-gray-100 text-gray-600'};
+        const statusLabel = {atingida:'Atingida', em_andamento:'Em andamento', pendente:'Pendente', nao_atingida:'Não atingida', cancelada:'Cancelada'};
+      %>
+      <div class="card">
+        <div class="flex items-start justify-between mb-1">
+          <p class="font-semibold text-gray-900 dark:text-white text-sm"><%= m.titulo %></p>
+          <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+            <span class="status-badge <%= statusCor[m.status] || 'bg-gray-100 text-gray-600' %>"><%= statusLabel[m.status] || m.status %></span>
+            <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+            <button type="button" onclick="excluirMeta(<%= m.id %>)" class="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Excluir">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <% } %>
+          </div>
+        </div>
+        <% if (m.indicador) { %><p class="text-xs text-gray-400 mb-2">Indicador: <%= m.indicador %></p><% } %>
+        <% if (vMeta > 0) { %>
+        <div class="my-2">
+          <div class="flex justify-between text-xs text-gray-500 mb-1">
+            <span><%= vAtual %> <%= m.unidade_medida || '' %></span>
+            <span><%= pct %>%</span>
+            <span><%= vMeta %> <%= m.unidade_medida || '' %></span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width:<%= pct %>%; background:<%= pct >= 100 ? '#22c55e' : pct >= 60 ? '#3b82f6' : '#f59e0b' %>;"></div>
+          </div>
+        </div>
+        <% } %>
+        <% if (m.data_inicio || m.data_fim) { %>
+        <p class="text-xs text-gray-400 mt-1">
+          <% if (m.data_inicio) { %><%= new Date(m.data_inicio).toLocaleDateString('pt-BR') %><% } %>
+          <% if (m.data_inicio && m.data_fim) { %> → <% } %>
+          <% if (m.data_fim) { %><%= new Date(m.data_fim).toLocaleDateString('pt-BR') %><% } %>
+        </p>
+        <% } %>
+        <% if (m.descricao) { %><p class="text-xs text-gray-500 mt-1 line-clamp-2"><%= m.descricao %></p><% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ═══════════════════ ABA: OBRIGAÇÕES ════════════════════════════════ -->
+  <div id="tab-obrigacoes" class="tab-panel <%= abaAtiva === 'obrigacoes' ? 'active' : '' %>">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-900 dark:text-white">Obrigações</h2>
+      <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <button type="button" onclick="abrirModal('modal-obrig')" class="btn-primary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nova Obrigação
+      </button>
+      <% } %>
+    </div>
+
+    <% if (obrigacoes.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">Nenhuma obrigação cadastrada.</div>
+    <% } else { %>
+    <div class="card">
+      <% obrigacoes.forEach(function(o) {
+        const venc    = o.data_vencimento ? new Date(o.data_vencimento) : null;
+        const hoje    = new Date();
+        const atrasada = venc && venc < hoje && o.status === 'pendente';
+        const statusCor = {pendente: atrasada ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700', cumprida:'bg-green-100 text-green-700', atrasada:'bg-red-100 text-red-700', cancelada:'bg-gray-100 text-gray-600'};
+        const statusLabel = {pendente: atrasada ? 'Atrasada' : 'Pendente', cumprida:'Cumprida', atrasada:'Atrasada', cancelada:'Cancelada'};
+        const tipoLabel = {fiscal:'Fiscal', legal:'Legal', contratual:'Contratual', trabalhista:'Trabalhista', ambiental:'Ambiental', outro:'Outro'};
+      %>
+      <div class="item-row">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="font-medium text-gray-900 dark:text-white text-sm"><%= o.titulo %></p>
+            <span class="status-badge <%= statusCor[atrasada ? 'atrasada' : o.status] || 'bg-gray-100 text-gray-600' %>"><%= statusLabel[atrasada ? 'atrasada' : o.status] || o.status %></span>
+            <span class="status-badge bg-gray-100 text-gray-500"><%= tipoLabel[o.tipo] || o.tipo %></span>
+            <span class="status-badge bg-indigo-100 text-indigo-600"><%= o.periodicidade %></span>
+          </div>
+          <% if (o.responsavel) { %><p class="text-xs text-gray-400 mt-0.5">Responsável: <%= o.responsavel %></p><% } %>
+          <% if (venc) { %><p class="text-xs mt-0.5 <%= atrasada ? 'text-red-500 font-semibold' : 'text-gray-400' %>">Vencimento: <%= venc.toLocaleDateString('pt-BR') %></p><% } %>
+          <% if (o.descricao) { %><p class="text-xs text-gray-400 mt-0.5 line-clamp-1"><%= o.descricao %></p><% } %>
+        </div>
+        <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+        <button type="button" onclick="excluirObrigacao(<%= o.id %>)" class="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Excluir">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+        <% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ═══════════════════ ABA: ANEXOS ═══════════════════════════════════ -->
+  <div id="tab-anexos" class="tab-panel <%= abaAtiva === 'anexos' ? 'active' : '' %>">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-900 dark:text-white">Anexos</h2>
+      <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <button type="button" onclick="abrirModal('modal-anexo')" class="btn-primary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+        Novo Anexo
+      </button>
+      <% } %>
+    </div>
+
+    <% if (anexos.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">Nenhum anexo cadastrado.</div>
+    <% } else { %>
+    <div class="card">
+      <% anexos.forEach(function(a) { %>
+      <div class="item-row">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-medium text-gray-900 dark:text-white text-sm"><%= a.nome %></p>
+          <p class="text-xs text-gray-400 mt-0.5">
+            <%= a.tipo_arquivo || '' %> <% if (a.tamanho_kb) { %> · <%= a.tamanho_kb %> KB<% } %>
+            · <span><%= new Date(a.criado_em).toLocaleDateString('pt-BR') %></span>
+            <% if (a.criado_por_nome) { %> · <%= a.criado_por_nome %><% } %>
+          </p>
+          <% if (a.descricao) { %><p class="text-xs text-gray-400 mt-0.5 line-clamp-1"><%= a.descricao %></p><% } %>
+        </div>
+        <div class="flex items-center gap-1">
+          <a href="<%= a.arquivo_url %>" target="_blank" class="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-500" title="Baixar">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           </a>
-        <% }); %>
+          <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+          <button type="button" onclick="excluirAnexo(<%= a.id %>)" class="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Excluir">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+          <% } %>
+        </div>
       </div>
+      <% }); %>
+    </div>
     <% } %>
   </div>
 
-  <!-- Vincular usuário ao grupo -->
-  <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Vincular usuário ao grupo</h2>
-    <% if (grupos.length > 0 && typeof todosUsuarios !== 'undefined' && todosUsuarios.length > 0) { %>
-      <form method="POST" action="/unidades/<%= unidade.id %>/usuarios-grupos" class="flex flex-wrap items-end gap-3 p-4 bg-gray-50 rounded-lg">
-        <div class="flex-1 min-w-[180px]">
-          <label for="vinculo_grupo_id" class="block text-xs font-medium text-gray-600 mb-1">Grupo</label>
-          <select id="vinculo_grupo_id" name="grupo_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
-            <option value="">Selecione o grupo</option>
-            <% grupos.forEach(g => { %>
-              <option value="<%= g.id %>"><%= g.nome %></option>
-            <% }); %>
-          </select>
-        </div>
-        <div class="flex-1 min-w-[180px]">
-          <label for="vinculo_usuario_id" class="block text-xs font-medium text-gray-600 mb-1">Usuário</label>
-          <select id="vinculo_usuario_id" name="usuario_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
-            <option value="">Selecione o usuário</option>
-            <% todosUsuarios.forEach(u => { %>
-              <option value="<%= u.id %>"><%= u.nome %> (<%= u.email %>)</option>
-            <% }); %>
-          </select>
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="is_lider" name="is_lider" value="true" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-          <label for="is_lider" class="text-sm text-gray-600">Líder do grupo</label>
-        </div>
-        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Vincular</button>
-      </form>
-    <% } else { %>
-      <p class="text-gray-500 text-sm">Crie pelo menos um grupo e certifique-se de que existem usuários no sistema para vincular.</p>
-    <% } %>
-  </div>
-  <% } %>
+  <!-- ═══════════════════ ABA: ADITIVOS ══════════════════════════════════ -->
+  <div id="tab-aditivos" class="tab-panel <%= abaAtiva === 'aditivos' ? 'active' : '' %>">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-900 dark:text-white">Aditivos Contratuais</h2>
+      <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+      <button type="button" onclick="abrirModal('modal-aditivo')" class="btn-primary flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo Aditivo
+      </button>
+      <% } %>
+    </div>
 
-  <!-- Usuários da Unidade -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-6">Usuários</h2>
-    
-    <% if (usuarios.length === 0) { %>
-      <div class="text-center py-8">
-        <p class="text-gray-600">Nenhum usuário vinculado a esta unidade.</p>
-      </div>
+    <% if (aditivos.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">Nenhum aditivo cadastrado.</div>
     <% } else { %>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% usuarios.forEach(usuario => { %>
-          <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center mb-2">
-              <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
-                <%= usuario.nome.charAt(0).toUpperCase() %>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-gray-900 truncate"><%= usuario.nome %></h3>
-                <p class="text-xs text-gray-600 truncate"><%= usuario.email %></p>
-              </div>
+    <div class="space-y-3">
+      <% aditivos.forEach(function(a) {
+        const tipoLabel = {prazo:'Prazo', valor:'Valor', escopo:'Escopo', prazo_valor:'Prazo + Valor', outro:'Outro'};
+        const tipoCor   = {prazo:'bg-blue-100 text-blue-700', valor:'bg-green-100 text-green-700', escopo:'bg-purple-100 text-purple-700', prazo_valor:'bg-amber-100 text-amber-700', outro:'bg-gray-100 text-gray-600'};
+      %>
+      <div class="card">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <% if (a.numero) { %><span class="text-xs font-mono text-gray-400">Nº <%= a.numero %></span><% } %>
+              <p class="font-semibold text-gray-900 dark:text-white text-sm"><%= a.titulo %></p>
+              <span class="status-badge <%= tipoCor[a.tipo] || 'bg-gray-100 text-gray-600' %>"><%= tipoLabel[a.tipo] || a.tipo %></span>
             </div>
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= usuario.perfil === 'admin' ? 'bg-red-100 text-red-800' : usuario.perfil === 'gestor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
-              <%= usuario.perfil %>
-            </span>
+            <% if (a.descricao) { %><p class="text-sm text-gray-500 dark:text-gray-400 mb-2"><%= a.descricao %></p><% } %>
+            <div class="flex flex-wrap gap-4 text-xs text-gray-400">
+              <% if (a.data_assinatura) { %><span>Assinado: <strong class="text-gray-600 dark:text-gray-300"><%= new Date(a.data_assinatura).toLocaleDateString('pt-BR') %></strong></span><% } %>
+              <% if (a.data_vigencia_inicio) { %><span>Vigência: <strong class="text-gray-600 dark:text-gray-300"><%= new Date(a.data_vigencia_inicio).toLocaleDateString('pt-BR') %></strong><% if (a.data_vigencia_fim) { %> → <%= new Date(a.data_vigencia_fim).toLocaleDateString('pt-BR') %><% } %></strong></span><% } %>
+              <% if (a.valor_original || a.valor_aditado) { %>
+              <span>Valor original: <strong class="text-gray-600 dark:text-gray-300">R$ <%= Number(a.valor_original||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) %></strong></span>
+              <span>Valor aditado: <strong class="text-green-600">R$ <%= Number(a.valor_aditado||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) %></strong></span>
+              <% } %>
+            </div>
           </div>
-        <% }); %>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <% if (a.arquivo_url) { %>
+            <a href="<%= a.arquivo_url %>" target="_blank" class="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-500" title="Baixar arquivo">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </a>
+            <% } %>
+            <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+            <button type="button" onclick="excluirAditivo(<%= a.id %>)" class="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Excluir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <% } %>
+          </div>
+        </div>
       </div>
+      <% }); %>
+    </div>
     <% } %>
+  </div>
+
+  <!-- ═══════════════════ ABA: GRUPOS & USUÁRIOS ═════════════════════════ -->
+  <div id="tab-grupos" class="tab-panel <%= abaAtiva === 'grupos' ? 'active' : '' %>">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- Grupos -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Grupos</h2>
+        </div>
+        <% if (grupos.length === 0) { %>
+        <div class="card text-center py-8 text-gray-400 text-sm">Nenhum grupo cadastrado.</div>
+        <% } else { %>
+        <div class="grid gap-3">
+          <% grupos.forEach(function(g) { %>
+          <a href="/grupos/<%= g.id %>" class="card hover:border-blue-300 dark:hover:border-blue-600 transition-colors block">
+            <p class="font-medium text-gray-900 dark:text-white text-sm"><%= g.nome %></p>
+            <% if (g.descricao) { %><p class="text-xs text-gray-400 mt-0.5 line-clamp-1"><%= g.descricao %></p><% } %>
+          </a>
+          <% }); %>
+        </div>
+        <% } %>
+
+        <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor')) { %>
+        <form action="/unidades/<%= unidade.id %>/grupos" method="POST" class="card mt-4">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Novo Grupo</h3>
+          <div class="space-y-2">
+            <input type="text" name="nome" placeholder="Nome do grupo" required class="form-input">
+            <input type="text" name="descricao" placeholder="Descrição (opcional)" class="form-input">
+          </div>
+          <button type="submit" class="btn-primary mt-3 w-full">Criar Grupo</button>
+        </form>
+        <% } %>
+      </div>
+
+      <!-- Usuários + vincular -->
+      <div>
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-3">Usuários</h2>
+        <% if (usuarios.length === 0) { %>
+        <div class="card text-center py-8 text-gray-400 text-sm">Nenhum usuário vinculado.</div>
+        <% } else { %>
+        <div class="grid gap-2">
+          <% usuarios.forEach(function(u) { %>
+          <div class="card flex items-center gap-3 py-2.5">
+            <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"><%= (u.nome||'?').charAt(0).toUpperCase() %></div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 dark:text-white text-sm truncate"><%= u.nome %></p>
+              <p class="text-xs text-gray-400 truncate"><%= u.email %></p>
+            </div>
+            <span class="status-badge bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300"><%= u.perfil %></span>
+          </div>
+          <% }); %>
+        </div>
+        <% } %>
+
+        <% if (user && (user.perfil === 'admin' || user.perfil === 'gestor') && grupos.length > 0) { %>
+        <form action="/unidades/<%= unidade.id %>/usuarios-grupos" method="POST" class="card mt-4">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Vincular Usuário ao Grupo</h3>
+          <div class="space-y-2">
+            <select name="grupo_id" class="form-input">
+              <option value="">Selecione o grupo</option>
+              <% grupos.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
+            </select>
+            <select name="usuario_id" class="form-input">
+              <option value="">Selecione o usuário</option>
+              <% todosUsuarios.forEach(function(u) { %><option value="<%= u.id %>"><%= u.nome %></option><% }); %>
+            </select>
+            <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <input type="checkbox" name="is_lider" value="on" class="rounded"> Definir como líder
+            </label>
+          </div>
+          <button type="submit" class="btn-primary mt-3 w-full">Vincular</button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ ABA: HISTÓRICO ════════════════════════════════ -->
+  <div id="tab-historico" class="tab-panel <%= abaAtiva === 'historico' ? 'active' : '' %>">
+    <h2 class="font-semibold text-gray-900 dark:text-white mb-4">Histórico de Atividades</h2>
+    <% if (historico.length === 0) { %>
+    <div class="card text-center py-12 text-gray-400">Nenhuma atividade registrada.</div>
+    <% } else { %>
+    <div class="card">
+      <% const tipoIcone = {
+        criacao:'bg-green-500', edicao:'bg-blue-500', contrato:'bg-purple-500',
+        aditivo:'bg-amber-500', meta:'bg-cyan-500', obrigacao:'bg-red-400',
+        anexo:'bg-indigo-500', centro_custo:'bg-orange-500', outro:'bg-gray-400'
+      }; %>
+      <% historico.forEach(function(h, i) { %>
+      <div class="timeline-item <%= i < historico.length - 1 ? 'timeline-line' : '' %>">
+        <div class="timeline-dot <%= tipoIcone[h.tipo_evento] || 'bg-gray-400' %>"></div>
+        <div class="flex-1 pb-2">
+          <p class="text-sm text-gray-800 dark:text-gray-200"><%= h.descricao %></p>
+          <p class="text-xs text-gray-400 mt-0.5">
+            <% if (h.usuario_nome) { %><span class="font-medium"><%= h.usuario_nome %></span> · <% } %>
+            <%= new Date(h.criado_em).toLocaleString('pt-BR') %>
+          </p>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+
+</div><!-- /max-w-7xl -->
+
+<!-- ══════════════════════ MODAIS ══════════════════════════════════════════ -->
+
+<!-- Modal: Centro de Custo -->
+<div id="modal-cc" class="modal-overlay">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Novo Centro de Custo</h3>
+      <button type="button" onclick="fecharModal('modal-cc')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form action="/unidades/<%= unidade.id %>/centros-custo" method="POST" class="space-y-3">
+      <div><label class="form-label">Nome <span class="text-red-500">*</span></label><input type="text" name="nome" class="form-input" required></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Código</label><input type="text" name="codigo" class="form-input"></div>
+        <div><label class="form-label">Tipo</label>
+          <select name="tipo" class="form-input">
+            <option value="operacional">Operacional</option>
+            <option value="investimento">Investimento</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="comercial">Comercial</option>
+            <option value="producao">Produção</option>
+            <option value="pesquisa">Pesquisa</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="form-label">Responsável</label><input type="text" name="responsavel" class="form-input"></div>
+      <div><label class="form-label">Orçamento Total (R$)</label><input type="number" name="valor_total" step="0.01" min="0" class="form-input"></div>
+      <div><label class="form-label">Descrição</label><textarea name="descricao" rows="2" class="form-input"></textarea></div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="btn-primary flex-1">Salvar</button>
+        <button type="button" onclick="fecharModal('modal-cc')" class="btn-ghost flex-1">Cancelar</button>
+      </div>
+    </form>
   </div>
 </div>
 
+<!-- Modal: Meta -->
+<div id="modal-meta" class="modal-overlay">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Nova Meta</h3>
+      <button type="button" onclick="fecharModal('modal-meta')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form action="/unidades/<%= unidade.id %>/metas" method="POST" class="space-y-3">
+      <div><label class="form-label">Título <span class="text-red-500">*</span></label><input type="text" name="titulo" class="form-input" required></div>
+      <div><label class="form-label">Indicador</label><input type="text" name="indicador" class="form-input" placeholder="Ex: % de entregas no prazo"></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="form-label">Valor Meta</label><input type="number" name="valor_meta" step="0.01" class="form-input"></div>
+        <div><label class="form-label">Valor Atual</label><input type="number" name="valor_atual" step="0.01" value="0" class="form-input"></div>
+        <div><label class="form-label">Unidade</label><input type="text" name="unidade_medida" class="form-input" placeholder="%, R$, un..."></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Início</label><input type="date" name="data_inicio" class="form-input"></div>
+        <div><label class="form-label">Prazo</label><input type="date" name="data_fim" class="form-input"></div>
+      </div>
+      <div><label class="form-label">Status</label>
+        <select name="status" class="form-input">
+          <option value="em_andamento">Em andamento</option>
+          <option value="pendente">Pendente</option>
+          <option value="atingida">Atingida</option>
+          <option value="nao_atingida">Não atingida</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div><label class="form-label">Descrição</label><textarea name="descricao" rows="2" class="form-input"></textarea></div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="btn-primary flex-1">Salvar</button>
+        <button type="button" onclick="fecharModal('modal-meta')" class="btn-ghost flex-1">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Obrigação -->
+<div id="modal-obrig" class="modal-overlay">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Nova Obrigação</h3>
+      <button type="button" onclick="fecharModal('modal-obrig')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form action="/unidades/<%= unidade.id %>/obrigacoes" method="POST" class="space-y-3">
+      <div><label class="form-label">Título <span class="text-red-500">*</span></label><input type="text" name="titulo" class="form-input" required></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Tipo</label>
+          <select name="tipo" class="form-input">
+            <option value="legal">Legal</option>
+            <option value="fiscal">Fiscal</option>
+            <option value="contratual">Contratual</option>
+            <option value="trabalhista">Trabalhista</option>
+            <option value="ambiental">Ambiental</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div><label class="form-label">Periodicidade</label>
+          <select name="periodicidade" class="form-input">
+            <option value="unica">Única</option>
+            <option value="mensal">Mensal</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="semestral">Semestral</option>
+            <option value="anual">Anual</option>
+            <option value="diaria">Diária</option>
+            <option value="semanal">Semanal</option>
+            <option value="bimestral">Bimestral</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Data Vencimento</label><input type="date" name="data_vencimento" class="form-input"></div>
+        <div><label class="form-label">Status</label>
+          <select name="status" class="form-input">
+            <option value="pendente">Pendente</option>
+            <option value="cumprida">Cumprida</option>
+            <option value="atrasada">Atrasada</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="form-label">Responsável</label><input type="text" name="responsavel" class="form-input"></div>
+      <div><label class="form-label">Descrição</label><textarea name="descricao" rows="2" class="form-input"></textarea></div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="btn-primary flex-1">Salvar</button>
+        <button type="button" onclick="fecharModal('modal-obrig')" class="btn-ghost flex-1">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Anexo -->
+<div id="modal-anexo" class="modal-overlay">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Novo Anexo</h3>
+      <button type="button" onclick="fecharModal('modal-anexo')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form action="/unidades/<%= unidade.id %>/anexos" method="POST" enctype="multipart/form-data" class="space-y-3">
+      <div><label class="form-label">Arquivo <span class="text-red-500">*</span></label>
+        <input type="file" name="arquivo" required class="form-input py-1.5 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      </div>
+      <div><label class="form-label">Nome / Título</label><input type="text" name="nome" class="form-input" placeholder="Ex: Contrato 2024, Relatório..."></div>
+      <div><label class="form-label">Descrição</label><textarea name="descricao" rows="2" class="form-input"></textarea></div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="btn-primary flex-1">Enviar</button>
+        <button type="button" onclick="fecharModal('modal-anexo')" class="btn-ghost flex-1">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Aditivo -->
+<div id="modal-aditivo" class="modal-overlay">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Novo Aditivo Contratual</h3>
+      <button type="button" onclick="fecharModal('modal-aditivo')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form action="/unidades/<%= unidade.id %>/aditivos" method="POST" enctype="multipart/form-data" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Nº do Aditivo</label><input type="text" name="numero" class="form-input" placeholder="Ex: 01/2024"></div>
+        <div><label class="form-label">Tipo</label>
+          <select name="tipo" class="form-input">
+            <option value="prazo">Prazo</option>
+            <option value="valor">Valor</option>
+            <option value="escopo">Escopo</option>
+            <option value="prazo_valor">Prazo + Valor</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="form-label">Título <span class="text-red-500">*</span></label><input type="text" name="titulo" class="form-input" required></div>
+      <div><label class="form-label">Descrição</label><textarea name="descricao" rows="2" class="form-input"></textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="form-label">Valor Original (R$)</label><input type="number" name="valor_original" step="0.01" min="0" class="form-input"></div>
+        <div><label class="form-label">Valor Aditado (R$)</label><input type="number" name="valor_aditado" step="0.01" min="0" class="form-input"></div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="form-label">Data Assinatura</label><input type="date" name="data_assinatura" class="form-input"></div>
+        <div><label class="form-label">Vigência Início</label><input type="date" name="data_vigencia_inicio" class="form-input"></div>
+        <div><label class="form-label">Vigência Fim</label><input type="date" name="data_vigencia_fim" class="form-input"></div>
+      </div>
+      <div><label class="form-label">Arquivo (opcional)</label>
+        <input type="file" name="arquivo" class="form-input py-1.5 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="btn-primary flex-1">Salvar</button>
+        <button type="button" onclick="fecharModal('modal-aditivo')" class="btn-ghost flex-1">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Abas ─────────────────────────────────────────────────────────────────────
+(function() {
+  var abaAtiva = '<%= abaAtiva %>';
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+      // Atualizar URL sem recarregar
+      var url = new URL(window.location.href);
+      url.searchParams.set('aba', tab);
+      window.history.replaceState(null, '', url.toString());
+    });
+  });
+})();
+
+// ── Modais ────────────────────────────────────────────────────────────────────
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+  m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── Exclusões ─────────────────────────────────────────────────────────────────
+function excluirCC(id) {
+  if (!confirm('Remover este centro de custo da unidade?')) return;
+  fetch('/unidades/<%= unidade.id %>/centros-custo/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Erro'); });
+}
+function excluirMeta(id) {
+  if (!confirm('Excluir esta meta?')) return;
+  fetch('/unidades/<%= unidade.id %>/metas/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Erro'); });
+}
+function excluirObrigacao(id) {
+  if (!confirm('Excluir esta obrigação?')) return;
+  fetch('/unidades/<%= unidade.id %>/obrigacoes/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Erro'); });
+}
+function excluirAnexo(id) {
+  if (!confirm('Excluir este anexo?')) return;
+  fetch('/unidades/<%= unidade.id %>/anexos/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Erro'); });
+}
+function excluirAditivo(id) {
+  if (!confirm('Excluir este aditivo?')) return;
+  fetch('/unidades/<%= unidade.id %>/aditivos/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Erro'); });
+}
+</script>
+
 <%- include('../partials/footer') %>
+</body>
+</html>

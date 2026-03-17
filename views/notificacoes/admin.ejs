@@ -1,0 +1,589 @@
+<%- include('../partials/header', { title: title, user: user }) %>
+
+<style>
+  .recip-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    border: 1.5px solid transparent; cursor: pointer; transition: all .15s;
+    user-select: none;
+  }
+  .recip-chip.unidade  { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .recip-chip.grupo    { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+  .recip-chip.active.unidade { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  .recip-chip.active.grupo   { background:#15803d; border-color:#15803d; color:#fff; }
+  .dark .recip-chip.unidade  { background:#1e3a5f; border-color:#3b82f6; color:#93c5fd; }
+  .dark .recip-chip.grupo    { background:#14532d; border-color:#22c55e; color:#86efac; }
+  .dark .recip-chip.active.unidade { background:#3b82f6; border-color:#3b82f6; color:#fff; }
+  .dark .recip-chip.active.grupo   { background:#22c55e; border-color:#22c55e; color:#fff; }
+
+  .notif-preview {
+    border-left: 3px solid #6366f1;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .dark .notif-preview { background: #1e293b; border-color:#818cf8; }
+
+  .tab-btn { transition: all .15s; }
+  .tab-btn.active {
+    background: #fff; color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .dark .tab-btn.active { background: #334155; color: #f1f5f9; }
+
+  .tipo-card {
+    border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; transition: all .15s; text-align: center; min-width: 80px;
+  }
+  .tipo-card.selected { border-color: #6366f1; background: #eef2ff; }
+  .dark .tipo-card { border-color: #334155; }
+  .dark .tipo-card.selected { border-color: #818cf8; background: #1e1b4b; }
+  .tipo-card:hover:not(.selected) { border-color: #a5b4fc; }
+</style>
+
+<div class="w-full px-6 py-6">
+
+  <!-- Cabeçalho -->
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white">Comunicação Interna</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Envie comunicados e alertas para sua equipe</p>
+      </div>
+    </div>
+    <a href="/notificacoes"
+      class="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+      Minhas notificações
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- ═══════════════════════ FORMULÁRIO ═══════════════════════ -->
+    <div class="xl:col-span-2 space-y-4">
+
+      <!-- Card do formulário -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+
+        <!-- Abas: Criar / Prévia -->
+        <div class="flex items-center gap-1 p-2 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+          <button type="button" id="tab-criar" class="tab-btn active flex-1 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-400">
+            Criar Notificação
+          </button>
+          <button type="button" id="tab-preview" class="tab-btn flex-1 py-1.5 text-xs font-semibold rounded-md text-gray-500 dark:text-gray-500">
+            Pré-visualizar
+          </button>
+        </div>
+
+        <!-- Painel: Criar -->
+        <div id="painel-criar">
+          <form id="form-notif" enctype="multipart/form-data">
+
+            <!-- ── Seção 1: Tipo ── -->
+            <div class="px-5 pt-5 pb-3">
+              <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Tipo de notificação</p>
+              <div class="flex gap-2 flex-wrap">
+                <label class="tipo-card selected" data-tipo="manual">
+                  <input type="radio" name="tipo_visual" value="manual" checked class="sr-only">
+                  <div class="text-xl mb-1">📢</div>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Comunicado</p>
+                </label>
+                <label class="tipo-card" data-tipo="aviso">
+                  <input type="radio" name="tipo_visual" value="aviso" class="sr-only">
+                  <div class="text-xl mb-1">⚠️</div>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Aviso</p>
+                </label>
+                <label class="tipo-card" data-tipo="evento">
+                  <input type="radio" name="tipo_visual" value="evento" class="sr-only">
+                  <div class="text-xl mb-1">📅</div>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Evento</p>
+                </label>
+                <label class="tipo-card" data-tipo="urgente">
+                  <input type="radio" name="tipo_visual" value="urgente" class="sr-only">
+                  <div class="text-xl mb-1">🚨</div>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Urgente</p>
+                </label>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-100 dark:border-slate-700 mx-5"></div>
+
+            <!-- ── Seção 2: Conteúdo ── -->
+            <div class="px-5 pt-4 pb-3 space-y-3">
+              <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Conteúdo</p>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Título <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="titulo" id="inp-titulo" required maxlength="150"
+                  placeholder="Ex: Reunião de equipe amanhã às 10h"
+                  class="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <p class="text-right text-xs text-gray-400 mt-0.5"><span id="char-titulo">0</span>/150</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Mensagem</label>
+                <textarea name="mensagem" id="inp-mensagem" rows="5" maxlength="1000"
+                  placeholder="Detalhe o comunicado aqui..."
+                  class="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"></textarea>
+                <p class="text-right text-xs text-gray-400 mt-0.5"><span id="char-msg">0</span>/1000</p>
+              </div>
+
+              <!-- Upload de imagem com preview -->
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Imagem (opcional)</label>
+                <div id="drop-zone"
+                  class="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
+                  <input type="file" name="imagem" id="inp-imagem" accept="image/*" class="hidden">
+                  <div id="drop-content">
+                    <svg class="w-7 h-7 mx-auto text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Clique ou arraste uma imagem aqui</p>
+                    <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, GIF, WebP — máx. 5 MB</p>
+                  </div>
+                  <div id="img-preview" class="hidden">
+                    <img id="preview-img" src="" alt="Preview" class="max-h-28 mx-auto rounded-lg object-cover">
+                    <button type="button" id="btn-remove-img" class="text-xs text-red-500 mt-1.5 hover:underline">Remover imagem</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-100 dark:border-slate-700 mx-5"></div>
+
+            <!-- ── Seção 3: Destinatários ── -->
+            <div class="px-5 pt-4 pb-5 space-y-3">
+              <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Destinatários</p>
+
+              <!-- Toggle: Todos vs Seleção -->
+              <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="chk-todos" name="todos" value="true" class="sr-only peer">
+                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                </label>
+                <div>
+                  <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Enviar para todos</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 block">Todos os usuários ativos do sistema</span>
+                </div>
+              </div>
+
+              <!-- Seleção por unidade / grupo -->
+              <div id="bloco-seletores" class="space-y-3">
+
+                <!-- Unidades -->
+                <% if (unidades.length > 0) { %>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Por unidade</p>
+                    <button type="button" class="text-xs text-indigo-500 hover:underline btn-sel-todos" data-grupo="unidades">Selecionar todas</button>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5" id="chips-unidades">
+                    <% unidades.forEach(function(u) { %>
+                    <div class="recip-chip unidade" data-id="<%= u.id %>" data-tipo="unidade">
+                      <input type="checkbox" name="unidades" value="<%= u.id %>" class="sr-only">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                      </svg>
+                      <%= u.nome %>
+                    </div>
+                    <% }); %>
+                  </div>
+                </div>
+                <% } %>
+
+                <!-- Grupos -->
+                <% if (grupos.length > 0) { %>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Por grupo</p>
+                    <button type="button" class="text-xs text-green-500 hover:underline btn-sel-todos" data-grupo="grupos">Selecionar todos</button>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5" id="chips-grupos">
+                    <% grupos.forEach(function(g) { %>
+                    <div class="recip-chip grupo" data-id="<%= g.id %>" data-tipo="grupo">
+                      <input type="checkbox" name="grupos" value="<%= g.id %>" class="sr-only">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      <%= g.nome %>
+                    </div>
+                    <% }); %>
+                  </div>
+                </div>
+                <% } %>
+
+                <div id="dest-resumo" class="hidden text-xs text-gray-400 dark:text-gray-500 mt-1"></div>
+              </div>
+            </div>
+
+            <!-- Botão enviar + feedback -->
+            <div class="px-5 pb-5 space-y-3">
+              <button type="submit" id="btn-enviar"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+                Enviar Notificação
+              </button>
+              <div id="feedback" class="hidden text-sm rounded-lg p-3 text-center font-medium"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Painel: Pré-visualização -->
+        <div id="painel-preview" class="hidden p-5">
+          <p class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Como ficará para o usuário</p>
+          <div class="notif-preview">
+            <div class="flex items-start gap-2.5">
+              <div id="pv-icon" class="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 text-lg">📢</div>
+              <div class="flex-1">
+                <div class="flex items-start justify-between gap-2">
+                  <p id="pv-titulo" class="font-semibold text-sm text-gray-900 dark:text-white">Título da notificação</p>
+                  <span class="text-xs text-gray-400 whitespace-nowrap">Agora</span>
+                </div>
+                <p id="pv-msg" class="text-xs text-gray-500 dark:text-gray-400 mt-1 whitespace-pre-line">Mensagem aparecerá aqui...</p>
+                <div id="pv-img-wrap" class="hidden mt-2">
+                  <img id="pv-img" src="" alt="" class="rounded-lg max-h-32 object-cover border border-gray-100 dark:border-slate-700">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 text-xs text-gray-400 dark:text-gray-500">
+            <span id="pv-dest-resumo">Nenhum destinatário selecionado</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ HISTÓRICO ═══════════════════════ -->
+    <div class="xl:col-span-3">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Notificações Enviadas</h2>
+          <span class="text-xs text-gray-400 dark:text-gray-500"><%= recentes.length %> registros</span>
+        </div>
+
+        <% if (recentes.length === 0) { %>
+        <div class="p-12 text-center">
+          <svg class="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <p class="text-sm text-gray-400 dark:text-gray-500">Nenhuma notificação enviada ainda.</p>
+          <p class="text-xs text-gray-400 mt-1">As notificações criadas aparecerão aqui.</p>
+        </div>
+        <% } else { %>
+        <div class="divide-y divide-gray-100 dark:divide-slate-700/60" id="lista-enviadas">
+          <% recentes.forEach(function(n) {
+            var tipoLabels = { manual:'Comunicado', aviso:'Aviso', evento:'Evento', urgente:'Urgente', aniversario:'Aniversário', doc_pendente:'Doc. Pendente', processo_pendente:'Processo' };
+            var tipoColors = {
+              manual:'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+              aviso:'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+              evento:'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
+              urgente:'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+              aniversario:'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
+              doc_pendente:'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+              processo_pendente:'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
+            };
+            var lbl   = tipoLabels[n.tipo] || 'Manual';
+            var color = tipoColors[n.tipo]  || tipoColors.manual;
+            var pct   = n.total_dest > 0 ? Math.round((n.total_lidas / n.total_dest) * 100) : 0;
+          %>
+          <div class="px-5 py-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors" id="enviada-<%= n.id %>">
+            <div class="flex items-start gap-3">
+              <!-- Ícone tipo -->
+              <div class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-base
+                <%= n.tipo === 'aniversario' ? 'bg-yellow-100 dark:bg-yellow-900/30' : n.tipo === 'urgente' ? 'bg-red-100 dark:bg-red-900/30' : n.tipo === 'doc_pendente' ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30' %>">
+                <%= n.tipo === 'aniversario' ? '🎂' : n.tipo === 'urgente' ? '🚨' : n.tipo === 'aviso' ? '⚠️' : n.tipo === 'evento' ? '📅' : n.tipo === 'doc_pendente' ? '📄' : '📢' %>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="font-semibold text-sm text-gray-800 dark:text-white"><%= n.titulo %></p>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= color %>"><%= lbl %></span>
+                  </div>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0">
+                    <%= new Date(n.criado_em).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) %>
+                  </span>
+                </div>
+
+                <% if (n.mensagem) { %>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1"><%= n.mensagem %></p>
+                <% } %>
+
+                <!-- Barra de leitura -->
+                <div class="flex items-center gap-2 mt-2">
+                  <div class="flex-1 h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-green-400 rounded-full transition-all" style="width: <%= pct %>%"></div>
+                  </div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    <strong class="text-gray-700 dark:text-gray-300"><%= n.total_lidas || 0 %></strong>
+                    / <%= n.total_dest || 0 %> lidas (<%= pct %>%)
+                  </span>
+                </div>
+              </div>
+
+              <!-- Botão arquivar -->
+              <button data-id="<%= n.id %>" class="btn-arquivar flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors mt-0.5" title="Arquivar notificação">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var tipoEmojis = { manual:'📢', aviso:'⚠️', evento:'📅', urgente:'🚨' };
+  var tipoAtual = 'manual';
+
+  // ── Tipo de notificação ──────────────────────────────────────────────────
+  document.querySelectorAll('.tipo-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.tipo-card').forEach(function(c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      tipoAtual = card.dataset.tipo;
+      document.getElementById('pv-icon').textContent = tipoEmojis[tipoAtual] || '📢';
+    });
+  });
+
+  // ── Contador de caracteres ───────────────────────────────────────────────
+  document.getElementById('inp-titulo').addEventListener('input', function() {
+    document.getElementById('char-titulo').textContent = this.value.length;
+    document.getElementById('pv-titulo').textContent = this.value || 'Título da notificação';
+  });
+  document.getElementById('inp-mensagem').addEventListener('input', function() {
+    document.getElementById('char-msg').textContent = this.value.length;
+    document.getElementById('pv-msg').textContent = this.value || 'Mensagem aparecerá aqui...';
+  });
+
+  // ── Upload de imagem com drag&drop e preview ─────────────────────────────
+  var dropZone  = document.getElementById('drop-zone');
+  var inpImagem = document.getElementById('inp-imagem');
+  var dropContent = document.getElementById('drop-content');
+  var imgPreview  = document.getElementById('img-preview');
+  var previewImg  = document.getElementById('preview-img');
+  var pvImg       = document.getElementById('pv-img');
+  var pvImgWrap   = document.getElementById('pv-img-wrap');
+
+  function mostrarPreviewImagem(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      previewImg.src = e.target.result;
+      pvImg.src      = e.target.result;
+      dropContent.classList.add('hidden');
+      imgPreview.classList.remove('hidden');
+      pvImgWrap.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropZone.addEventListener('click', function(e) {
+    if (!e.target.closest('#btn-remove-img')) inpImagem.click();
+  });
+  inpImagem.addEventListener('change', function() {
+    if (this.files[0]) mostrarPreviewImagem(this.files[0]);
+  });
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault(); this.classList.add('border-indigo-400');
+  });
+  dropZone.addEventListener('dragleave', function() {
+    this.classList.remove('border-indigo-400');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault(); this.classList.remove('border-indigo-400');
+    var file = e.dataTransfer.files[0];
+    if (file && /^image\//.test(file.type)) {
+      // Criar novo FileList simulado via DataTransfer
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      inpImagem.files = dt.files;
+      mostrarPreviewImagem(file);
+    }
+  });
+  document.getElementById('btn-remove-img').addEventListener('click', function(e) {
+    e.stopPropagation();
+    inpImagem.value = '';
+    dropContent.classList.remove('hidden');
+    imgPreview.classList.add('hidden');
+    pvImgWrap.classList.add('hidden');
+  });
+
+  // ── Chips de destinatários ───────────────────────────────────────────────
+  var destSelecionados = { unidades: new Set(), grupos: new Set() };
+
+  function atualizarResumoDestinatarios() {
+    var partes = [];
+    var numU = destSelecionados.unidades.size;
+    var numG = destSelecionados.grupos.size;
+    if (document.getElementById('chk-todos').checked) {
+      partes.push('Todos os usuários');
+    } else {
+      if (numU > 0) partes.push(numU + ' unidade' + (numU > 1 ? 's' : ''));
+      if (numG > 0) partes.push(numG + ' grupo' + (numG > 1 ? 's' : ''));
+    }
+    var resumo = partes.length > 0 ? 'Envio para: ' + partes.join(' + ') : 'Nenhum destinatário selecionado';
+    document.getElementById('dest-resumo').textContent = resumo;
+    document.getElementById('dest-resumo').classList.toggle('hidden', partes.length === 0);
+    document.getElementById('pv-dest-resumo').textContent = resumo;
+  }
+
+  document.querySelectorAll('.recip-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var cb = chip.querySelector('input[type=checkbox]');
+      if (cb && cb.disabled) return; // bloqueado quando "todos" está marcado
+      var tipo = chip.dataset.tipo === 'unidade' ? 'unidades' : 'grupos';
+      var id   = chip.dataset.id;
+      chip.classList.toggle('active');
+      cb.checked = chip.classList.contains('active');
+      if (chip.classList.contains('active')) destSelecionados[tipo].add(id);
+      else destSelecionados[tipo].delete(id);
+      atualizarResumoDestinatarios();
+    });
+  });
+
+  // Selecionar todos chips de um tipo
+  document.querySelectorAll('.btn-sel-todos').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tipo  = btn.dataset.grupo; // 'unidades' ou 'grupos'
+      var tipoC = tipo === 'unidades' ? 'unidade' : 'grupo';
+      var chips = document.querySelectorAll('.recip-chip.' + tipoC);
+      var todos = [...chips].every(function(c) { return c.classList.contains('active'); });
+      chips.forEach(function(c) {
+        c.classList.toggle('active', !todos);
+        c.querySelector('input').checked = !todos;
+        if (!todos) destSelecionados[tipo].add(c.dataset.id);
+        else destSelecionados[tipo].delete(c.dataset.id);
+      });
+      btn.textContent = !todos ? 'Desmarcar todos' : 'Selecionar todos';
+      atualizarResumoDestinatarios();
+    });
+  });
+
+  // Toggle "Todos"
+  document.getElementById('chk-todos').addEventListener('change', function() {
+    var bloco = document.getElementById('bloco-seletores');
+    bloco.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+      cb.disabled = this.checked;
+    }, this);
+    bloco.style.opacity = this.checked ? '0.4' : '1';
+    atualizarResumoDestinatarios();
+  });
+
+  // ── Abas Criar / Prévia ──────────────────────────────────────────────────
+  document.getElementById('tab-criar').addEventListener('click', function() {
+    document.getElementById('painel-criar').classList.remove('hidden');
+    document.getElementById('painel-preview').classList.add('hidden');
+    this.classList.add('active');
+    document.getElementById('tab-preview').classList.remove('active');
+  });
+  document.getElementById('tab-preview').addEventListener('click', function() {
+    document.getElementById('painel-preview').classList.remove('hidden');
+    document.getElementById('painel-criar').classList.add('hidden');
+    this.classList.add('active');
+    document.getElementById('tab-criar').classList.remove('active');
+    atualizarResumoDestinatarios();
+  });
+
+  // ── Enviar formulário ────────────────────────────────────────────────────
+  document.getElementById('form-notif').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('btn-enviar');
+    var fb  = document.getElementById('feedback');
+
+    // Validação
+    var titulo = document.getElementById('inp-titulo').value.trim();
+    if (!titulo) {
+      fb.className = 'text-sm rounded-lg p-3 text-center bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800';
+      fb.textContent = 'Informe um título para a notificação.';
+      fb.classList.remove('hidden');
+      document.getElementById('inp-titulo').focus();
+      return;
+    }
+
+    var todos = document.getElementById('chk-todos').checked;
+    if (!todos && destSelecionados.unidades.size === 0 && destSelecionados.grupos.size === 0) {
+      fb.className = 'text-sm rounded-lg p-3 text-center bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
+      fb.textContent = 'Selecione pelo menos um destinatário ou marque "Enviar para todos".';
+      fb.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Enviando...';
+
+    var fd = new FormData(this);
+    fetch('/notificacoes/admin', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: fd
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        fb.className = 'text-sm rounded-lg p-3 text-center bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800';
+        fb.textContent = '✓ Notificação enviada para ' + d.total_destinatarios + ' usuário(s)!';
+        fb.classList.remove('hidden');
+        setTimeout(function() { window.location.reload(); }, 2200);
+      } else {
+        fb.className = 'text-sm rounded-lg p-3 text-center bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800';
+        fb.textContent = d.message || 'Erro ao enviar';
+        fb.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Enviar Notificação';
+      }
+    })
+    .catch(function(err) {
+      fb.className = 'text-sm rounded-lg p-3 text-center bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800';
+      fb.textContent = 'Erro de conexão: ' + err.message;
+      fb.classList.remove('hidden');
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Enviar Notificação';
+    });
+  });
+
+  // ── Arquivar ─────────────────────────────────────────────────────────────
+  document.querySelectorAll('.btn-arquivar').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm('Arquivar esta notificação? Ela sumirá das caixas de entrada dos usuários.')) return;
+      var id = btn.dataset.id;
+      fetch('/notificacoes/admin/' + id, { method: 'DELETE', credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.success) {
+            var el = document.getElementById('enviada-' + id);
+            if (el) { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 320); }
+          }
+        }).catch(function() {});
+    });
+  });
+
+})();
+</script>
+
+<%- include('../partials/footer') %>

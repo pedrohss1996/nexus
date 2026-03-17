@@ -1,52 +1,54 @@
-// Rotas: Unidades
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const UnidadeController = require('../controllers/UnidadeController');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 
-// Aplicar autenticação em todas as rotas
 router.use(authenticateToken);
 
-// Listar unidades
-router.get('/', UnidadeController.listar);
-
-// Formulário de criação
+// ── Listagem / criação ────────────────────────────────────────────────────
+router.get('/',    UnidadeController.listar);
 router.get('/novo', requireRole(['admin']), UnidadeController.formCriar);
+router.post('/',   requireRole(['admin']), UnidadeController.criar);
 
-// Criar unidade
-router.post('/', requireRole(['admin']), UnidadeController.criar);
+// ── Plano de Contas ───────────────────────────────────────────────────────
+router.get('/:id/plano-contas',                               UnidadeController.planoContas);
+router.post('/:id/plano-contas/contas', requireRole(['admin','gestor']), UnidadeController.criarSubcontaContabil);
+router.patch('/:id/contas-contabeis/:contaId', requireRole(['admin','gestor']), UnidadeController.atualizarContaContabil);
+router.delete('/:id/contas-contabeis/:contaId', requireRole(['admin','gestor']), UnidadeController.excluirContaContabil);
 
-// Plano de Contas (página hierárquica)
-router.get('/:id/plano-contas', UnidadeController.planoContas);
+// ── Centros de Custo vinculados ───────────────────────────────────────────
+router.post('/:id/centros-custo',        requireRole(['admin','gestor']), UnidadeController.criarCentroCusto);
+router.delete('/:id/centros-custo/:ccId', requireRole(['admin','gestor']), UnidadeController.excluirCentroCusto);
 
-// API Plano de Contas: criar subconta (JSON)
-router.post('/:id/plano-contas/contas', requireRole(['admin', 'gestor']), UnidadeController.criarSubcontaContabil);
+// ── Metas ─────────────────────────────────────────────────────────────────
+router.post('/:id/metas',              requireRole(['admin','gestor']), UnidadeController.criarMeta);
+router.post('/:id/metas/:metaId',      requireRole(['admin','gestor']), UnidadeController.atualizarMeta);
+router.delete('/:id/metas/:metaId',    requireRole(['admin','gestor']), UnidadeController.excluirMeta);
 
-// API Plano de Contas: atualizar conta (JSON, validação de teto)
-router.patch('/:id/contas-contabeis/:contaId', requireRole(['admin', 'gestor']), UnidadeController.atualizarContaContabil);
+// ── Obrigações ────────────────────────────────────────────────────────────
+router.post('/:id/obrigacoes',                   requireRole(['admin','gestor']), UnidadeController.criarObrigacao);
+router.post('/:id/obrigacoes/:obrigacaoId',      requireRole(['admin','gestor']), UnidadeController.atualizarObrigacao);
+router.delete('/:id/obrigacoes/:obrigacaoId',    requireRole(['admin','gestor']), UnidadeController.excluirObrigacao);
 
-// API Plano de Contas: excluir conta (e filhas em cascade)
-router.delete('/:id/contas-contabeis/:contaId', requireRole(['admin', 'gestor']), UnidadeController.excluirContaContabil);
+// ── Anexos ────────────────────────────────────────────────────────────────
+router.post('/:id/anexos', requireRole(['admin','gestor']),
+  UnidadeController.uploadAnexo.single('arquivo'), UnidadeController.criarAnexo);
+router.delete('/:id/anexos/:anexoId', requireRole(['admin','gestor']), UnidadeController.excluirAnexo);
 
-// Detalhes da unidade
-router.get('/:id', UnidadeController.detalhes);
+// ── Aditivos ──────────────────────────────────────────────────────────────
+router.post('/:id/aditivos', requireRole(['admin','gestor']),
+  UnidadeController.uploadAnexo.single('arquivo'), UnidadeController.criarAditivo);
+router.delete('/:id/aditivos/:aditivoId', requireRole(['admin','gestor']), UnidadeController.excluirAditivo);
 
-// Criar conta contábil na unidade (formulário flat - legado)
-router.post('/:id/contas-contabeis', requireRole(['admin', 'gestor']), UnidadeController.criarContaContabil);
+// ── Grupos e usuários ─────────────────────────────────────────────────────
+router.post('/:id/grupos',        requireRole(['admin','gestor']), UnidadeController.criarGrupo);
+router.post('/:id/usuarios-grupos', requireRole(['admin','gestor']), UnidadeController.vincularUsuarioGrupo);
+router.post('/:id/contas-contabeis', requireRole(['admin','gestor']), UnidadeController.criarContaContabil);
 
-// Criar grupo na unidade (formulário simples)
-router.post('/:id/grupos', requireRole(['admin', 'gestor']), UnidadeController.criarGrupo);
-
-// Vincular usuário ao grupo (na unidade)
-router.post('/:id/usuarios-grupos', requireRole(['admin', 'gestor']), UnidadeController.vincularUsuarioGrupo);
-
-// Formulário de edição
+// ── Detalhes / editar / desativar ─────────────────────────────────────────
+router.get('/:id',        UnidadeController.detalhes);
 router.get('/:id/editar', requireRole(['admin']), UnidadeController.formEditar);
-
-// Atualizar unidade
-router.post('/:id', requireRole(['admin']), UnidadeController.atualizar);
-
-// Desativar unidade
-router.delete('/:id', requireRole(['admin']), UnidadeController.desativar);
+router.post('/:id',       requireRole(['admin']), UnidadeController.atualizar);
+router.delete('/:id',     requireRole(['admin']), UnidadeController.desativar);
 
 module.exports = router;

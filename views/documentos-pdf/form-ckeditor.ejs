@@ -339,12 +339,34 @@
         <div class="vd-chips" id="vd-chips-list">
           <% var defaultCampos = ['NOME','DATA','DATA_EMISSAO','NR_PROTOCOLO','NUMERO',
             'UNIDADE','CARGO','CPF','MATRICULA','RESPONSAVEL',
-            'ASSINATURA','CIDADE','ESTADO','ENDERECO','TELEFONE',
+            'CIDADE','ESTADO','ENDERECO','TELEFONE',
             'EMAIL','PROCESSO','SETOR','DEPARTAMENTO']; %>
           <% defaultCampos.forEach(function(c) { %>
             <span class="vchip" data-campo="<%= c %>"><%=c%></span>
           <% }) %>
         </div>
+
+        <!-- Assinatura vinculada a grupo -->
+        <% if (typeof grupos !== 'undefined' && grupos.length > 0) { %>
+        <div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px;">
+          <p class="vd-title" style="color:#7c3aed;">🔐 Assinatura eletrônica</p>
+          <p style="font-size:11px;color:#6b7280;margin-bottom:7px;">Insere um campo de assinatura vinculado ao grupo selecionado.</p>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="select-grupo-assin" style="flex:1;font-size:12px;border:1px solid #c4b5fd;border-radius:6px;padding:5px 8px;background:#faf5ff;color:#5b21b6;outline:none;cursor:pointer;">
+              <option value="">Selecione o grupo...</option>
+              <% grupos.forEach(function(g) { %>
+                <option value="<%= g.id %>"><%= g.nome %></option>
+              <% }); %>
+            </select>
+            <button type="button" id="btn-inserir-assin"
+              style="padding:5px 12px;font-size:12px;font-weight:600;color:#fff;background:#7c3aed;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .15s;"
+              onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+              ✍ Inserir
+            </button>
+          </div>
+        </div>
+        <% } %>
+
         <div class="vd-custom-row">
           <input type="text" id="input-custom-var" placeholder="MINHA_VARIAVEL" maxlength="40">
           <button type="button" id="btn-inserir-custom">Inserir</button>
@@ -600,6 +622,35 @@
     }
   });
 
+  // Inserir variável de assinatura vinculada a grupo
+  var btnAssin = document.getElementById('btn-inserir-assin');
+  if (btnAssin) {
+    btnAssin.addEventListener('click', function() {
+      var sel = document.getElementById('select-grupo-assin');
+      var grupoId   = sel ? sel.value : '';
+      var grupoNome = sel ? sel.options[sel.selectedIndex].text : '';
+      if (!grupoId) {
+        if (window.showToast) showToast('Selecione um grupo para a assinatura.', 'error');
+        return;
+      }
+      // Inserir no editor como marcador simples — sem wrapper colorido
+      var varKey = 'ASSINATURA:' + grupoId;
+      var blocoHtml =
+        '<p style="margin:10px 0;padding:7px 12px;border-left:3px solid #94a3b8;background:#f8fafc;' +
+        'font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#64748b;line-height:1.5;">' +
+        '<strong style="display:block;font-size:7pt;text-transform:uppercase;letter-spacing:.07em;color:#475569;">' +
+        'Local de Assinatura — ' + grupoNome + '</strong>' +
+        '<span style="font-family:\'Courier New\',monospace;font-size:7pt;color:#94a3b8;">{{' + varKey + '}}</span>' +
+        '</p>';
+      if (jodit) {
+        jodit.selection.insertHTML(blocoHtml);
+        jodit.focus();
+      }
+      document.getElementById('vars-dropdown').classList.remove('open');
+      if (window.showToast) showToast('Campo de assinatura do grupo "' + grupoNome + '" inserido.', 'success');
+    });
+  }
+
   // ── Salvar ──────────────────────────────────────────────────
   document.getElementById('form-editor').addEventListener('submit', function() {
     if (jodit) document.getElementById('conteudo_html').value = jodit.value;
@@ -617,7 +668,8 @@
 
   document.getElementById('btn-preview').addEventListener('click', function() {
     var html = jodit ? jodit.value : document.getElementById('conteudo_html').value;
-    html = html.replace(/\{\{(\w+)\}\}/g,
+    // Destacar variáveis comuns em amarelo
+    html = html.replace(/\{\{(?!ASSINATURA:)(\w+)\}\}/g,
       '<mark style="background:#fef08a;padding:0 4px;border-radius:3px;font-weight:700;font-family:monospace;font-size:10pt;">{{$1}}</mark>');
     document.getElementById('preview-doc').innerHTML =
       html || '<p style="color:#9aa0a6;text-align:center;padding:80px">Documento vazio</p>';

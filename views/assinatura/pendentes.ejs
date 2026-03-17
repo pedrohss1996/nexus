@@ -1,0 +1,53 @@
+<%- include('../partials/header', { title: title, user: user }) %>
+
+<div class="w-full max-w-3xl mx-auto px-4 sm:px-6 py-8">
+
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+      <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Documentos para assinar</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Documentos que aguardam sua assinatura eletrônica</p>
+    </div>
+  </div>
+
+  <% if (documentos.length === 0) { %>
+  <div class="bg-gray-50 dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 p-12 text-center">
+    <div class="text-5xl mb-4">🎉</div>
+    <p class="font-semibold text-gray-600 dark:text-gray-300">Nenhum documento pendente</p>
+    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Todos os documentos que requerem sua assinatura já foram processados.</p>
+  </div>
+  <% } else { %>
+  <div class="space-y-3">
+    <% documentos.forEach(function(doc) { %>
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-5 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-gray-800 dark:text-white truncate"><%= doc.titulo || doc.template_nome || doc.nome_arquivo %></p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          Gerado em: <%= new Date(doc.gerado_em).toLocaleString('pt-BR') %>
+          &nbsp;·&nbsp;
+          <span class="text-amber-600 dark:text-amber-400"><%= doc.total_pendentes %> assinatura(s) pendente(s)</span>
+        </p>
+      </div>
+      <a href="/assinaturas-doc/assinar/<%= doc.token_assinatura %>"
+         class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors flex-shrink-0">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+        </svg>
+        Assinar
+      </a>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

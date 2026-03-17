@@ -1,7 +1,7 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Usuário - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
 <div class="w-full px-6 py-6">
-  <div class="max-w-xl mx-auto">
+  <div class="max-w-3xl mx-auto">
     <!-- Breadcrumb -->
     <nav class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-5">
       <a href="/cadastros/usuarios" class="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Usuários</a>
@@ -12,70 +12,65 @@
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
         <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= usuario ? 'Editar usuário' : 'Novo usuário' %></h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= usuario ? 'Altere as informações do usuário.' : 'Preencha os dados para criar um novo usuário.' %></p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Preencha os dados pessoais, profissionais e de acesso.</p>
       </div>
 
-      <% if (erro) { %>
+      <% if (typeof erro !== 'undefined' && erro) { %>
         <div class="mx-6 mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 flex items-center gap-3">
           <svg class="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <p class="text-sm text-red-700 dark:text-red-300"><%= erro %></p>
         </div>
       <% } %>
 
-      <form method="POST" action="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>" class="p-6 space-y-5">
-        <div>
-          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Nome Completo <span class="text-red-500">*</span>
-          </label>
-          <input type="text" id="nome" name="nome" value="<%= usuario ? usuario.nome : '' %>" required maxlength="255"
-            placeholder="Ex: João da Silva"
-            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
-        </div>
+      <form method="POST" action="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>" class="p-6 space-y-6">
 
+        <!-- ── Seção 1: Dados de acesso ───────────────────────────── -->
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            E-mail <span class="text-red-500">*</span>
-          </label>
-          <input type="email" id="email" name="email" value="<%= usuario ? usuario.email : '' %>" required maxlength="255"
-            placeholder="joao@exemplo.com"
-            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
-        </div>
-
-        <% if (!usuario) { %>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Acesso ao sistema
+          </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="senha" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Senha <span class="text-red-500">*</span>
-              </label>
-              <input type="password" id="senha" name="senha" required minlength="6"
-                placeholder="Mínimo 6 caracteres"
+              <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome Completo <span class="text-red-500">*</span></label>
+              <input type="text" id="nome" name="nome" value="<%= usuario ? usuario.nome : '' %>" required maxlength="255"
+                placeholder="João da Silva"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
-              <label for="confirmar_senha" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Confirmar Senha <span class="text-red-500">*</span>
-              </label>
-              <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6"
-                placeholder="Repita a senha"
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail <span class="text-red-500">*</span></label>
+              <input type="email" id="email" name="email" value="<%= usuario ? usuario.email : '' %>" required maxlength="255"
+                placeholder="joao@exemplo.com"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 -mt-2">A senha deve ter no mínimo 6 caracteres.</p>
-        <% } %>
 
-        <% const mostrarPerfil = !usuario || (typeof user !== 'undefined' && user.perfil === 'admin'); %>
-        <% if (mostrarPerfil) { %>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Perfil de Acesso <span class="text-red-500">*</span>
-            </label>
+          <% if (!usuario) { %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label for="senha" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha <span class="text-red-500">*</span></label>
+              <input type="password" id="senha" name="senha" required minlength="6" placeholder="Mínimo 6 caracteres"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="confirmar_senha" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirmar Senha <span class="text-red-500">*</span></label>
+              <input type="password" id="confirmar_senha" name="confirmar_senha" required minlength="6" placeholder="Repita a senha"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+          <% } %>
+
+          <% const mostrarPerfil = !usuario || (typeof user !== 'undefined' && user.perfil === 'admin'); %>
+          <% if (mostrarPerfil) { %>
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Perfil de Acesso <span class="text-red-500">*</span></label>
             <div class="grid grid-cols-3 gap-3">
               <label class="cursor-pointer">
                 <input type="radio" name="perfil" value="usuario" <%= !usuario || usuario.perfil === 'usuario' ? 'checked' : '' %> required class="sr-only peer">
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
-                  <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  <svg class="w-5 h-5 text-gray-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Usuário</span>
-                  <span class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">Acesso básico</span>
+                  <span class="text-xs text-gray-400 hidden sm:block">Acesso básico</span>
                 </div>
               </label>
               <label class="cursor-pointer">
@@ -83,7 +78,7 @@
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
                   <svg class="w-5 h-5 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Gestor</span>
-                  <span class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">Gerencia grupos</span>
+                  <span class="text-xs text-gray-400 hidden sm:block">Gerencia grupos</span>
                 </div>
               </label>
               <label class="cursor-pointer">
@@ -91,15 +86,116 @@
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
                   <svg class="w-5 h-5 text-red-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Admin</span>
-                  <span class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">Acesso total</span>
+                  <span class="text-xs text-gray-400 hidden sm:block">Acesso total</span>
                 </div>
               </label>
             </div>
           </div>
-        <% } %>
+          <% } %>
+        </div>
 
+        <hr class="border-gray-100 dark:border-slate-700">
+
+        <!-- ── Seção 2: Dados pessoais ─────────────────────────────── -->
+        <div>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Dados pessoais e profissionais
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label for="cpf" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CPF</label>
+              <input type="text" id="cpf" name="cpf" value="<%= usuario && usuario.cpf ? usuario.cpf : '' %>" maxlength="14"
+                placeholder="000.000.000-00"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="telefone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Telefone / Celular</label>
+              <input type="text" id="telefone" name="telefone" value="<%= usuario && usuario.telefone ? usuario.telefone : '' %>" maxlength="25"
+                placeholder="(00) 90000-0000"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="matricula" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Matrícula</label>
+              <input type="text" id="matricula" name="matricula" value="<%= usuario && usuario.matricula ? usuario.matricula : '' %>" maxlength="50"
+                placeholder="Ex: 2024001"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+          <div class="mt-4">
+            <label for="cargo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cargo / Função</label>
+            <input type="text" id="cargo" name="cargo" value="<%= usuario && usuario.cargo ? usuario.cargo : '' %>" maxlength="150"
+              placeholder="Ex: Médico, Enfermeiro, Analista Administrativo..."
+              class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+          </div>
+        </div>
+
+        <hr class="border-gray-100 dark:border-slate-700">
+
+        <!-- ── Seção 3: Endereço ───────────────────────────────────── -->
+        <div>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Endereço
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+              <label for="cep" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CEP</label>
+              <input type="text" id="cep" name="cep" value="<%= usuario && usuario.cep ? usuario.cep : '' %>" maxlength="10"
+                placeholder="00000-000"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="logradouro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Logradouro</label>
+              <input type="text" id="logradouro" name="logradouro" value="<%= usuario && usuario.logradouro ? usuario.logradouro : '' %>" maxlength="255"
+                placeholder="Rua, Avenida, Travessa..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="numero" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número</label>
+              <input type="text" id="numero" name="numero" value="<%= usuario && usuario.numero ? usuario.numero : '' %>" maxlength="20"
+                placeholder="123"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label for="complemento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Complemento</label>
+              <input type="text" id="complemento" name="complemento" value="<%= usuario && usuario.complemento ? usuario.complemento : '' %>" maxlength="100"
+                placeholder="Apto, Bloco..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="bairro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bairro</label>
+              <input type="text" id="bairro" name="bairro" value="<%= usuario && usuario.bairro ? usuario.bairro : '' %>" maxlength="100"
+                placeholder="Centro, Vila Nova..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label for="cidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
+                <input type="text" id="cidade" name="cidade" value="<%= usuario && usuario.cidade ? usuario.cidade : '' %>" maxlength="100"
+                  placeholder="São Paulo"
+                  class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+              </div>
+              <div>
+                <label for="estado" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">UF</label>
+                <select id="estado" name="estado"
+                  class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-2 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+                  <option value="">--</option>
+                  <% ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].forEach(function(uf){ %>
+                    <option value="<%= uf %>" <%= usuario && usuario.estado === uf ? 'selected' : '' %>><%= uf %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Ações ──────────────────────────────────────────────── -->
         <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-700">
-          <a href="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">
+          <a href="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>"
+            class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">
             Cancelar
           </a>
           <button type="submit" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
@@ -110,14 +206,54 @@
       </form>
     </div>
 
-    <% if (usuario && user.perfil === 'admin') { %>
-      <div class="mt-3 text-center">
-        <a href="/cadastros/usuarios/<%= usuario.id %>/alterar-senha" class="text-sm text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
-          Alterar senha deste usuário
-        </a>
-      </div>
+    <% if (usuario && typeof user !== 'undefined' && user.perfil === 'admin') { %>
+    <div class="mt-3 text-center">
+      <a href="/cadastros/usuarios/<%= usuario.id %>/alterar-senha"
+        class="text-sm text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+        Alterar senha deste usuário
+      </a>
+    </div>
     <% } %>
   </div>
 </div>
+
+<script>
+  // Máscara CPF
+  document.getElementById('cpf').addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    e.target.value = v;
+  });
+
+  // Máscara telefone
+  document.getElementById('telefone').addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length <= 10) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    else                v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    e.target.value = v.trim().replace(/-$/, '');
+  });
+
+  // Máscara CEP + auto-preenchimento via ViaCEP
+  document.getElementById('cep').addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g, '').slice(0, 8);
+    e.target.value = v.length > 5 ? v.replace(/(\d{5})(\d{0,3})/, '$1-$2') : v;
+  });
+  document.getElementById('cep').addEventListener('blur', async function(e) {
+    var cep = e.target.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    try {
+      var r = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+      var d = await r.json();
+      if (!d.erro) {
+        document.getElementById('logradouro').value = d.logradouro || '';
+        document.getElementById('bairro').value     = d.bairro     || '';
+        document.getElementById('cidade').value     = d.localidade || '';
+        document.getElementById('estado').value     = d.uf         || '';
+      }
+    } catch (_) {}
+  });
+</script>
 
 <%- include('../partials/footer') %>

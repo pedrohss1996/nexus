@@ -1,7 +1,7 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Unidade - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
 <div class="w-full px-6 py-6">
-  <div class="max-w-xl mx-auto">
+  <div class="max-w-3xl mx-auto">
     <!-- Breadcrumb -->
     <nav class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-5">
       <a href="/unidades" class="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Unidades</a>
@@ -12,64 +12,209 @@
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
         <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= unidade ? 'Editar unidade' : 'Nova unidade' %></h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"><%= unidade ? 'Altere os dados da unidade.' : 'Preencha as informações da nova unidade.' %></p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Preencha os dados institucionais, fiscais e de endereço.</p>
       </div>
 
-      <form method="POST" action="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="p-6 space-y-5">
-        <div>
-          <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Nome da Unidade <span class="text-red-500">*</span>
-          </label>
-          <input type="text" id="nome" name="nome" value="<%= unidade ? unidade.nome : '' %>" required maxlength="255"
-            placeholder="Ex: Hospital São Lucas, Clínica Ortopédica..."
-            class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
-        </div>
+      <form method="POST" action="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="p-6 space-y-6">
 
+        <!-- ── Seção 1: Identificação ─────────────────────────────── -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Tipo <span class="text-red-500">*</span>
-          </label>
-          <!-- Tipo Principal em destaque -->
-          <div class="mb-3">
-            <label class="cursor-pointer block">
-              <input type="radio" name="cd_tipo" value="4" <%= unidade && unidade.cd_tipo == 4 ? 'checked' : '' %> required class="sr-only peer">
-              <div class="flex items-center gap-3 p-3 rounded-lg border-2 border-amber-200 dark:border-amber-700 peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 hover:border-amber-400 dark:hover:border-amber-500 transition-colors">
-                <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                <div>
-                  <span class="text-sm font-bold text-amber-700 dark:text-amber-300">Principal</span>
-                  <p class="text-xs text-amber-600 dark:text-amber-400">Unidade raiz / matriz da organização</p>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            Identificação
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+              <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome da Unidade <span class="text-red-500">*</span></label>
+              <input type="text" id="nome" name="nome" value="<%= unidade ? unidade.nome : '' %>" required maxlength="255"
+                placeholder="Hospital São Lucas, Departamento de TI..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="codigo_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Código interno</label>
+              <input type="text" id="codigo_unidade" name="codigo_unidade" value="<%= unidade && unidade.codigo_unidade ? unidade.codigo_unidade : '' %>" maxlength="50"
+                placeholder="UNI-001"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <label for="razao_social" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Razão Social</label>
+            <input type="text" id="razao_social" name="razao_social" value="<%= unidade && unidade.razao_social ? unidade.razao_social : '' %>" maxlength="255"
+              placeholder="Hospital São Lucas LTDA"
+              class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo <span class="text-red-500">*</span></label>
+            <div class="mb-3">
+              <label class="cursor-pointer block">
+                <input type="radio" name="cd_tipo" value="4" <%= unidade && unidade.cd_tipo == 4 ? 'checked' : '' %> required class="sr-only peer">
+                <div class="flex items-center gap-3 p-3 rounded-lg border-2 border-amber-200 dark:border-amber-700 peer-checked:border-amber-500 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-900/20 hover:border-amber-400 transition-colors">
+                  <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <div>
+                    <span class="text-sm font-bold text-amber-700 dark:text-amber-300">Principal</span>
+                    <p class="text-xs text-amber-600 dark:text-amber-400">Unidade raiz / matriz da organização</p>
+                  </div>
                 </div>
-              </div>
-            </label>
+              </label>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <% [['1','Hospital','text-blue-500'],['2','Clínica','text-green-500'],['3','Departamento','text-purple-500'],
+                  ['5','Filial','text-orange-500'],['6','Secretaria','text-pink-500'],['7','Outro','text-gray-500']].forEach(function(t){ %>
+              <label class="cursor-pointer">
+                <input type="radio" name="cd_tipo" value="<%= t[0] %>" <%= unidade && unidade.cd_tipo == t[0] ? 'checked' : '' %> class="sr-only peer">
+                <div class="flex flex-col items-center justify-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center">
+                  <span class="text-xs font-medium text-gray-700 dark:text-gray-300 <%= t[2] %>"><%= t[1] %></span>
+                </div>
+              </label>
+              <% }); %>
+            </div>
           </div>
-          <!-- Outros tipos -->
-          <div class="grid grid-cols-3 gap-3">
-            <label class="cursor-pointer">
-              <input type="radio" name="cd_tipo" value="1" <%= unidade && unidade.cd_tipo == 1 ? 'checked' : '' %> class="sr-only peer">
-              <div class="flex flex-col items-center justify-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors text-center">
-                <svg class="w-6 h-6 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Hospital</span>
-              </div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="cd_tipo" value="2" <%= unidade && unidade.cd_tipo == 2 ? 'checked' : '' %> class="sr-only peer">
-              <div class="flex flex-col items-center justify-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors text-center">
-                <svg class="w-6 h-6 text-green-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Clínica</span>
-              </div>
-            </label>
-            <label class="cursor-pointer">
-              <input type="radio" name="cd_tipo" value="3" <%= unidade && unidade.cd_tipo == 3 ? 'checked' : '' %> class="sr-only peer">
-              <div class="flex flex-col items-center justify-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors text-center">
-                <svg class="w-6 h-6 text-purple-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Departamento</span>
-              </div>
-            </label>
+
+          <div class="mt-4">
+            <label for="descricao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Descrição</label>
+            <textarea id="descricao" name="descricao" rows="2" maxlength="500"
+              placeholder="Descreva brevemente a unidade..."
+              class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors resize-none"><%= unidade && unidade.descricao ? unidade.descricao : '' %></textarea>
           </div>
         </div>
 
+        <hr class="border-gray-100 dark:border-slate-700">
+
+        <!-- ── Seção 2: Dados fiscais e contratuais ───────────────── -->
+        <div>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Dados fiscais e contratuais
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label for="cnpj" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CNPJ</label>
+              <input type="text" id="cnpj" name="cnpj" value="<%= unidade && unidade.cnpj ? unidade.cnpj : '' %>" maxlength="18"
+                placeholder="00.000.000/0001-00"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="inscricao_estadual" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Inscrição Estadual</label>
+              <input type="text" id="inscricao_estadual" name="inscricao_estadual" value="<%= unidade && unidade.inscricao_estadual ? unidade.inscricao_estadual : '' %>" maxlength="50"
+                placeholder="000.000.000.000"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="inscricao_municipal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Inscrição Municipal</label>
+              <input type="text" id="inscricao_municipal" name="inscricao_municipal" value="<%= unidade && unidade.inscricao_municipal ? unidade.inscricao_municipal : '' %>" maxlength="50"
+                placeholder="000.000.00"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label for="responsavel_legal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Responsável Legal</label>
+              <input type="text" id="responsavel_legal" name="responsavel_legal" value="<%= unidade && unidade.responsavel_legal ? unidade.responsavel_legal : '' %>" maxlength="255"
+                placeholder="Dr. João da Silva"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="site" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Site</label>
+              <input type="url" id="site" name="site" value="<%= unidade && unidade.site ? unidade.site : '' %>" maxlength="255"
+                placeholder="https://www.exemplo.com.br"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-gray-100 dark:border-slate-700">
+
+        <!-- ── Seção 3: Contato ───────────────────────────────────── -->
+        <div>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            Contato
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="telefone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Telefone</label>
+              <input type="text" id="telefone" name="telefone" value="<%= unidade && unidade.telefone ? unidade.telefone : '' %>" maxlength="25"
+                placeholder="(00) 3000-0000"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail institucional</label>
+              <input type="email" id="email_unidade" name="email" value="<%= unidade && unidade.email ? unidade.email : '' %>" maxlength="255"
+                placeholder="contato@unidade.com.br"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-gray-100 dark:border-slate-700">
+
+        <!-- ── Seção 4: Endereço ──────────────────────────────────── -->
+        <div>
+          <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Endereço
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+              <label for="cep_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CEP</label>
+              <input type="text" id="cep_unidade" name="cep" value="<%= unidade && unidade.cep ? unidade.cep : '' %>" maxlength="10"
+                placeholder="00000-000"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="endereco" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Logradouro</label>
+              <input type="text" id="endereco" name="endereco" value="<%= unidade && unidade.endereco ? unidade.endereco : '' %>" maxlength="255"
+                placeholder="Rua, Avenida, Travessa..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="numero_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número</label>
+              <input type="text" id="numero_unidade" name="numero" value="<%= unidade && unidade.numero ? unidade.numero : '' %>" maxlength="20"
+                placeholder="s/n"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label for="complemento_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Complemento</label>
+              <input type="text" id="complemento_unidade" name="complemento" value="<%= unidade && unidade.complemento ? unidade.complemento : '' %>" maxlength="100"
+                placeholder="Bloco A, Sala 2..."
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div>
+              <label for="bairro_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bairro</label>
+              <input type="text" id="bairro_unidade" name="bairro" value="<%= unidade && unidade.bairro ? unidade.bairro : '' %>" maxlength="100"
+                placeholder="Centro"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label for="cidade_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
+                <input type="text" id="cidade_unidade" name="cidade" value="<%= unidade && unidade.cidade ? unidade.cidade : '' %>" maxlength="100"
+                  placeholder="São Paulo"
+                  class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+              </div>
+              <div>
+                <label for="estado_unidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">UF</label>
+                <select id="estado_unidade" name="estado"
+                  class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-2 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+                  <option value="">--</option>
+                  <% ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].forEach(function(uf){ %>
+                    <option value="<%= uf %>" <%= unidade && unidade.estado === uf ? 'selected' : '' %>><%= uf %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Ações ──────────────────────────────────────────────── -->
         <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-700">
-          <a href="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">
+          <a href="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>"
+            class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">
             Cancelar
           </a>
           <button type="submit" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
@@ -81,5 +226,37 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Máscara CNPJ
+  document.getElementById('cnpj').addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g,'').slice(0,14);
+    v = v.replace(/(\d{2})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1/$2');
+    v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    e.target.value = v;
+  });
+
+  // Máscara CEP + ViaCEP
+  document.getElementById('cep_unidade').addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g,'').slice(0,8);
+    e.target.value = v.length > 5 ? v.replace(/(\d{5})(\d{0,3})/, '$1-$2') : v;
+  });
+  document.getElementById('cep_unidade').addEventListener('blur', async function(e) {
+    var cep = e.target.value.replace(/\D/g,'');
+    if (cep.length !== 8) return;
+    try {
+      var r = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+      var d = await r.json();
+      if (!d.erro) {
+        document.getElementById('endereco').value          = d.logradouro || '';
+        document.getElementById('bairro_unidade').value    = d.bairro     || '';
+        document.getElementById('cidade_unidade').value    = d.localidade || '';
+        document.getElementById('estado_unidade').value    = d.uf         || '';
+      }
+    } catch(_) {}
+  });
+</script>
 
 <%- include('../partials/footer') %>
