@@ -1,5 +1,33 @@
+[variables]
+# Evita que o Puppeteer tente baixar o próprio Chromium (o que causa erros no Railway)
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
+
 [phases.setup]
-nixPkgs = ["nodejs-18_x", "chromium", "nss", "freetype", "harfbuzz", "ca-certificates", "ttf-dejavu", "fontconfig"]
+# Removido o 'cacert' para evitar conflito. Ajustado o Node para 'nodejs_18' (padrão mais estável do Nix).
+nixPkgs = [
+  "nodejs_18", 
+  "chromium", 
+  "nss", 
+  "freetype", 
+  "harfbuzz", 
+  "dejavu_fonts", 
+  "fontconfig"
+]
+# Garantindo as dependências de sistema (shared libraries) exigidas pelo Chromium no Linux
+aptPkgs = [
+  "libnss3", 
+  "libatk1.0-0", 
+  "libatk-bridge2.0-0", 
+  "libcups2", 
+  "libgbm1", 
+  "libasound2", 
+  "libpangocairo-1.0-0", 
+  "libxss1", 
+  "libgtk-3-0", 
+  "libxshmfence1", 
+  "libglu1"
+]
 
 [phases.install]
 cmds = ["npm install"]
@@ -8,4 +36,4 @@ cmds = ["npm install"]
 cmds = ["npm run build:css"]
 
 [start]
-cmd = "node server.js"
+cmd = "NODE_ENV=production node server.js"
