@@ -1,10 +1,9 @@
 [variables]
-# Evita que o Puppeteer tente baixar o próprio Chromium (o que causa erros no Railway)
+# Evita que o Puppeteer tente baixar o próprio Chromium
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
 
 [phases.setup]
-# Removido o 'cacert' para evitar conflito. Ajustado o Node para 'nodejs_18' (padrão mais estável do Nix).
 nixPkgs = [
   "nodejs_18", 
   "chromium", 
@@ -14,14 +13,14 @@ nixPkgs = [
   "dejavu_fonts", 
   "fontconfig"
 ]
-# Garantindo as dependências de sistema (shared libraries) exigidas pelo Chromium no Linux
+# Ajustado libasound2 -> libasound2t64 para compatibilidade com Ubuntu 24.04
 aptPkgs = [
   "libnss3", 
   "libatk1.0-0", 
   "libatk-bridge2.0-0", 
   "libcups2", 
   "libgbm1", 
-  "libasound2", 
+  "libasound2t64", 
   "libpangocairo-1.0-0", 
   "libxss1", 
   "libgtk-3-0", 
@@ -33,6 +32,8 @@ aptPkgs = [
 cmds = ["npm install"]
 
 [phases.build]
+# Garante que o install rodou antes do build
+dependsOn = ["install"]
 cmds = ["npm run build:css"]
 
 [start]
