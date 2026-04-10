@@ -72,17 +72,22 @@ class AssinaturaDocController {
         [doc.id]
       );
 
-      // Verificar se o usuário atual pode assinar alguma pendência
-      const pendentesParaUsuario = [];
-      for (const assin of assinPendentes.rows.filter(a => a.status === 'pendente')) {
-        const pertence = await query(
-          `SELECT 1 FROM usuarios_grupos WHERE grupo_id = $1 AND usuario_id = $2`,
-          [assin.grupo_id, req.user.id]
+      // Verificar se o usuário atual pode assinar alguma pendência — query única
+      const gruposPendentes = assinPendentes.rows
+        .filter(a => a.status === 'pendente')
+        .map(a => a.grupo_id);
+
+      let gruposDoUsuario = new Set();
+      if (gruposPendentes.length > 0) {
+        const gruposResult = await query(
+          `SELECT grupo_id FROM usuarios_grupos WHERE usuario_id = $1 AND grupo_id = ANY($2)`,
+          [req.user.id, gruposPendentes]
         );
-        if (pertence.rows.length > 0) {
-          pendentesParaUsuario.push(assin);
-        }
+        gruposResult.rows.forEach(r => gruposDoUsuario.add(r.grupo_id));
       }
+
+      const pendentesParaUsuario = assinPendentes.rows
+        .filter(a => a.status === 'pendente' && gruposDoUsuario.has(a.grupo_id));
 
       res.render('assinatura/assinar', {
         title: `Assinar: ${doc.titulo || doc.template_nome}`,

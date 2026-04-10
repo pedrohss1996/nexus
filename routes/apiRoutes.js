@@ -27,10 +27,17 @@ router.post('/selecionar-unidade', (req, res) => {
         console.error('❌ Erro ao salvar sessão:', err);
       }
       
-      // Redirecionar de volta para a página anterior ou início
-      const referer = req.get('Referer') || '/inicio';
-      console.log('🔄 Redirecionando para:', referer);
-      res.redirect(referer);
+      // Redirecionar de volta — valida que é rota interna para evitar open redirect
+      const referer = req.get('Referer') || '';
+      let destino = '/inicio';
+      try {
+        const url = new URL(referer);
+        if (url.origin === `${req.protocol}://${req.get('host')}`) {
+          destino = url.pathname + url.search;
+        }
+      } catch (_) { /* referer inválido ou ausente — usa /inicio */ }
+      console.log('🔄 Redirecionando para:', destino);
+      res.redirect(destino);
     });
   } catch (error) {
     console.error('❌ Erro ao selecionar unidade:', error);

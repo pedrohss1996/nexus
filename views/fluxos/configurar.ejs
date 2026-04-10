@@ -8,225 +8,497 @@
   const temUnidade = !!unidadeNomeStr && gruposList.length > 0;
 
   function tipoInfo(t) {
-    if (t === 'questionario')    return { label:'Questionário', icon:'📋', color:'#3b82f6' };
-    if (t === 'aprovacao')       return { label:'Aprovação',    icon:'✅', color:'#22c55e' };
+    if (t === 'questionario')    return { label:'Questionário',      icon:'📋', color:'#3b82f6' };
+    if (t === 'aprovacao')       return { label:'Aprovação',         icon:'✅', color:'#22c55e' };
     if (t === 'parecer' || t === 'parecer_tecnico') return { label:'Parecer', icon:'💬', color:'#8b5cf6' };
-    if (t === 'assinatura_digital') return { label:'Assinatura', icon:'✍️', color:'#f59e0b' };
+    if (t === 'assinatura_digital') return { label:'Assinatura Digital', icon:'✍️', color:'#f59e0b' };
     return { label:'Formulário', icon:'📄', color:'#64748b' };
   }
 %>
 
 <style>
-  /* ── Canvas ── */
-  .fluxo-canvas {
-    position: relative;
-    width: 100%;
-    height: calc(100vh - 220px);
-    min-height: 560px;
-    background-color: #f8fafc;
-    background-image:
-      linear-gradient(rgba(148,163,184,.15) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148,163,184,.15) 1px, transparent 1px);
-    background-size: 24px 24px;
-    overflow: auto;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    cursor: default;
-  }
-  .dark .fluxo-canvas {
-    background-color: #0f172a;
-    background-image:
-      linear-gradient(rgba(71,85,105,.25) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(71,85,105,.25) 1px, transparent 1px);
-    border-color: #334155;
-  }
+/* ── Layout builder ── */
+.sf-builder-wrap {
+  display: flex;
+  height: calc(100vh - 124px);
+  overflow: hidden;
+}
 
-  /* ── Card de etapa ── */
-  .fluxo-card {
-    position: absolute;
-    width: 210px;
-    background: #fff;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    cursor: move;
-    box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 0 0 0 transparent;
-    transition: box-shadow .15s, border-color .15s;
-    user-select: none;
-  }
-  .dark .fluxo-card { background: #1e293b; border-color: #334155; }
-  .fluxo-card:hover  { box-shadow: 0 4px 16px rgba(0,0,0,.12); border-color: #a5b4fc; }
-  .dark .fluxo-card:hover { border-color: #6366f1; }
-  .fluxo-card.dragging { opacity: .72; z-index: 999; box-shadow: 0 12px 32px rgba(0,0,0,.2); }
-  .fluxo-card.connecting-source { outline: 3px solid #06b6d4; outline-offset: 3px; }
+/* ── Paleta esquerda ── */
+.sf-palette {
+  width: 164px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px 10px;
+  gap: 4px;
+}
+.dark .sf-palette {
+  background: #1e293b;
+  border-color: #334155;
+}
+.sf-palette-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 2px 4px 8px;
+}
+.sf-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: all .14s;
+}
+.dark .sf-palette-item {
+  background: #0f172a;
+  border-color: #334155;
+}
+.sf-palette-item:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+  transform: translateX(2px);
+}
+.dark .sf-palette-item:hover {
+  background: #1e1b4b;
+  border-color: #6366f1;
+}
+.sf-palette-item-icon { font-size: 16px; flex-shrink: 0; }
+.sf-palette-item-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.2;
+}
+.dark .sf-palette-item-label { color: #e2e8f0; }
+.sf-palette-divider {
+  border: none;
+  border-top: 1px solid #f1f5f9;
+  margin: 8px 0;
+}
+.dark .sf-palette-divider { border-color: #334155; }
+.sf-palette-tips {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.6;
+  padding: 4px;
+}
 
-  .fluxo-card-topbar { height: 5px; border-radius: 8px 8px 0 0; }
-  .fluxo-card-header {
-    padding: 5px 10px 4px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .05em; color: #94a3b8;
-    border-bottom: 1px solid #f1f5f9;
-  }
-  .dark .fluxo-card-header { color: #475569; border-color: #334155; }
-  .fluxo-card-body { padding: 10px 12px 12px; }
-  .fluxo-card-icon { font-size: 16px; margin-bottom: 4px; }
-  .fluxo-card-title { font-size: 13px; font-weight: 700; color: #1e293b; line-height: 1.3; margin-bottom: 6px; }
-  .dark .fluxo-card-title { color: #f1f5f9; }
-  .fluxo-card-code  { font-size: 10px; color: #94a3b8; font-family: monospace; margin-bottom: 6px; }
-  .fluxo-card-badges { display: flex; flex-wrap: wrap; gap: 3px; }
-  .fluxo-badge {
-    font-size: 10px; font-weight: 600;
-    padding: 1px 6px; border-radius: 4px;
-    background: #f1f5f9; color: #475569;
-  }
-  .dark .fluxo-badge { background: #334155; color: #94a3b8; }
+/* ── Área do canvas ── */
+.sf-canvas-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  /* ── SVG conexões ── */
-  .connection-group { pointer-events: all; cursor: pointer; }
-  .conn-hit  { fill: none; stroke: transparent; stroke-width: 14; }
-  .conn-line { fill: none; stroke-width: 2.5; }
-  .conn-label-bg { rx: 4; }
-  .conn-label { font-size: 10px; font-weight: 700; }
-  .conn-del { display: none; }
-  .connection-group:hover .conn-del { display: block; }
-  .connection-group:hover .conn-label-bg { stroke-width: 2; }
+/* ── Barra do topo ── */
+.sf-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.dark .sf-topbar {
+  background: #1e293b;
+  border-color: #334155;
+}
+.sf-topbar-flow-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dark .sf-topbar-flow-name { color: #f1f5f9; }
+.sf-topbar-version {
+  font-size: 11px;
+  color: #6366f1;
+  background: #eef2ff;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.dark .sf-topbar-version {
+  background: #1e1b4b;
+  color: #a5b4fc;
+}
 
-  /* ── Painel lateral ── */
-  #painelConfig {
-    position: fixed; top: 0; right: 0; height: 100%;
-    width: 100%; max-width: 420px;
-    background: #fff;
-    border-left: 1px solid #e2e8f0;
-    box-shadow: -4px 0 24px rgba(0,0,0,.12);
-    z-index: 50;
-    transform: translateX(100%);
-    transition: transform .22s cubic-bezier(.4,0,.2,1);
-    overflow: hidden;           /* ← não deixa vazar conteúdo */
-    display: flex; flex-direction: column;
-  }
-  #painelConfig.open { transform: translateX(0); }
-  .dark #painelConfig { background: #1e293b; border-color: #334155; }
+/* ── Canvas ── */
+.sf-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background-color: #f8fafc;
+  background-image:
+    linear-gradient(rgba(148,163,184,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow: auto;
+  cursor: default;
+}
+.dark .sf-canvas {
+  background-color: #0f172a;
+  background-image:
+    linear-gradient(rgba(71,85,105,.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71,85,105,.2) 1px, transparent 1px);
+}
 
-  .painel-header {
-    padding: 14px 16px; border-bottom: 1px solid #e2e8f0;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;             /* ← nunca encolhe */
-    background: inherit;
-  }
-  .dark .painel-header { border-color: #334155; }
+/* ── Nó SF-style ── */
+.sf-node {
+  position: absolute;
+  width: 240px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: move;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  transition: box-shadow .15s, border-color .15s;
+  user-select: none;
+  display: flex;
+  align-items: stretch;
+  z-index: 10;
+}
+.dark .sf-node {
+  background: #1e293b;
+  border-color: #334155;
+}
+.sf-node:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+  border-color: #a5b4fc;
+}
+.dark .sf-node:hover { border-color: #6366f1; }
+.sf-node.dragging {
+  opacity: .8;
+  z-index: 999;
+  box-shadow: 0 16px 40px rgba(0,0,0,.2);
+  cursor: grabbing;
+}
+.sf-node.connecting-source {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6,182,212,.25);
+}
+.sf-node.connect-target {
+  border-color: #6366f1;
+  cursor: crosshair;
+}
+.sf-node.sf-node-inicio { border-color: #10b981; }
+.sf-node.sf-node-fim    { border-color: #ef4444; }
 
-  /* Corpo rolável do painel */
-  #painelBody {
-    flex: 1; min-height: 0;     /* ← crucial para flex + overflow funcionar */
-    overflow-y: auto;
-    padding: 16px;
-  }
+.sf-node-inner {
+  flex: 1;
+  min-width: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
 
-  /* Rodapé fixo do painel */
-  #painelFooter {
-    flex-shrink: 0;
-    padding: 12px 16px;
-    border-top: 1px solid #e2e8f0;
-    display: flex; gap: 8px;
-    background: inherit;
-  }
-  .dark #painelFooter { border-color: #334155; }
+/* Type header */
+.sf-node-type-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 6px;
+  border-radius: 10px 10px 0 0;
+}
+.sf-node-type-icon  { font-size: 13px; }
+.sf-node-type-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #fff;
+  opacity: .92;
+  flex: 1;
+}
+.sf-node-state-badges {
+  display: flex;
+  gap: 4px;
+}
+.sf-state-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.25);
+  color: #fff;
+  white-space: nowrap;
+}
 
-  /* ── Tipo selector ── */
-  .tipo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
-  .tipo-opt {
-    border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px 4px;
-    cursor: pointer; text-align: center; transition: all .12s;
-    background: #f8fafc;
-  }
-  .dark .tipo-opt { background: #0f172a; border-color: #334155; }
-  .tipo-opt:hover { border-color: #a5b4fc; background: #eef2ff; }
-  .dark .tipo-opt:hover { background: #1e1b4b; }
-  .tipo-opt.sel { border-color: #6366f1; background: #eef2ff; }
-  .dark .tipo-opt.sel { background: #1e1b4b; border-color: #6366f1; }
-  .tipo-opt-icon  { font-size: 18px; }
-  .tipo-opt-label { font-size: 10px; font-weight: 700; color: #374151; display: block; margin-top: 2px; }
-  .dark .tipo-opt-label { color: #e2e8f0; }
+/* Step name — destaque principal */
+.sf-node-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 10px 12px 6px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.dark .sf-node-name { color: #f1f5f9; }
 
-  /* ── Question builder ── */
-  .qb-item {
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
-    padding: 10px; margin-bottom: 6px;
-  }
-  .dark .qb-item { background: #0f172a; border-color: #334155; }
-  .qb-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .qb-drag { color: #94a3b8; cursor: grab; }
-  .qb-num  { font-size: 11px; font-weight: 700; color: #64748b; min-width: 14px; }
-  .qb-label { flex: 1; min-width: 0; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; background: #fff; color: #1e293b; }
-  .dark .qb-label { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-  .qb-tipo  { font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; background: #fff; color: #1e293b; }
-  .dark .qb-tipo { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-  .qb-req  { font-size: 10px; color: #64748b; display:flex; align-items:center; gap:3px; white-space:nowrap; }
-  .qb-del  { color: #ef4444; cursor: pointer; font-size: 14px; line-height:1; }
-  .qb-opts { margin-top: 6px; padding-left: 22px; }
-  .qb-opt-row { display: flex; gap: 5px; align-items: center; margin-bottom: 3px; }
-  .qb-opt-inp { flex: 1; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 5px; padding: 3px 7px; background: #fff; color: #1e293b; }
-  .dark .qb-opt-inp { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+/* Indicators row */
+.sf-node-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px 8px;
+}
+.sf-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.dark .sf-badge { background: #334155; color: #94a3b8; }
 
-  /* ── Form helpers ── */
-  .fl-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
-  .dark .fl-label { color: #e2e8f0; }
-  .fl-input, .fl-select, .fl-textarea {
-    width: 100%; border: 1px solid #e2e8f0; border-radius: 7px;
-    padding: 7px 10px; font-size: 13px; color: #1e293b; background: #fff;
-  }
-  .fl-input:focus, .fl-select:focus, .fl-textarea:focus {
-    outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15);
-  }
-  .dark .fl-input, .dark .fl-select, .dark .fl-textarea {
-    background: #0f172a; border-color: #334155; color: #f1f5f9;
-  }
-  .fl-textarea { resize: vertical; min-height: 70px; }
-  .fl-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-                color: #94a3b8; margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
-  .dark .fl-section { color: #475569; border-color: #1e293b; }
+/* Group footer */
+.sf-node-group {
+  font-size: 10px;
+  color: #94a3b8;
+  padding: 5px 12px 9px;
+  border-top: 1px solid #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dark .sf-node-group { border-color: #334155; color: #475569; }
+
+/* ── Ports de conexão ── */
+.sf-port-col {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.sf-port {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+  position: relative;
+}
+.dark .sf-port { background: #1e293b; border-color: #475569; }
+.sf-port-out { cursor: crosshair; }
+.sf-port:hover {
+  background: #6366f1;
+  border-color: #6366f1;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 4px rgba(99,102,241,.2);
+}
+.sf-node.connecting-source .sf-port-out {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6,182,212,.3);
+}
+
+/* ── SVG conexões ── */
+.connection-group { pointer-events: all; cursor: pointer; }
+.conn-hit  { fill: none; stroke: transparent; stroke-width: 14; }
+.conn-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.conn-del { display: none; }
+.connection-group:hover .conn-del { display: block; }
+.connection-group:hover .conn-label-bg { stroke-width: 2; }
+
+/* ── Painel lateral ── */
+#painelConfig {
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: 100%; max-width: 420px;
+  background: #fff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -4px 0 24px rgba(0,0,0,.12);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+#painelConfig.open { transform: translateX(0); }
+.dark #painelConfig { background: #1e293b; border-color: #334155; }
+
+.painel-header {
+  padding: 14px 16px; border-bottom: 1px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: inherit;
+}
+.dark .painel-header { border-color: #334155; }
+
+#painelBody {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+#painelFooter {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  display: flex; gap: 8px;
+  background: inherit;
+}
+.dark #painelFooter { border-color: #334155; }
+
+/* ── Tipo selector ── */
+.tipo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.tipo-opt {
+  border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px 4px;
+  cursor: pointer; text-align: center; transition: all .12s;
+  background: #f8fafc;
+}
+.dark .tipo-opt { background: #0f172a; border-color: #334155; }
+.tipo-opt:hover { border-color: #a5b4fc; background: #eef2ff; }
+.dark .tipo-opt:hover { background: #1e1b4b; }
+.tipo-opt.sel { border-color: #6366f1; background: #eef2ff; }
+.dark .tipo-opt.sel { background: #1e1b4b; border-color: #6366f1; }
+.tipo-opt-icon  { font-size: 18px; }
+.tipo-opt-label { font-size: 10px; font-weight: 700; color: #374151; display: block; margin-top: 2px; }
+.dark .tipo-opt-label { color: #e2e8f0; }
+
+/* ── Question builder ── */
+.qb-item {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 10px; margin-bottom: 6px;
+}
+.dark .qb-item { background: #0f172a; border-color: #334155; }
+.qb-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.qb-drag { color: #94a3b8; cursor: grab; }
+.qb-num  { font-size: 11px; font-weight: 700; color: #64748b; min-width: 14px; }
+.qb-label { flex: 1; min-width: 0; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; background: #fff; color: #1e293b; }
+.dark .qb-label { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+.qb-tipo  { font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; background: #fff; color: #1e293b; }
+.dark .qb-tipo { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+.qb-req  { font-size: 10px; color: #64748b; display:flex; align-items:center; gap:3px; white-space:nowrap; }
+.qb-del  { color: #ef4444; cursor: pointer; font-size: 14px; line-height:1; }
+.qb-opts { margin-top: 6px; padding-left: 22px; }
+.qb-opt-row { display: flex; gap: 5px; align-items: center; margin-bottom: 3px; }
+.qb-opt-inp { flex: 1; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 5px; padding: 3px 7px; background: #fff; color: #1e293b; }
+.dark .qb-opt-inp { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+
+/* ── Form helpers ── */
+.fl-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.dark .fl-label { color: #e2e8f0; }
+.fl-input, .fl-select, .fl-textarea {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 7px;
+  padding: 7px 10px; font-size: 13px; color: #1e293b; background: #fff;
+}
+.fl-input:focus, .fl-select:focus, .fl-textarea:focus {
+  outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+}
+.dark .fl-input, .dark .fl-select, .dark .fl-textarea {
+  background: #0f172a; border-color: #334155; color: #f1f5f9;
+}
+.fl-textarea { resize: vertical; min-height: 70px; }
+.fl-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+              color: #94a3b8; margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+.dark .fl-section { color: #475569; border-color: #1e293b; }
 </style>
 
-<div class="w-full px-4 sm:px-6 py-5">
+<div class="sf-builder-wrap">
 
-  <!-- Breadcrumb + header -->
-  <nav class="flex text-sm text-gray-500 dark:text-gray-400 mb-3 items-center gap-1.5">
-    <a href="/fluxos" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Fluxos</a>
-    <svg class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-    <span class="text-gray-900 dark:text-white font-medium truncate"><%= (f.nome || 'Fluxo').slice(0,60) %></span>
-    <span class="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full font-semibold ml-1">v<%= f.versao || '1.0' %></span>
-  </nav>
+  <!-- ── Paleta esquerda ── -->
+  <% if (temUnidade) { %>
+  <div class="sf-palette">
+    <div class="sf-palette-title">Elementos</div>
 
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-    <div>
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= f.nome %></h1>
-      <% if (f.descricao) { %><p class="text-sm text-gray-500 dark:text-gray-400"><%= f.descricao %></p><% } %>
-    </div>
-    <div class="flex items-center gap-2 flex-wrap">
-      <button id="btnAdicionarEtapa"
-        class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Adicionar etapa
-      </button>
-      <a href="/fluxos/<%= f.id %>/editar"
-        class="inline-flex items-center gap-1.5 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-        ✏️ Editar info
-      </a>
-      <a href="/fluxos" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-2">← Voltar</a>
+    <button class="sf-palette-item" data-palette-tipo="questionario">
+      <span class="sf-palette-item-icon">📋</span>
+      <span class="sf-palette-item-label">Questionário</span>
+    </button>
+    <button class="sf-palette-item" data-palette-tipo="aprovacao">
+      <span class="sf-palette-item-icon">✅</span>
+      <span class="sf-palette-item-label">Aprovação</span>
+    </button>
+    <button class="sf-palette-item" data-palette-tipo="parecer">
+      <span class="sf-palette-item-icon">💬</span>
+      <span class="sf-palette-item-label">Parecer Técnico</span>
+    </button>
+    <button class="sf-palette-item" data-palette-tipo="assinatura_digital">
+      <span class="sf-palette-item-icon">✍️</span>
+      <span class="sf-palette-item-label">Assinatura Digital</span>
+    </button>
+
+    <hr class="sf-palette-divider">
+
+    <!-- Botão IA -->
+    <button class="sf-palette-item" id="btnAiAssistant" style="border-color:#a855f7;background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);">
+      <span class="sf-palette-item-icon">✨</span>
+      <span class="sf-palette-item-label" style="color:#7c3aed;">Gerar com IA</span>
+    </button>
+
+    <hr class="sf-palette-divider">
+
+    <div class="sf-palette-tips">
+      <strong style="display:block;margin-bottom:4px;color:#64748b;">Como usar</strong>
+      Clique em um elemento para adicionar ao fluxo.<br><br>
+      <strong>●</strong> Clique no ponto direito para conectar etapas.<br><br>
+      Arraste os nós para reposicionar.
     </div>
   </div>
+  <% } %>
 
-  <% if (!temUnidade) { %>
-    <div class="rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-6 text-center">
-      <p class="text-amber-800 dark:text-amber-300 font-medium">⚠️ Selecione uma unidade no topo da página para configurar as etapas e grupos.</p>
+  <!-- ── Área principal ── -->
+  <div class="sf-canvas-area">
+
+    <!-- Barra superior -->
+    <div class="sf-topbar">
+      <a href="/fluxos" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex-shrink-0">
+        <svg class="w-4 h-4 inline -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Fluxos
+      </a>
+      <svg class="w-4 h-4 opacity-30 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      <span class="sf-topbar-flow-name"><%= f.nome %></span>
+      <span class="sf-topbar-version">v<%= f.versao || '1.0' %></span>
+      <% if (f.descricao) { %>
+        <span class="hidden sm:inline text-xs text-gray-400 truncate max-w-xs"><%= f.descricao %></span>
+      <% } %>
+      <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
+        <a href="/fluxos/<%= f.id %>/editar"
+          class="inline-flex items-center gap-1.5 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+          ✏️ Editar info
+        </a>
+      </div>
     </div>
-  <% } else { %>
 
     <!-- Canvas -->
-    <div id="fluxoCanvas" class="fluxo-canvas mb-3">
+    <% if (!temUnidade) { %>
+      <div class="flex-1 flex items-center justify-center p-8">
+        <div class="rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-8 text-center max-w-md">
+          <p class="text-amber-800 dark:text-amber-300 font-medium">⚠️ Selecione uma unidade no topo da página para configurar as etapas e grupos.</p>
+        </div>
+      </div>
+    <% } else { %>
+
+    <div id="fluxoCanvas" class="sf-canvas">
       <svg id="svgConexoes" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;"></svg>
 
       <% etapasList.forEach(function(e) {
-        const px = e.pos_x != null ? e.pos_x : (etapasList.indexOf(e) * 240 + 40);
+        const px = e.pos_x != null ? e.pos_x : (etapasList.indexOf(e) * 280 + 40);
         const py = e.pos_y != null ? e.pos_y : 60;
         const ti = tipoInfo(e.tipo_acao);
         const grupoNome = e.proprietario_nome || '';
@@ -237,59 +509,73 @@
         let dvArr = [];
         try { dvArr = typeof e.documentos_vinculados === 'string' ? JSON.parse(e.documentos_vinculados) : (e.documentos_vinculados || []); } catch(_) {}
         const nDocs = Array.isArray(dvArr) ? dvArr.length : 0;
+        const nodeClass = e.eh_inicio ? 'sf-node sf-node-inicio' : (e.eh_fim ? 'sf-node sf-node-fim' : 'sf-node');
       %>
-      <div class="fluxo-card"
+      <div class="<%= nodeClass %>"
         id="node-<%= e.id %>"
         data-etapa-id="<%= e.id %>"
         data-proprietario-id="<%= e.proprietario_id || '' %>"
-        style="left:<%= px %>px;top:<%= py %>px;z-index:10;">
-        <!-- Barra de cor do tipo -->
-        <div class="fluxo-card-topbar" style="background:<%= ti.color %>;"></div>
-        <!-- Barra fina início/fim sobreposta -->
-        <% if (e.eh_inicio) { %><div style="height:3px;background:#10b981;margin-top:-1px;"></div><% } %>
-        <% if (e.eh_fim)    { %><div style="height:3px;background:#ef4444;margin-top:-1px;"></div><% } %>
-        <% if (grupoNome) { %>
-          <div class="fluxo-card-header"><%= grupoNome %></div>
-        <% } %>
-        <div class="fluxo-card-body">
-          <!-- Linha topo: ícone + indicadores -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:18px;"><%= ti.icon %></span>
-            <div style="display:flex;gap:4px;align-items:center;">
-              <% if (nPerguntas > 0) { %>
-                <span title="<%= nPerguntas %> pergunta(s)" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:1px 5px;border-radius:4px;">📋 <%= nPerguntas %></span>
-              <% } %>
-              <% if (nDocs > 0) { %>
-                <span title="<%= nDocs %> documento(s) vinculado(s)" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:4px;">📄 <%= nDocs %></span>
-              <% } %>
-              <% if (e.exige_assinatura) { %>
-                <span title="Exige assinatura digital" style="font-size:12px;background:#fdf4ff;color:#7e22ce;padding:1px 4px;border-radius:4px;" title="Assinatura digital">✍️</span>
-              <% } %>
+        style="left:<%= px %>px;top:<%= py %>px;">
+
+        <!-- Port de entrada (esquerda) -->
+        <div class="sf-port-col">
+          <div class="sf-port sf-port-in" title="Entrada" data-port="in" data-etapa-id="<%= e.id %>"></div>
+        </div>
+
+        <!-- Conteúdo do nó -->
+        <div class="sf-node-inner">
+          <!-- Barra de tipo -->
+          <div class="sf-node-type-bar" style="background:<%= ti.color %>;">
+            <span class="sf-node-type-icon"><%= ti.icon %></span>
+            <span class="sf-node-type-label"><%= ti.label %></span>
+            <div class="sf-node-state-badges">
+              <% if (e.eh_inicio) { %><span class="sf-state-badge">▶ Início</span><% } %>
+              <% if (e.eh_fim)    { %><span class="sf-state-badge">■ Fim</span><% } %>
             </div>
           </div>
-          <div class="fluxo-card-title"><%= e.nome %></div>
-          <% if (e.codigo) { %><div class="fluxo-card-code"><%= e.codigo %></div><% } %>
-          <div class="fluxo-card-badges" style="margin-top:6px;">
-            <span class="fluxo-badge" style="background:<%= ti.color %>22;color:<%= ti.color %>;"><%= ti.label %></span>
-            <% if (e.eh_inicio) { %><span class="fluxo-badge" style="background:#d1fae5;color:#065f46;">▶ Início</span><% } %>
-            <% if (e.eh_fim)    { %><span class="fluxo-badge" style="background:#fee2e2;color:#991b1b;">■ Fim</span><% } %>
-            <% if (e.prazo_em_dias) { %><span class="fluxo-badge">⏱ <%= e.prazo_em_dias %>d</span><% } %>
+
+          <!-- Nome da etapa (destaque principal) -->
+          <div class="sf-node-name"><%= e.nome %></div>
+
+          <!-- Indicadores -->
+          <% if (nPerguntas > 0 || nDocs > 0 || e.exige_assinatura || e.prazo_em_dias || e.codigo) { %>
+          <div class="sf-node-indicators">
+            <% if (e.codigo) { %>
+              <span class="sf-badge" style="font-family:monospace;"><%= e.codigo %></span>
+            <% } %>
+            <% if (nPerguntas > 0) { %>
+              <span class="sf-badge" style="background:#eff6ff;color:#1d4ed8;" title="<%= nPerguntas %> pergunta(s)">📋 <%= nPerguntas %></span>
+            <% } %>
+            <% if (nDocs > 0) { %>
+              <span class="sf-badge" style="background:#fef9c3;color:#854d0e;" title="<%= nDocs %> documento(s)">📄 <%= nDocs %></span>
+            <% } %>
+            <% if (e.exige_assinatura) { %>
+              <span class="sf-badge" style="background:#fdf4ff;color:#7e22ce;" title="Exige assinatura digital">✍️ Assinatura</span>
+            <% } %>
+            <% if (e.prazo_em_dias) { %>
+              <span class="sf-badge">⏱ <%= e.prazo_em_dias %>d</span>
+            <% } %>
           </div>
+          <% } %>
+
+          <!-- Grupo responsável -->
+          <% if (grupoNome) { %>
+          <div class="sf-node-group">👥 <%= grupoNome %></div>
+          <% } %>
         </div>
+
+        <!-- Port de saída (direita) -->
+        <div class="sf-port-col">
+          <div class="sf-port sf-port-out" title="Clique para conectar" data-port="out" data-etapa-id="<%= e.id %>"></div>
+        </div>
+
       </div>
       <% }); %>
     </div>
 
-    <!-- Instruções -->
-    <div class="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
-      <span>🖱️ <strong>Arrastar</strong> para mover</span>
-      <span>🖱️🖱️ <strong>Duplo clique</strong> para configurar</span>
-      <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded">Shift</kbd> + clique para conectar etapas</span>
-      <span>🔗 Clique no rótulo da seta para remover conexão</span>
-    </div>
-
-  <% } %>
-</div>
+    <% } %>
+  </div><!-- /sf-canvas-area -->
+</div><!-- /sf-builder-wrap -->
 
 <!-- ══════════════════════════════════════════ -->
 <!-- PAINEL LATERAL: Configurar etapa          -->
@@ -302,10 +588,8 @@
     </button>
   </div>
 
-  <!-- Hidden id do form — fora do scroll para sempre estar acessível -->
   <input type="hidden" id="configEtapaId">
 
-  <!-- Corpo rolável -->
   <div id="painelBody">
     <!-- Tipo -->
     <div style="margin-bottom:12px;">
@@ -323,6 +607,10 @@
           <div class="tipo-opt-icon">💬</div>
           <span class="tipo-opt-label">Parecer</span>
         </div>
+        <div class="tipo-opt" data-tipo="assinatura_digital">
+          <div class="tipo-opt-icon">✍️</div>
+          <span class="tipo-opt-label">Assinatura</span>
+        </div>
       </div>
     </div>
 
@@ -331,7 +619,7 @@
 
     <div style="margin-bottom:10px;">
       <label class="fl-label">Nome da etapa *</label>
-      <input type="text" id="configNome" class="fl-input" required maxlength="255">
+      <input type="text" id="configNome" class="fl-input" required maxlength="255" placeholder="Ex: Validar documentação">
     </div>
     <div style="margin-bottom:10px;">
       <label class="fl-label">Código (único no fluxo)</label>
@@ -389,7 +677,6 @@
     </form>
   </div><!-- /painelBody -->
 
-  <!-- Rodapé fixo com botões sempre visíveis -->
   <div id="painelFooter">
     <button type="button" id="btnSalvarEtapa"
       style="flex:1;padding:9px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
@@ -405,60 +692,91 @@
 <div id="painelConfigBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:49;"></div>
 
 <!-- ══════════════════════════════════════════ -->
-<!-- MODAL: Adicionar etapa                    -->
+<!-- MODAL: Adicionar etapa (SF-like)          -->
 <!-- ══════════════════════════════════════════ -->
 <div id="modalEtapa" style="display:none;position:fixed;inset:0;z-index:60;overflow-y:auto;">
   <div style="display:flex;min-height:100%;align-items:center;justify-content:center;padding:16px;">
     <div id="modalEtapaBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);"></div>
-    <div style="position:relative;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:480px;overflow:hidden;" class="dark:bg-slate-800">
-      <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;" class="dark:border-slate-700">
-        <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white">Adicionar etapa</h3>
-      </div>
-      <form method="POST" action="/fluxos/<%= f.id %>/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-        <!-- Tipo visual — event delegation via #novoTipoGrid -->
-        <div>
-          <label class="fl-label">Tipo *</label>
-          <div class="tipo-grid" id="novoTipoGrid">
-            <div class="tipo-opt sel" data-novo-tipo="questionario" style="border-color:#6366f1;background:#eef2ff;">
-              <div class="tipo-opt-icon">📋</div>
-              <span class="tipo-opt-label">Questionário</span>
-            </div>
-            <div class="tipo-opt" data-novo-tipo="aprovacao">
-              <div class="tipo-opt-icon">✅</div>
-              <span class="tipo-opt-label">Aprovação</span>
-            </div>
-            <div class="tipo-opt" data-novo-tipo="parecer">
-              <div class="tipo-opt-icon">💬</div>
-              <span class="tipo-opt-label">Parecer</span>
-            </div>
+    <div style="position:relative;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:460px;overflow:hidden;" class="dark:bg-slate-800">
+
+      <!-- Header com pill de tipo -->
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #e2e8f0;" class="dark:border-slate-700">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="modalEtapaTipoPill" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;color:#fff;background:#6366f1;">
+            <span id="modalEtapaTipoIcon">📋</span>
+            <span id="modalEtapaTipoLabel">Questionário</span>
           </div>
-          <!-- Campo hidden que vai para o form -->
-          <input type="hidden" name="tipo_acao" id="novoTipoValor" value="questionario">
+          <div>
+            <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white">Nova etapa</h3>
+            <p style="font-size:11px;color:#94a3b8;margin:2px 0 0;">Defina o nome e o responsável</p>
+          </div>
         </div>
+      </div>
+
+      <form method="POST" action="/fluxos/<%= f.id %>/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <input type="hidden" name="tipo_acao" id="novoTipoValor" value="questionario">
+
+        <!-- Nome — campo principal e em destaque -->
         <div>
-          <label class="fl-label">Grupo (setor) *</label>
-          <select name="proprietario_id" required class="fl-select">
-            <option value="">— Selecionar grupo —</option>
-            <% gruposList.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
-          </select>
+          <label class="fl-label" style="font-size:13px;">Nome da etapa <span style="color:#ef4444;">*</span></label>
+          <input type="text" name="nome" id="novaNome" required maxlength="255"
+            placeholder="Ex: Validar documentação"
+            class="fl-input"
+            style="font-size:15px;font-weight:600;padding:10px 12px;">
         </div>
-        <div>
-          <label class="fl-label">Nome da etapa *</label>
-          <input type="text" name="nome" required maxlength="255" placeholder="Ex: Validar documentação" class="fl-input" id="novaNome">
-        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div>
-            <label class="fl-label">Código (opcional)</label>
-            <input type="text" name="codigo" maxlength="80" placeholder="Auto" class="fl-input" style="font-family:monospace;">
+            <label class="fl-label">Grupo responsável <span style="color:#ef4444;">*</span></label>
+            <select name="proprietario_id" required class="fl-select">
+              <option value="">— Selecionar —</option>
+              <% gruposList.forEach(function(g) { %><option value="<%= g.id %>"><%= g.nome %></option><% }); %>
+            </select>
           </div>
           <div>
             <label class="fl-label">Prazo (dias)</label>
             <input type="number" name="prazo_em_dias" min="0" placeholder="Opcional" class="fl-input">
           </div>
         </div>
+
+        <!-- Tipo selector — expandido (acessível caso o usuário queira trocar) -->
+        <details style="border:1px solid #e2e8f0;border-radius:8px;padding:0;" class="dark:border-slate-700">
+          <summary style="padding:8px 12px;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+            Trocar tipo de elemento
+          </summary>
+          <div style="padding:10px 12px;border-top:1px solid #f1f5f9;" class="dark:border-slate-700">
+            <div class="tipo-grid" id="novoTipoGrid">
+              <div class="tipo-opt sel" data-novo-tipo="questionario" style="border-color:#6366f1;background:#eef2ff;">
+                <div class="tipo-opt-icon">📋</div>
+                <span class="tipo-opt-label">Questionário</span>
+              </div>
+              <div class="tipo-opt" data-novo-tipo="aprovacao">
+                <div class="tipo-opt-icon">✅</div>
+                <span class="tipo-opt-label">Aprovação</span>
+              </div>
+              <div class="tipo-opt" data-novo-tipo="parecer">
+                <div class="tipo-opt-icon">💬</div>
+                <span class="tipo-opt-label">Parecer</span>
+              </div>
+              <div class="tipo-opt" data-novo-tipo="assinatura_digital">
+                <div class="tipo-opt-icon">✍️</div>
+                <span class="tipo-opt-label">Assinatura</span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div>
+          <label class="fl-label">Código (opcional)</label>
+          <input type="text" name="codigo" maxlength="80" placeholder="Gerado automaticamente" class="fl-input" style="font-family:monospace;">
+        </div>
+
         <div style="display:flex;gap:8px;padding-top:4px;">
-          <button type="submit" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Criar etapa</button>
-          <button type="button" id="btnFecharModalEtapa" style="padding:10px 16px;border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:8px;font-size:13px;cursor:pointer;" class="dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">Cancelar</button>
+          <button type="submit" style="flex:1;padding:11px;background:#4f46e5;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;">
+            Adicionar ao fluxo
+          </button>
+          <button type="button" id="btnFecharModalEtapa" style="padding:11px 18px;border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:9px;font-size:13px;cursor:pointer;" class="dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400">Cancelar</button>
         </div>
       </form>
     </div>
@@ -472,7 +790,6 @@
   <div id="mqBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:0;"></div>
   <div style="position:relative;z-index:1;width:100%;max-width:640px;max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.25);display:flex;flex-direction:column;" class="dark:bg-slate-800">
 
-    <!-- Header -->
     <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;" class="dark:border-slate-700">
       <div>
         <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white">📋 Editor de Questionário</h3>
@@ -483,12 +800,10 @@
       </button>
     </div>
 
-    <!-- Perguntas existentes (scrollável) -->
     <div class="mq-content" style="flex:1;min-height:0;overflow-y:auto;padding:16px;">
       <div id="modalQ-perguntas"></div>
     </div>
 
-    <!-- Adicionar nova pergunta -->
     <div class="mq-add-footer" style="padding:12px 16px;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
       <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 8px;">Adicionar pergunta</p>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -505,10 +820,75 @@
       </div>
     </div>
 
-    <!-- Footer: salvar / cancelar -->
     <div style="padding:12px 16px;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;">
       <button type="button" id="btnCancelarPerguntas" style="padding:8px 18px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
       <button type="button" id="btnSalvarPerguntas"   style="padding:8px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">✓ Salvar perguntas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: Assistente de IA                   -->
+<!-- ══════════════════════════════════════════ -->
+<div id="modalAi" style="display:none;position:fixed;inset:0;z-index:70;overflow-y:auto;">
+  <div style="display:flex;min-height:100%;align-items:center;justify-content:center;padding:16px;">
+    <div id="modalAiBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.55);"></div>
+    <div style="position:relative;background:#fff;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:100%;max-width:640px;overflow:hidden;" class="dark:bg-slate-800">
+
+      <!-- Header -->
+      <div style="padding:20px 24px 18px;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h3 style="font-size:18px;font-weight:800;color:#fff;margin:0;">✨ Assistente de IA</h3>
+            <p style="font-size:12px;color:rgba(255,255,255,.75);margin:4px 0 0;">Descreva o processo e a IA monta o fluxo automaticamente</p>
+          </div>
+          <button id="btnFecharModalAi" style="color:rgba(255,255,255,.8);background:rgba(255,255,255,.15);border:none;border-radius:8px;cursor:pointer;padding:6px 10px;font-size:18px;line-height:1;">×</button>
+        </div>
+      </div>
+
+      <!-- Step 1: input -->
+      <div id="aiStep1" style="padding:24px;">
+        <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;" class="dark:text-slate-300">
+          Descreva o processo em linguagem natural
+        </label>
+        <textarea id="aiDescricao" rows="5" placeholder="Ex: Processo de compra de materiais que começa com uma solicitação do setor, passa por aprovação do gestor, cotação de fornecedores, aprovação financeira e finaliza com o pedido de compra assinado..."
+          style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;font-size:13px;color:#1e293b;background:#f8fafc;resize:vertical;outline:none;box-sizing:border-box;font-family:inherit;line-height:1.5;"
+          class="dark:bg-slate-700 dark:border-slate-600 dark:text-white"></textarea>
+        <p style="font-size:11px;color:#94a3b8;margin:6px 0 16px;">Seja específico sobre as etapas, aprovações e quem é responsável por cada parte.</p>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="btnAiGerar" style="flex:1;padding:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span id="aiGerarIcon">✨</span>
+            <span id="aiGerarLabel">Gerar fluxo com IA</span>
+          </button>
+          <button id="btnAiCancelar1" style="padding:12px 20px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:10px;font-size:13px;cursor:pointer;" class="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Cancelar</button>
+        </div>
+        <div id="aiError" style="display:none;margin-top:12px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;color:#dc2626;"></div>
+      </div>
+
+      <!-- Step 2: preview da sugestão -->
+      <div id="aiStep2" style="display:none;">
+        <!-- Subheader com título sugerido -->
+        <div style="padding:14px 24px;background:#f8fafc;border-bottom:1px solid #e2e8f0;" class="dark:bg-slate-700 dark:border-slate-700">
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 4px;">Fluxo sugerido pela IA</p>
+          <p id="aiTituloSugerido" style="font-size:15px;font-weight:700;color:#1e293b;margin:0;" class="dark:text-white"></p>
+          <p id="aiDescSugerida" style="font-size:12px;color:#64748b;margin:3px 0 0;" class="dark:text-slate-400"></p>
+        </div>
+
+        <!-- Lista de etapas sugeridas (scrollável) -->
+        <div id="aiEtapasPreview" style="max-height:340px;overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:10px;"></div>
+
+        <!-- Footer de ação -->
+        <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;gap:10px;" class="dark:border-slate-700">
+          <button id="btnAiCriar" style="flex:1;padding:12px;background:#22c55e;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span id="aiCriarIcon">🚀</span>
+            <span id="aiCriarLabel">Criar no fluxo</span>
+          </button>
+          <button id="btnAiVoltar" style="padding:12px 16px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:10px;font-size:13px;cursor:pointer;" class="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">← Voltar</button>
+          <button id="btnAiFechar2" style="padding:12px 16px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:10px;font-size:13px;cursor:pointer;" class="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Cancelar</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -561,53 +941,96 @@
     return {id:e.id,etapa_origem_id:e.etapa_origem_id,etapa_destino_id:e.etapa_destino_id,label:e.label||'sempre'};
   })) %>;
   var anexosPorEtapa = <%- JSON.stringify(typeof anexosPorEtapa!=='undefined'?anexosPorEtapa:{}) %>;
+  var gruposData = <%- JSON.stringify(gruposList.map(function(g){return {id:g.id,nome:g.nome};})) %>;
 
-  // ── Drag ────────────────────────────────────────────────────
+  var TIPO_INFO = {
+    questionario:      { label:'Questionário',       icon:'📋', color:'#3b82f6' },
+    aprovacao:         { label:'Aprovação',          icon:'✅', color:'#22c55e' },
+    parecer:           { label:'Parecer',            icon:'💬', color:'#8b5cf6' },
+    parecer_tecnico:   { label:'Parecer',            icon:'💬', color:'#8b5cf6' },
+    assinatura_digital:{ label:'Assinatura Digital', icon:'✍️', color:'#f59e0b' }
+  };
+  function getTipoInfo(t) { return TIPO_INFO[t] || { label:'Formulário', icon:'📄', color:'#64748b' }; }
+
+  // ── Drag ─────────────────────────────────────────────────────
   var dragging   = null;
   var dragOffset = {x:0,y:0};
-  var connectingFrom = null;
+  var didDrag    = false;
 
   function getEtapa(id) { return etapasData.find(function(e){return e.id===+id;}); }
 
-  document.querySelectorAll('.fluxo-card').forEach(function(card){
+  // ── Conexão via ports ─────────────────────────────────────────
+  var connectingFrom = null; // card element
+
+  function cancelConnect() {
+    if (connectingFrom) {
+      connectingFrom.classList.remove('connecting-source');
+      connectingFrom = null;
+    }
+    document.querySelectorAll('.sf-node.connect-target').forEach(function(n){
+      n.classList.remove('connect-target');
+    });
+  }
+
+  function initNodeEvents(card) {
     var etapaId = +card.dataset.etapaId;
 
-    card.addEventListener('mousedown', function(e){
-      if (e.target.closest('button,a')) return;
-      if (e.shiftKey) {
-        e.preventDefault();
-        if (!connectingFrom) {
-          connectingFrom = card;
-          card.classList.add('connecting-source');
-        } else if (connectingFrom === card) {
-          card.classList.remove('connecting-source');
-          connectingFrom = null;
-        } else {
-          var fromId = connectingFrom.dataset.etapaId;
-          document.getElementById('conexaoOrigem').value = fromId;
-          document.getElementById('conexaoDestino').value = etapaId;
-          connectingFrom.classList.remove('connecting-source');
-          connectingFrom = null;
-          document.getElementById('modalConexao').style.display = 'block';
-        }
+    // Port de saída → iniciar conexão
+    var portOut = card.querySelector('.sf-port-out');
+    if (portOut) {
+      portOut.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (connectingFrom === card) { cancelConnect(); return; }
+        cancelConnect();
+        connectingFrom = card;
+        card.classList.add('connecting-source');
+        // Destacar outros nós como destino possível
+        document.querySelectorAll('.sf-node').forEach(function(n){
+          if (n !== card) n.classList.add('connect-target');
+        });
+      });
+    }
+
+    // Port de entrada OU clique no nó → destino da conexão
+    card.addEventListener('click', function(e) {
+      if (e.target.closest('.sf-port-out')) return;
+      if (dragging || didDrag) return;
+
+      if (connectingFrom && connectingFrom !== card) {
+        document.getElementById('conexaoOrigem').value = connectingFrom.dataset.etapaId;
+        document.getElementById('conexaoDestino').value = etapaId;
+        cancelConnect();
+        document.getElementById('modalConexao').style.display = 'block';
         return;
       }
+      if (connectingFrom === card) { cancelConnect(); return; }
+    });
+
+    // Duplo clique → abrir painel de config
+    card.addEventListener('dblclick', function(e) {
+      if (e.target.closest('.sf-port')) return;
+      if (dragging) return;
+      var etapa = getEtapa(etapaId);
+      if (etapa) openPainel(etapa);
+    });
+
+    // Drag
+    card.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.sf-port,button,a')) return;
       dragging = card;
+      didDrag  = false;
       var r = card.getBoundingClientRect();
       dragOffset = {x: e.clientX - r.left, y: e.clientY - r.top};
       card.classList.add('dragging');
       e.preventDefault();
     });
+  }
 
-    card.addEventListener('dblclick', function(e){
-      if (e.target.closest('button,a') || dragging) return;
-      var etapa = getEtapa(etapaId);
-      if (etapa) openPainel(etapa);
-    });
-  });
+  document.querySelectorAll('.sf-node').forEach(initNodeEvents);
 
   document.addEventListener('mousemove', function(e){
     if (!dragging) return;
+    didDrag = true;
     var canvas = document.getElementById('fluxoCanvas');
     var cr = canvas.getBoundingClientRect();
     var x = e.clientX - cr.left - dragOffset.x + canvas.scrollLeft;
@@ -629,19 +1052,16 @@
     }).catch(function(){});
     dragging.classList.remove('dragging');
     dragging = null;
+    setTimeout(function(){ didDrag = false; }, 50);
   });
 
   document.addEventListener('keydown', function(e){
-    if (e.key==='Escape' && connectingFrom){
-      connectingFrom.classList.remove('connecting-source');
-      connectingFrom=null;
-    }
+    if (e.key==='Escape') cancelConnect();
   });
 
   // ── Desenhar conexões SVG ────────────────────────────────────
   function svgEl(tag){ return document.createElementNS('http://www.w3.org/2000/svg',tag); }
 
-  // Retorna os pontos de borda do card (com direção de saída)
   function cardEdges(card){
     var canvas = document.getElementById('fluxoCanvas');
     var cr = canvas.getBoundingClientRect();
@@ -658,56 +1078,43 @@
     };
   }
 
-  // Caminho ortogonal com GAP para sair pela borda sem cruzar o card
-  function orthoPath(p1, p2) {
-    var GAP = 22;  // afasta o traçado da borda do card
-    // Calcular ponto de saída (fora do card)
-    var ex1x = p1.x + (p1.dir==='right'?GAP : p1.dir==='left'?-GAP : 0);
-    var ex1y = p1.y + (p1.dir==='bottom'?GAP : p1.dir==='top'?-GAP : 0);
-    // Calcular ponto de entrada (fora do card destino)
-    var ex2x = p2.x + (p2.dir==='left'?GAP : p2.dir==='right'?-GAP : 0);
-    var ex2y = p2.y + (p2.dir==='top'?GAP : p2.dir==='bottom'?-GAP : 0);
+  function bezierPath(p1, p2) {
+    var dx = p2.x - p1.x;
+    var dy = p2.y - p1.y;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    var offset = Math.max(60, dist * 0.42);
 
-    if (p1.dir==='right' || p1.dir==='left') {
-      // Sai horizontal → dobra vertical → entra
-      return 'M '+p1.x+' '+p1.y+
-             ' H '+ex1x+
-             ' V '+ex2y+
-             ' H '+p2.x;
-    } else {
-      // Sai vertical → dobra horizontal → entra
-      return 'M '+p1.x+' '+p1.y+
-             ' V '+ex1y+
-             ' H '+ex2x+
-             ' V '+p2.y;
-    }
+    var c1x = p1.x + (p1.dir==='right'?offset : p1.dir==='left'?-offset : 0);
+    var c1y = p1.y + (p1.dir==='bottom'?offset : p1.dir==='top'?-offset : 0);
+    var c2x = p2.x + (p2.dir==='left'?-offset : p2.dir==='right'?offset : 0);
+    var c2y = p2.y + (p2.dir==='top'?-offset : p2.dir==='bottom'?offset : 0);
+
+    return 'M '+p1.x+','+p1.y+' C '+c1x+','+c1y+' '+c2x+','+c2y+' '+p2.x+','+p2.y;
   }
 
-  // Ponto médio visual do path para posicionar o label
-  function pathMidPoint(p1, p2) {
-    var GAP = 22;
-    var ex1x = p1.x + (p1.dir==='right'?GAP : p1.dir==='left'?-GAP : 0);
-    var ex1y = p1.y + (p1.dir==='bottom'?GAP : p1.dir==='top'?-GAP : 0);
-    var ex2x = p2.x + (p2.dir==='left'?GAP : p2.dir==='right'?-GAP : 0);
-    var ex2y = p2.y + (p2.dir==='top'?GAP : p2.dir==='bottom'?-GAP : 0);
-    if (p1.dir==='right' || p1.dir==='left') {
-      return { x: ex1x, y: (ex1y + ex2y) / 2 };
-    } else {
-      return { x: (ex1x + ex2x) / 2, y: ex1y };
-    }
+  function bezierMidPoint(p1, p2) {
+    var dx = p2.x - p1.x;
+    var dy = p2.y - p1.y;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    var offset = Math.max(60, dist * 0.42);
+    var c1x = p1.x + (p1.dir==='right'?offset : p1.dir==='left'?-offset : 0);
+    var c1y = p1.y + (p1.dir==='bottom'?offset : p1.dir==='top'?-offset : 0);
+    var c2x = p2.x + (p2.dir==='left'?-offset : p2.dir==='right'?offset : 0);
+    var c2y = p2.y + (p2.dir==='top'?-offset : p2.dir==='bottom'?offset : 0);
+    // Ponto t=0.5 da curva cúbica de Bézier
+    var mx = 0.125*p1.x + 0.375*c1x + 0.375*c2x + 0.125*p2.x;
+    var my = 0.125*p1.y + 0.375*c1y + 0.375*c2y + 0.125*p2.y;
+    return { x: mx, y: my };
   }
 
   function drawConnections(){
     var svg    = document.getElementById('svgConexoes');
     var canvas = document.getElementById('fluxoCanvas');
     if (!svg || !canvas) return;
-
-    // Garantir que o SVG cobre toda a área scrollável
     svg.setAttribute('width',  canvas.scrollWidth  + 'px');
     svg.setAttribute('height', canvas.scrollHeight + 'px');
     svg.innerHTML = '';
 
-    // Arrowheads (orient="auto" orienta conforme direção final do path)
     var defs = svgEl('defs');
     [['ag','#22c55e'],['ar','#ef4444'],['agy','#6366f1']].forEach(function(pair){
       var m = svgEl('marker');
@@ -729,16 +1136,12 @@
 
       var e1 = cardEdges(orig);
       var e2 = cardEdges(dest);
-
-      // Escolher pontos de saída/entrada conforme posição relativa
       var p1, p2;
       var dx = e2.cx - e1.cx, dy = e2.cy - e1.cy;
       if (Math.abs(dx) >= Math.abs(dy)) {
-        // Mover predominantemente na horizontal
         p1 = dx >= 0 ? e1.right  : e1.left;
         p2 = dx >= 0 ? e2.left   : e2.right;
       } else {
-        // Mover predominantemente na vertical
         p1 = dy >= 0 ? e1.bottom : e1.top;
         p2 = dy >= 0 ? e2.top    : e2.bottom;
       }
@@ -748,11 +1151,8 @@
       var color  = lLow.indexOf('não')>=0 || lLow.indexOf('reprov')>=0 ? '#ef4444' :
                    lLow==='sempre' ? '#6366f1' : '#22c55e';
       var arrow  = color==='#ef4444'?'ar': color==='#6366f1'?'agy':'ag';
-
-      var d = orthoPath(p1, p2);
-
-      // Ponto médio visual do caminho para o label
-      var mid = pathMidPoint(p1, p2);
+      var d      = bezierPath(p1, p2);
+      var mid    = bezierMidPoint(p1, p2);
       var lx = mid.x, ly = mid.y;
 
       var g = svgEl('g');
@@ -770,42 +1170,67 @@
           }).catch(function(){ if(window.showToast)showToast('Erro.','error'); });
       });
 
-      // Linha de hit transparente (facilita clicar)
+      // Sombra suave (filtro SVG inline)
+      var filterId = 'shadow-'+edge.id;
+      var filterEl = svgEl('filter');
+      filterEl.setAttribute('id', filterId);
+      filterEl.setAttribute('x','-20%'); filterEl.setAttribute('y','-20%');
+      filterEl.setAttribute('width','140%'); filterEl.setAttribute('height','140%');
+      var feFlood = svgEl('feDropShadow');
+      feFlood.setAttribute('dx','0'); feFlood.setAttribute('dy','1');
+      feFlood.setAttribute('stdDeviation','1.5');
+      feFlood.setAttribute('flood-color', color);
+      feFlood.setAttribute('flood-opacity','0.18');
+      filterEl.appendChild(feFlood);
+      // Adicionar ao defs do SVG
+      svg.querySelector('defs').appendChild(filterEl);
+
+      // Área de hit transparente
       var hit = svgEl('path');
       hit.setAttribute('d',d); hit.setAttribute('fill','none');
-      hit.setAttribute('stroke','transparent'); hit.setAttribute('stroke-width','14');
+      hit.setAttribute('stroke','transparent'); hit.setAttribute('stroke-width','16');
       g.appendChild(hit);
 
-      // Linha visível
+      // Linha principal
       var line = svgEl('path');
-      line.setAttribute('d',d); line.setAttribute('fill','none');
-      line.setAttribute('stroke',color); line.setAttribute('stroke-width','2.5');
-      line.setAttribute('stroke-linejoin','round');
+      line.setAttribute('d',d);
+      line.setAttribute('fill','none');
+      line.setAttribute('stroke',color);
+      line.setAttribute('stroke-width','2');
+      line.setAttribute('stroke-linecap','round');
       line.setAttribute('marker-end','url(#'+arrow+')');
+      line.setAttribute('filter','url(#'+filterId+')');
       g.appendChild(line);
 
-      // Label background
-      var lblW = Math.max(44, lbl.length*7+10);
+      // Pill de label (fundo com borda arredondada)
+      var lblPad = 8;
+      var lblH   = 18;
+      var lblW   = Math.max(36, lbl.length * 6.5 + lblPad * 2);
+      var rx     = lblH / 2;
+
       var bg = svgEl('rect');
-      bg.setAttribute('x', lx-lblW/2); bg.setAttribute('y', ly-9);
-      bg.setAttribute('width', lblW);  bg.setAttribute('height','18');
-      bg.setAttribute('fill','white'); bg.setAttribute('rx','4');
-      bg.setAttribute('stroke',color); bg.setAttribute('stroke-width','1');
+      bg.setAttribute('x', lx - lblW/2); bg.setAttribute('y', ly - lblH/2);
+      bg.setAttribute('width', lblW);    bg.setAttribute('height', lblH);
+      bg.setAttribute('rx', rx);
+      bg.setAttribute('fill', color);
+      bg.setAttribute('opacity','0.92');
       g.appendChild(bg);
 
       // Ícone × ao hover
       var del = svgEl('text');
-      del.setAttribute('x', lx+lblW/2-5); del.setAttribute('y', ly+4);
+      del.setAttribute('x', lx + lblW/2 - 6); del.setAttribute('y', ly + 4.5);
       del.setAttribute('text-anchor','middle'); del.setAttribute('font-size','11');
-      del.setAttribute('font-weight','700'); del.setAttribute('fill','#ef4444');
-      del.setAttribute('class','conn-del'); del.textContent='×';
+      del.setAttribute('font-weight','900'); del.setAttribute('fill','#fff');
+      del.setAttribute('class','conn-del'); del.textContent = '×';
       g.appendChild(del);
 
-      // Texto do label
+      // Texto do label (branco sobre pill colorida)
       var txt = svgEl('text');
-      txt.setAttribute('x', lx); txt.setAttribute('y', ly+4);
-      txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','10');
-      txt.setAttribute('font-weight','700'); txt.setAttribute('fill',color);
+      txt.setAttribute('x', lx); txt.setAttribute('y', ly + 4.5);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('font-size','10'); txt.setAttribute('font-weight','700');
+      txt.setAttribute('fill','#fff');
+      txt.setAttribute('pointer-events','none');
       txt.textContent = lbl;
       g.appendChild(txt);
 
@@ -814,9 +1239,8 @@
   }
 
   // ── Estado central do painel ──────────────────────────────────
-  var _currentCampos = {}; // campos da etapa atualmente aberta
+  var _currentCampos = {};
 
-  // ── Aplicar tipo — atualiza visuais + área de config ─────────
   function _applyTipo(tipo, campos) {
     try {
       document.querySelectorAll('#tipoGrid .tipo-opt').forEach(function(el){
@@ -825,7 +1249,8 @@
       var titles = {
         questionario: 'PERGUNTAS DO QUESTIONÁRIO',
         aprovacao:    'CONFIGURAÇÃO DA APROVAÇÃO',
-        parecer:      'CONFIGURAÇÃO DO PARECER'
+        parecer:      'CONFIGURAÇÃO DO PARECER',
+        assinatura_digital: 'CONFIGURAÇÃO DA ASSINATURA'
       };
       var titleEl = document.getElementById('tipoConfigTitle');
       if (titleEl) titleEl.textContent = titles[tipo] || 'CONFIGURAÇÃO';
@@ -836,7 +1261,6 @@
     }
   }
 
-  // ── Event delegation: clique nos tipo-opt do painel ──────────
   var tipoGrid = document.getElementById('tipoGrid');
   if (tipoGrid) {
     tipoGrid.addEventListener('click', function(e) {
@@ -844,13 +1268,11 @@
       if (!opt) return;
       var tipo = opt.dataset.tipo;
       if (!tipo) return;
-      // Ao mudar tipo manualmente: campos vazios (novo start)
       _currentCampos = {};
       _applyTipo(tipo, {});
     });
   }
 
-  // Expor para retrocompatibilidade (onclick no modal)
   window.selecionarTipo = function(tipo) {
     _currentCampos = {};
     _applyTipo(tipo, {});
@@ -867,16 +1289,13 @@
     document.getElementById('configEhInicio').checked = !!etapa.eh_inicio;
     document.getElementById('configEhFim').checked    = !!etapa.eh_fim;
 
-    // Tipo — carrega campos SALVOS ao abrir painel existente
     var tipo = etapa.tipo_acao||'questionario';
     _currentCampos = JSON.parse(JSON.stringify(etapa.campos_requeridos || {}));
     _applyTipo(tipo, _currentCampos);
 
-    // Docs
     var vinculados = (etapa.documentos_vinculados||[]).map(function(d){return String(d.template_id||'');});
     document.querySelectorAll('.config-doc-template').forEach(function(cb){ cb.checked=vinculados.indexOf(cb.value)>=0; });
 
-    // Anexos
     var anexos = anexosPorEtapa[etapa.id]||[];
     var lista = document.getElementById('configAnexosLista');
     lista.innerHTML = '';
@@ -884,7 +1303,7 @@
     else anexos.forEach(function(a){
       var li=document.createElement('li');
       li.style='display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:#f8fafc;border-radius:6px;font-size:12px;';
-      li.innerHTML='<a href="/fluxos/'+fluxoId+'/etapas/'+etapa.id+'/anexos/'+a.id+'/download" style="color:#6366f1;text-decoration:none;flex:1;truncate;" target="_blank">'+(a.nome_original||a.nome_arquivo)+'</a>'+
+      li.innerHTML='<a href="/fluxos/'+fluxoId+'/etapas/'+etapa.id+'/anexos/'+a.id+'/download" style="color:#6366f1;text-decoration:none;flex:1;" target="_blank">'+(a.nome_original||a.nome_arquivo)+'</a>'+
         '<button type="button" class="btnRemoverAnexo" data-anexo-id="'+a.id+'" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:15px;line-height:1;">×</button>';
       lista.appendChild(li);
     });
@@ -908,12 +1327,12 @@
 
   // ── Render configuração por tipo ─────────────────────────────
   function renderTipoConfig(tipo, campos){
-    if (tipo==='questionario') return renderQuestionario(campos);
-    if (tipo==='aprovacao')    return renderAprovacao(campos);
+    if (tipo==='questionario')    return renderQuestionario(campos);
+    if (tipo==='aprovacao')       return renderAprovacao(campos);
+    if (tipo==='assinatura_digital') return renderAssinatura(campos);
     return renderParecer(campos);
   }
 
-  /* Questionário */
   function renderQuestionario(campos){
     var perguntas = campos.perguntas||[];
     var html = '';
@@ -938,64 +1357,6 @@
     return html;
   }
 
-  function renderPergunta(p,i){
-    var tipos=['texto','textarea','numero','data','selecao','sim_nao','arquivo'];
-    var tiposLabel={texto:'Texto curto',textarea:'Texto longo',numero:'Número',data:'Data',selecao:'Seleção',sim_nao:'Sim/Não',arquivo:'Arquivo'};
-    var optsHtml='';
-    if (p.tipo==='selecao'){
-      optsHtml='<div class="qb-opts" id="qb-opts-'+i+'">';
-      (p.opcoes||[]).forEach(function(o,oi){
-        optsHtml+='<div class="qb-opt-row"><input class="qb-opt-inp" type="text" value="'+escHtml(o)+'" placeholder="Opção '+(oi+1)+'">'+
-                  '<span onclick="removeOpt('+i+','+oi+')" style="color:#ef4444;cursor:pointer;font-size:14px;line-height:1;">×</span></div>';
-      });
-      optsHtml+='<button type="button" onclick="addOpt('+i+')" style="font-size:11px;color:#6366f1;background:none;border:none;cursor:pointer;padding:2px 0;">+ Opção</button></div>';
-    }
-    return '<div class="qb-item" id="qb-item-'+i+'" data-pi="'+i+'">'+
-      '<div class="qb-row">'+
-      '<span class="qb-drag">⠿</span>'+
-      '<span class="qb-num">'+(i+1)+'.</span>'+
-      '<input class="qb-label" type="text" value="'+escHtml(p.label||'')+'" placeholder="Texto da pergunta...">'+
-      '<select class="qb-tipo" onchange="changeTipoPergunta('+i+',this.value)">'+
-      tipos.map(function(t){return '<option value="'+t+'"'+(p.tipo===t?' selected':'')+'>'+tiposLabel[t]+'</option>';}).join('')+
-      '</select>'+
-      '<label class="qb-req"><input type="checkbox"'+(p.obrigatorio?' checked':'')+'> Obrig.</label>'+
-      '<span class="qb-del" onclick="removePergunta('+i+')" title="Remover">×</span>'+
-      '</div>'+optsHtml+'</div>';
-  }
-
-  window.addPergunta = function(){
-    var list = collectPerguntas();
-    list.push({label:'',tipo:'texto',obrigatorio:false});
-    document.getElementById('qb-list').innerHTML = list.map(renderPergunta).join('');
-  };
-  window.removePergunta = function(i){
-    var list=collectPerguntas(); list.splice(i,1);
-    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
-  };
-  window.changeTipoPergunta = function(i,tipo){
-    var list=collectPerguntas(); list[i].tipo=tipo; list[i].opcoes=tipo==='selecao'?(list[i].opcoes||['']):undefined;
-    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
-  };
-  window.addOpt = function(pi){
-    var list=collectPerguntas(); list[pi].opcoes=(list[pi].opcoes||[]); list[pi].opcoes.push('');
-    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
-  };
-  window.removeOpt = function(pi,oi){
-    var list=collectPerguntas(); list[pi].opcoes.splice(oi,1);
-    document.getElementById('qb-list').innerHTML=list.map(renderPergunta).join('');
-  };
-
-  function collectPerguntas(){
-    var items=document.querySelectorAll('#qb-list .qb-item');
-    return Array.from(items).map(function(item){
-      var tipo=item.querySelector('.qb-tipo').value;
-      var opcoes=null;
-      if(tipo==='selecao'){ opcoes=Array.from(item.querySelectorAll('.qb-opt-inp')).map(function(i){return i.value.trim();}).filter(Boolean); }
-      return {label:item.querySelector('.qb-label').value,tipo:tipo,obrigatorio:item.querySelector('input[type="checkbox"]').checked,opcoes:opcoes};
-    });
-  }
-
-  /* Aprovação */
   function renderAprovacao(campos){
     var instrucoes = campos.instrucoes||'';
     var rejeicoes  = campos.opcoes_rejeicao||['Documentação incompleta','Fora do prazo','Não atende requisitos'];
@@ -1006,31 +1367,33 @@
              '<button type="button" data-rej-rm style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;">×</button>'+
              '</div>';
     }).join('');
-    var html = '<div style="margin-bottom:12px;">'+
-               '<label class="fl-label">Instruções para o aprovador</label>'+
-               '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="Critérios de aprovação...">'+escHtml(instrucoes)+'</textarea>'+
-               '</div>'+
-               '<div>'+
-               '<label class="fl-label">Motivos de rejeição</label>'+
-               '<div id="rej-list">'+rejHtml+'</div>'+
-               '<button type="button" id="btnAddRej" style="font-size:12px;color:#ef4444;background:none;border:2px dashed #fecaca;border-radius:7px;padding:6px 12px;cursor:pointer;width:100%;margin-top:4px;">+ Motivo</button>'+
-               '</div>';
-    return html;
+    return '<div style="margin-bottom:12px;">'+
+           '<label class="fl-label">Instruções para o aprovador</label>'+
+           '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="Critérios de aprovação...">'+escHtml(instrucoes)+'</textarea>'+
+           '</div>'+
+           '<div>'+
+           '<label class="fl-label">Motivos de rejeição</label>'+
+           '<div id="rej-list">'+rejHtml+'</div>'+
+           '<button type="button" id="btnAddRej" style="font-size:12px;color:#ef4444;background:none;border:2px dashed #fecaca;border-radius:7px;padding:6px 12px;cursor:pointer;width:100%;margin-top:4px;">+ Motivo</button>'+
+           '</div>';
   }
 
-  // ── Listener único para tipoConfigArea (delegation de tudo) ──
+  function renderParecer(campos){
+    return '<div style="margin-bottom:12px;"><label class="fl-label">Instruções para o parecerista</label>'+
+           '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="O que deve ser avaliado...">'+escHtml(campos.instrucoes||'')+'</textarea></div>'+
+           '<div><label class="fl-label">Texto modelo (opcional)</label>'+
+           '<textarea class="fl-textarea" id="ed-modelo" style="min-height:90px;" placeholder="Considerando os documentos...">'+escHtml(campos.modelo_texto||'')+'</textarea></div>';
+  }
+
+  function renderAssinatura(campos){
+    return '<div style="margin-bottom:12px;"><label class="fl-label">Instrução de assinatura</label>'+
+           '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="Quem deve assinar e em que ordem...">'+escHtml(campos.instrucoes||'')+'</textarea></div>';
+  }
+
+  // Listener único para tipoConfigArea
   document.getElementById('tipoConfigArea').addEventListener('click', function(e) {
-    // Abrir modal de perguntas
-    if (e.target.closest('[data-a="open-q"]')) {
-      abrirModalPerguntasInterno();
-      return;
-    }
-    // Remover motivo de rejeição
-    if (e.target.closest('[data-rej-rm]')) {
-      e.target.closest('[data-rej-rm]').parentElement.remove();
-      return;
-    }
-    // Adicionar motivo de rejeição
+    if (e.target.closest('[data-a="open-q"]')) { abrirModalPerguntasInterno(); return; }
+    if (e.target.closest('[data-rej-rm]'))  { e.target.closest('[data-rej-rm]').parentElement.remove(); return; }
     if (e.target.closest('#btnAddRej')) {
       var div = document.createElement('div');
       div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:5px;';
@@ -1047,20 +1410,8 @@
       .map(function(i){ return i.value.trim(); }).filter(Boolean);
   }
 
-  /* Parecer */
-  function renderParecer(campos){
-    return '<div style="margin-bottom:12px;"><label class="fl-label">Instruções para o parecerista</label>'+
-           '<textarea class="fl-textarea" id="ed-instrucoes" placeholder="O que deve ser avaliado...">'+escHtml(campos.instrucoes||'')+'</textarea></div>'+
-           '<div><label class="fl-label">Texto modelo (opcional)</label>'+
-           '<textarea class="fl-textarea" id="ed-modelo" style="min-height:90px;" placeholder="Considerando os documentos...">'+escHtml(campos.modelo_texto||'')+'</textarea></div>';
-  }
-
-  /* Coletar campos_requeridos — questionario usa _currentCampos */
   function collectCampos(tipo){
-    if(tipo==='questionario') {
-      // Perguntas gerenciadas pelo modal; _currentCampos.perguntas é a fonte da verdade
-      return { perguntas: _currentCampos.perguntas || [] };
-    }
+    if(tipo==='questionario') return { perguntas: _currentCampos.perguntas || [] };
     if(tipo==='aprovacao'){
       var i=document.getElementById('ed-instrucoes');
       return {instrucoes:i?i.value:'',opcoes_rejeicao:collectRejeicoes()};
@@ -1069,7 +1420,7 @@
     return {instrucoes:i2?i2.value:'',modelo_texto:m?m.value:''};
   }
 
-  // ── Salvar etapa (via click, não form submit) ─────────────────
+  // ── Salvar etapa ──────────────────────────────────────────────
   function doSalvar(){
     var etapaId=document.getElementById('configEtapaId').value;
     if(!etapaId){if(window.showToast)showToast('Nenhuma etapa selecionada.','warning');return;}
@@ -1116,27 +1467,75 @@
       }).catch(function(){if(window.showToast)showToast('Erro.','error');});
   });
 
+  // ── Paleta de elementos ───────────────────────────────────────
+  var TIPO_MODAL_INFO = {
+    questionario:       { label:'Questionário',       icon:'📋', color:'#3b82f6' },
+    aprovacao:          { label:'Aprovação',          icon:'✅', color:'#22c55e' },
+    parecer:            { label:'Parecer Técnico',    icon:'💬', color:'#8b5cf6' },
+    assinatura_digital: { label:'Assinatura Digital', icon:'✍️', color:'#f59e0b' }
+  };
+
+  function openModalEtapa(tipo) {
+    var info = TIPO_MODAL_INFO[tipo] || TIPO_MODAL_INFO.questionario;
+    // Atualizar pill de tipo no modal
+    var pill = document.getElementById('modalEtapaTipoPill');
+    if (pill) pill.style.background = info.color;
+    var iconEl = document.getElementById('modalEtapaTipoIcon');
+    if (iconEl) iconEl.textContent = info.icon;
+    var labelEl = document.getElementById('modalEtapaTipoLabel');
+    if (labelEl) labelEl.textContent = info.label;
+    // Atualizar campo hidden e seletor de tipo
+    var hidden = document.getElementById('novoTipoValor');
+    if (hidden) hidden.value = tipo;
+    var grid = document.getElementById('novoTipoGrid');
+    if (grid) {
+      grid.querySelectorAll('.tipo-opt').forEach(function(el) {
+        var isSel = el.dataset.novoTipo === tipo;
+        el.classList.toggle('sel', isSel);
+        el.style.borderColor = isSel ? '#6366f1' : '';
+        el.style.background  = isSel ? '#eef2ff' : '';
+      });
+    }
+    document.getElementById('modalEtapa').style.display = 'block';
+    setTimeout(function(){ document.getElementById('novaNome').focus(); }, 80);
+  }
+
+  // Cliques na paleta
+  document.querySelectorAll('[data-palette-tipo]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      openModalEtapa(this.dataset.paletteTipo);
+    });
+  });
+
   // ── Modal adicionar etapa ─────────────────────────────────────
-  document.getElementById('btnAdicionarEtapa').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='block';setTimeout(function(){document.getElementById('novaNome').focus();},80);});
   document.getElementById('btnFecharModalEtapa').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='none';});
   document.getElementById('modalEtapaBackdrop').addEventListener('click',function(){document.getElementById('modalEtapa').style.display='none';});
 
-  // ── Seletor de tipo do modal "nova etapa" (event delegation) ──
+  // Seletor de tipo dentro do modal
   var novoTipoGrid = document.getElementById('novoTipoGrid');
   if (novoTipoGrid) {
     novoTipoGrid.addEventListener('click', function(e) {
       var opt = e.target.closest('[data-novo-tipo]');
       if (!opt) return;
       var tipo = opt.dataset.novoTipo;
-      // Destacar selecionado
       novoTipoGrid.querySelectorAll('.tipo-opt').forEach(function(el) {
-        el.classList.toggle('sel', el.dataset.novoTipo === tipo);
-        el.style.borderColor = el.dataset.novoTipo === tipo ? '#6366f1' : '';
-        el.style.background  = el.dataset.novoTipo === tipo ? '#eef2ff' : '';
+        var isSel = el.dataset.novoTipo === tipo;
+        el.classList.toggle('sel', isSel);
+        el.style.borderColor = isSel ? '#6366f1' : '';
+        el.style.background  = isSel ? '#eef2ff' : '';
       });
-      // Atualizar campo hidden
       var hidden = document.getElementById('novoTipoValor');
       if (hidden) hidden.value = tipo;
+      // Atualizar pill
+      var info = TIPO_MODAL_INFO[tipo];
+      if (info) {
+        var pill = document.getElementById('modalEtapaTipoPill');
+        if (pill) pill.style.background = info.color;
+        var iconEl = document.getElementById('modalEtapaTipoIcon');
+        if (iconEl) iconEl.textContent = info.icon;
+        var labelEl = document.getElementById('modalEtapaTipoLabel');
+        if (labelEl) labelEl.textContent = info.label;
+      }
     });
   }
 
@@ -1184,7 +1583,7 @@
   });
 
   // ── Modal de Perguntas ────────────────────────────────────────
-  var _perguntasTemp = []; // cópia de trabalho no modal
+  var _perguntasTemp = [];
 
   var TIPO_PERGUNTA_INFO = {
     texto_curto: { icon:'📝', label:'Texto curto' },
@@ -1199,15 +1598,12 @@
     sim_nao:     { icon:'↕',  label:'Sim ou Não' }
   };
 
-  // ── Modal de Perguntas ────────────────────────────────────────
-  // Função interna (não precisa ser global)
   function abrirModalPerguntasInterno() {
     _perguntasTemp = JSON.parse(JSON.stringify(_currentCampos.perguntas || []));
     renderModalPerguntas();
     var modal = document.getElementById('modalPerguntas');
     if (modal) modal.style.display = 'flex';
   }
-  // Expor para retrocompatibilidade
   window.abrirModalPerguntas = abrirModalPerguntasInterno;
 
   window.fecharModalPerguntas = function() {
@@ -1218,7 +1614,6 @@
   function renderModalPerguntas() {
     var container = document.getElementById('modalQ-perguntas');
     if (!container) return;
-
     var html = '';
     if (_perguntasTemp.length === 0) {
       html = '<p style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">Nenhuma pergunta.<br>Use os botões abaixo para adicionar.</p>';
@@ -1243,7 +1638,6 @@
             'style="font-size:11px;color:#6366f1;background:#eef2ff;border:1px solid #c7d2fe;border-radius:5px;padding:3px 10px;cursor:pointer;margin-top:2px;">+ Opção</button>';
           optsHtml += '</div>';
         }
-
         html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;">'+
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
           '<span style="font-size:20px;flex-shrink:0;">'+info.icon+'</span>'+
@@ -1266,16 +1660,12 @@
           optsHtml+'</div>';
       });
     }
-
     container.innerHTML = html;
-    // NÃO adiciona listeners aqui (eles já estão no container, adicionados 1 vez abaixo)
   }
 
-  // Listeners do modal — adicionados UMA ÚNICA VEZ após a página carregar
   (function initModalListeners() {
     var mq = document.getElementById('modalQ-perguntas');
     if (!mq) return;
-
     function mqHandle(e) {
       var el = e.target.closest('[data-mq]');
       if (!el) return;
@@ -1283,13 +1673,11 @@
       var i  = parseInt(el.dataset.i, 10);
       var oi = parseInt(el.dataset.oi, 10);
       var tipos3 = ['radio','checkbox','selecao'];
-
       if (a==='lbl'     && e.type==='input')  { _perguntasTemp[i].label = el.value; return; }
       if (a==='req'     && e.type==='change') { _perguntasTemp[i].obrigatorio = el.checked; return; }
       if (a==='opt-val' && e.type==='input')  {
         if (!_perguntasTemp[i].opcoes) _perguntasTemp[i].opcoes = [];
-        _perguntasTemp[i].opcoes[oi] = el.value;
-        return;
+        _perguntasTemp[i].opcoes[oi] = el.value; return;
       }
       if (a==='tipo' && e.type==='change') {
         _perguntasTemp[i].tipo = el.value;
@@ -1299,21 +1687,17 @@
       if (a==='rm-q'    && e.type==='click') { _perguntasTemp.splice(i,1); renderModalPerguntas(); return; }
       if (a==='add-opt' && e.type==='click') {
         if (!_perguntasTemp[i].opcoes) _perguntasTemp[i].opcoes = [];
-        _perguntasTemp[i].opcoes.push('');
-        renderModalPerguntas(); return;
+        _perguntasTemp[i].opcoes.push(''); renderModalPerguntas(); return;
       }
       if (a==='rm-opt'  && e.type==='click') {
-        _perguntasTemp[i].opcoes.splice(oi,1);
-        renderModalPerguntas(); return;
+        _perguntasTemp[i].opcoes.splice(oi,1); renderModalPerguntas(); return;
       }
     }
-
     mq.addEventListener('input',  mqHandle);
     mq.addEventListener('change', mqHandle);
     mq.addEventListener('click',  mqHandle);
   })();
 
-  // Botões tipo de pergunta no footer do modal
   (function initAddBtns() {
     var footer = document.querySelector('#modalPerguntas .mq-add-footer');
     if (!footer) return;
@@ -1330,7 +1714,6 @@
     });
   })();
 
-  // Botões salvar/fechar do modal (todos por ID, sem inline onclick)
   (function initModalBtns() {
     var btnSalvar  = document.getElementById('btnSalvarPerguntas');
     var btnFechar  = document.getElementById('btnFecharPerguntas');
@@ -1343,12 +1726,279 @@
       fecharModalPerguntas();
       if (window.showToast) showToast(_perguntasTemp.length+' pergunta(s). Clique em Salvar para gravar.','success');
     }
-
     if (btnSalvar)  btnSalvar.addEventListener('click', salvarQ);
     if (btnFechar)  btnFechar.addEventListener('click',  fecharModalPerguntas);
     if (btnFechar2) btnFechar2.addEventListener('click', fecharModalPerguntas);
     if (backdrop)   backdrop.addEventListener('click',   fecharModalPerguntas);
   })();
+
+  // ── Assistente de IA ─────────────────────────────────────────
+  var _aiSugestao = null;
+
+  var AI_TIPO_INFO = {
+    questionario:      { label:'Questionário',       icon:'📋', color:'#3b82f6' },
+    aprovacao:         { label:'Aprovação',          icon:'✅', color:'#22c55e' },
+    parecer:           { label:'Parecer Técnico',    icon:'💬', color:'#8b5cf6' },
+    assinatura_digital:{ label:'Assinatura Digital', icon:'✍️', color:'#f59e0b' }
+  };
+
+  function openModalAi() {
+    document.getElementById('aiStep1').style.display = 'block';
+    document.getElementById('aiStep2').style.display = 'none';
+    document.getElementById('aiError').style.display = 'none';
+    document.getElementById('aiDescricao').value = '';
+    document.getElementById('modalAi').style.display = 'block';
+    setTimeout(function(){ document.getElementById('aiDescricao').focus(); }, 80);
+  }
+  function closeModalAi() {
+    document.getElementById('modalAi').style.display = 'none';
+  }
+
+  var btnAi = document.getElementById('btnAiAssistant');
+  if (btnAi) btnAi.addEventListener('click', openModalAi);
+  document.getElementById('btnFecharModalAi').addEventListener('click', closeModalAi);
+  document.getElementById('btnAiCancelar1').addEventListener('click', closeModalAi);
+  document.getElementById('btnAiFechar2').addEventListener('click', closeModalAi);
+  document.getElementById('modalAiBackdrop').addEventListener('click', closeModalAi);
+
+  document.getElementById('btnAiVoltar').addEventListener('click', function() {
+    document.getElementById('aiStep2').style.display = 'none';
+    document.getElementById('aiStep1').style.display = 'block';
+  });
+
+  document.getElementById('btnAiGerar').addEventListener('click', function() {
+    var desc = document.getElementById('aiDescricao').value.trim();
+    if (!desc) {
+      var ta = document.getElementById('aiDescricao');
+      ta.focus();
+      ta.style.borderColor = '#ef4444';
+      ta.placeholder = 'Por favor, descreva o processo antes de gerar...';
+      setTimeout(function(){ ta.style.borderColor = ''; }, 2000);
+      return;
+    }
+
+    var btn = document.getElementById('btnAiGerar');
+    var iconEl  = document.getElementById('aiGerarIcon');
+    var labelEl = document.getElementById('aiGerarLabel');
+    btn.disabled = true;
+    iconEl.textContent = '⏳';
+    labelEl.textContent = 'Gerando...';
+    document.getElementById('aiError').style.display = 'none';
+
+    fetch('/fluxos/<%= f.id %>/ai-suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ descricao: desc, grupos: gruposData })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      iconEl.textContent = '✨';
+      labelEl.textContent = 'Gerar fluxo com IA';
+      if (!data.success) {
+        var errEl = document.getElementById('aiError');
+        errEl.textContent = data.message || 'Erro desconhecido.';
+        errEl.style.display = 'block';
+        return;
+      }
+      _aiSugestao = data.suggestion;
+      renderAiPreview(data.suggestion);
+      document.getElementById('aiStep1').style.display = 'none';
+      document.getElementById('aiStep2').style.display = 'block';
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      iconEl.textContent = '✨';
+      labelEl.textContent = 'Gerar fluxo com IA';
+      var errEl = document.getElementById('aiError');
+      errEl.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      errEl.style.display = 'block';
+      console.error(err);
+    });
+  });
+
+  function renderAiPreview(sug) {
+    document.getElementById('aiTituloSugerido').textContent = sug.titulo_sugerido || 'Fluxo sugerido';
+    document.getElementById('aiDescSugerida').textContent   = sug.descricao_sugerida || '';
+
+    var container = document.getElementById('aiEtapasPreview');
+    container.innerHTML = '';
+
+    (sug.etapas || []).forEach(function(e) {
+      var ti = AI_TIPO_INFO[e.tipo_acao] || { label: e.tipo_acao, icon: '📄', color: '#64748b' };
+
+      var card = document.createElement('div');
+      card.style.cssText = 'background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;';
+      card.setAttribute('data-ordem', e.ordem);
+
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+ti.color+';';
+      header.innerHTML = '<span style="font-size:14px;">'+ti.icon+'</span>'+
+        '<span style="font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em;flex:1;">'+ti.label+'</span>'+
+        (e.eh_inicio ? '<span style="font-size:9px;background:rgba(255,255,255,.25);color:#fff;padding:1px 6px;border-radius:10px;font-weight:700;">▶ Início</span>' : '')+
+        (e.eh_fim    ? '<span style="font-size:9px;background:rgba(255,255,255,.25);color:#fff;padding:1px 6px;border-radius:10px;font-weight:700;">■ Fim</span>' : '');
+
+      var body = document.createElement('div');
+      body.style.cssText = 'padding:10px 12px;';
+
+      // Nome editável
+      var nomeInput = document.createElement('input');
+      nomeInput.type = 'text';
+      nomeInput.value = e.nome || '';
+      nomeInput.setAttribute('data-field', 'nome');
+      nomeInput.setAttribute('data-ordem', e.ordem);
+      nomeInput.style.cssText = 'width:100%;font-size:13px;font-weight:700;color:#1e293b;border:none;border-bottom:2px solid #e2e8f0;padding:2px 0 5px;background:transparent;outline:none;margin-bottom:8px;';
+      nomeInput.addEventListener('change', function() {
+        var ord = parseInt(this.getAttribute('data-ordem'),10);
+        var etapa = (_aiSugestao.etapas||[]).find(function(x){return x.ordem===ord;});
+        if (etapa) etapa.nome = this.value;
+      });
+
+      // Grupo selector
+      var grupoDiv = document.createElement('div');
+      grupoDiv.style.cssText = 'display:flex;align-items:center;gap:6px;';
+      var grupoLabel = document.createElement('span');
+      grupoLabel.style.cssText = 'font-size:11px;color:#94a3b8;white-space:nowrap;';
+      grupoLabel.textContent = '👥 Grupo:';
+      var grupoSelect = document.createElement('select');
+      grupoSelect.setAttribute('data-field','grupo');
+      grupoSelect.setAttribute('data-ordem', e.ordem);
+      grupoSelect.style.cssText = 'flex:1;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;padding:3px 6px;background:#fff;color:#374151;';
+      var optNone = document.createElement('option');
+      optNone.value = '';
+      optNone.textContent = '— Sem grupo —';
+      grupoSelect.appendChild(optNone);
+      gruposData.forEach(function(g) {
+        var opt = document.createElement('option');
+        opt.value = String(g.id);
+        opt.textContent = g.nome;
+        if (String(e.grupo_id_sugerido) === String(g.id)) opt.selected = true;
+        grupoSelect.appendChild(opt);
+      });
+      grupoSelect.addEventListener('change', function() {
+        var ord = parseInt(this.getAttribute('data-ordem'),10);
+        var etapa = (_aiSugestao.etapas||[]).find(function(x){return x.ordem===ord;});
+        if (etapa) etapa._grupo_id_escolhido = this.value;
+      });
+
+      grupoDiv.appendChild(grupoLabel);
+      grupoDiv.appendChild(grupoSelect);
+      body.appendChild(nomeInput);
+      body.appendChild(grupoDiv);
+      card.appendChild(header);
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+
+    // Mostrar edges como texto
+    if (sug.edges && sug.edges.length > 0) {
+      var edgesDiv = document.createElement('div');
+      edgesDiv.style.cssText = 'margin-top:8px;padding:10px 12px;background:#f1f5f9;border-radius:8px;';
+      edgesDiv.innerHTML = '<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 6px;">Conexões sugeridas</p>';
+      sug.edges.forEach(function(edge) {
+        var row = document.createElement('div');
+        row.style.cssText = 'font-size:11px;color:#475569;margin-bottom:3px;display:flex;align-items:center;gap:6px;';
+        var etapaO = (sug.etapas||[]).find(function(x){return x.ordem===edge.origem_ordem;});
+        var etapaD = (sug.etapas||[]).find(function(x){return x.ordem===edge.destino_ordem;});
+        var labelColor = edge.label==='Não'||edge.label==='Reprovado' ? '#ef4444' :
+                         edge.label==='sempre' ? '#6366f1' : '#22c55e';
+        row.innerHTML = '<span style="font-size:12px;">→</span>'+
+          '<span style="color:#1e293b;font-weight:600;">'+(etapaO?etapaO.nome:'?')+'</span>'+
+          '<span style="background:'+labelColor+';color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">'+edge.label+'</span>'+
+          '<span style="color:#1e293b;font-weight:600;">'+(etapaD?etapaD.nome:'?')+'</span>';
+        edgesDiv.appendChild(row);
+      });
+      container.appendChild(edgesDiv);
+    }
+  }
+
+  // Criar etapas e edges no fluxo
+  document.getElementById('btnAiCriar').addEventListener('click', function() {
+    if (!_aiSugestao) return;
+    var btn = document.getElementById('btnAiCriar');
+    var iconEl  = document.getElementById('aiCriarIcon');
+    var labelEl = document.getElementById('aiCriarLabel');
+    btn.disabled = true;
+    iconEl.textContent = '⏳';
+    labelEl.textContent = 'Criando...';
+
+    var etapas = _aiSugestao.etapas || [];
+    var edges   = _aiSugestao.edges  || [];
+
+    // Mapa ordem → id criado
+    var ordemParaId = {};
+    var colsPerRow = 3;
+    var colSpacing = 290;
+    var rowSpacing = 200;
+
+    // Criar etapas sequencialmente
+    var promise = Promise.resolve();
+    etapas.forEach(function(e, i) {
+      promise = promise.then(function() {
+        // Atualizar nome se foi editado na preview
+        var nomeInput = document.querySelector('[data-field="nome"][data-ordem="'+e.ordem+'"]');
+        if (nomeInput) e.nome = nomeInput.value || e.nome;
+        var grupoSelect = document.querySelector('[data-field="grupo"][data-ordem="'+e.ordem+'"]');
+        var grupoId = grupoSelect ? grupoSelect.value : (e._grupo_id_escolhido || '');
+
+        var col = i % colsPerRow;
+        var row = Math.floor(i / colsPerRow);
+        var posX = 60 + col * colSpacing;
+        var posY = 60 + row * rowSpacing;
+
+        return fetch('/fluxos/'+fluxoId+'/etapas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            nome: e.nome,
+            tipo_acao: e.tipo_acao || 'questionario',
+            eh_inicio: e.eh_inicio ? '1' : '0',
+            eh_fim:    e.eh_fim    ? '1' : '0',
+            proprietario_id: grupoId || '',
+            prazo_em_dias: e.prazo_em_dias || '',
+            pos_x: posX,
+            pos_y: posY
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.success && d.etapa) {
+            ordemParaId[e.ordem] = d.etapa.id;
+          }
+        });
+      });
+    });
+
+    // Depois criar edges
+    promise = promise.then(function() {
+      var ep = Promise.resolve();
+      edges.forEach(function(edge) {
+        ep = ep.then(function() {
+          var origemId  = ordemParaId[edge.origem_ordem];
+          var destinoId = ordemParaId[edge.destino_ordem];
+          if (!origemId || !destinoId) return;
+          return fetch('/fluxos/'+fluxoId+'/edges', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ etapa_origem_id: origemId, etapa_destino_id: destinoId, label: edge.label || 'sempre' })
+          }).then(function(r){ return r.json(); });
+        });
+      });
+      return ep;
+    });
+
+    promise.then(function() {
+      closeModalAi();
+      if (window.showToast) showToast('Fluxo criado pela IA! Recarregando...', 'success');
+      setTimeout(function(){ location.reload(); }, 1000);
+    }).catch(function(err) {
+      btn.disabled = false;
+      iconEl.textContent = '🚀';
+      labelEl.textContent = 'Criar no fluxo';
+      if (window.showToast) showToast('Erro ao criar etapas. Tente novamente.', 'error');
+      console.error(err);
+    });
+  });
 
   // ── Helpers ───────────────────────────────────────────────────
   function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -1357,7 +2007,6 @@
   var canvas = document.getElementById('fluxoCanvas');
   if (canvas) canvas.addEventListener('scroll', drawConnections);
 
-  // Desenhar imediatamente E depois do layout completo
   drawConnections();
   setTimeout(drawConnections, 200);
   window.addEventListener('load', drawConnections);

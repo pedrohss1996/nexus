@@ -29,4 +29,6 @@ router.get('/:id/etapas/:etapaId/anexos/:anexoId/download', FluxoController.down
 router.post('/:id/edges', requireRole(['admin', 'gestor']), FluxoController.storeEdge);
 router.delete('/:id/edges/:edgeId', requireRole(['admin', 'gestor']), FluxoController.destroyEdge);
 
+router.post('/:id/ai-suggest', requireRole(['admin', 'gestor']), FluxoController.aiSuggest);
+
 module.exports = router;

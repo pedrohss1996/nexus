@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// Validar segredos obrigatórios em produção
+if (process.env.NODE_ENV === 'production') {
+  const missing = ['JWT_SECRET', 'SESSION_SECRET'].filter(k => !process.env[k]);
+  if (missing.length > 0) {
+    console.error(`FATAL: Variáveis de ambiente obrigatórias não definidas: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -67,14 +77,24 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting
+// Rate limiting geral para /api/
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requisições por IP
+  max: 100,
   message: 'Muitas requisições deste IP, tente novamente mais tarde.'
 });
-
 app.use('/api/', limiter);
+
+// Rate limiting estrito para login — protege contra brute-force
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // máximo 10 tentativas por IP por janela
+  message: 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // só conta falhas
+});
+app.use('/auth/login', loginLimiter);
 
 // Middlewares básicos
 app.use(cors({

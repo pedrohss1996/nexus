@@ -565,6 +565,86 @@ class FluxoController {
       res.status(500).send('Erro ao baixar arquivo.');
     }
   }
+
+  static async aiSuggest(req, res) {
+    try {
+      const { descricao, grupos } = req.body;
+      if (!descricao || !String(descricao).trim()) {
+        return res.status(400).json({ success: false, message: 'Descrição do processo é obrigatória.' });
+      }
+
+      const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+      const hasGemini    = !!process.env.GEMINI_API_KEY;
+
+      if (!hasAnthropic && !hasGemini) {
+        return res.status(503).json({ success: false, message: 'Nenhuma chave de IA configurada. Adicione GEMINI_API_KEY (gratuito) ou ANTHROPIC_API_KEY no arquivo .env e reinicie o servidor.' });
+      }
+
+      const gruposStr = Array.isArray(grupos) && grupos.length > 0
+        ? grupos.map(g => `- "${g.nome}" (id: ${g.id})`).join('\n')
+        : '(nenhum grupo disponível)';
+
+      const prompt = `Você é um especialista em mapeamento de processos e BPM (Business Process Management).
+Analise a descrição do processo abaixo e gere uma estrutura de fluxo de trabalho no formato JSON.
+
+Tipos de etapa disponíveis:
+- "questionario": formulário que um usuário preenche com dados/informações
+- "aprovacao": etapa de aprovação/reprovação por um responsável
+- "parecer": emissão de parecer técnico por especialista
+- "assinatura_digital": etapa que requer assinatura digital de documento
+
+Regras:
+1. UMA etapa com "eh_inicio": true (a primeira) e UMA com "eh_fim": true (a última)
+2. Use "label": "sempre" para fluxo linear, "Sim"/"Não" para ramificações de aprovação
+3. Sugira o grupo mais adequado usando os IDs dos grupos disponíveis
+4. 3 a 8 etapas para a maioria dos processos
+
+Grupos disponíveis:
+${gruposStr}
+
+Processo: ${String(descricao).trim()}
+
+Retorne APENAS JSON válido neste formato (sem texto extra, sem markdown):
+{"titulo_sugerido":"...","descricao_sugerida":"...","etapas":[{"ordem":1,"nome":"...","tipo_acao":"questionario","eh_inicio":true,"eh_fim":false,"grupo_id_sugerido":null,"prazo_em_dias":null}],"edges":[{"origem_ordem":1,"destino_ordem":2,"label":"sempre"}]}`;
+
+      let raw = '';
+
+      if (hasAnthropic) {
+        const Anthropic = require('@anthropic-ai/sdk');
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const message = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
+          messages: [{ role: 'user', content: prompt }]
+        });
+        raw = message.content[0].text.trim();
+      } else {
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        raw = result.response.text().trim();
+      }
+
+      const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
+      if (!jsonMatch) {
+        return res.status(500).json({ success: false, message: 'A IA não retornou JSON válido. Tente reformular a descrição.' });
+      }
+      const suggestion = JSON.parse(jsonMatch[1]);
+      return res.json({ success: true, suggestion });
+    } catch (error) {
+      console.error('Erro no AI suggest:', error);
+      const body = error.error || {};
+      const msg = (error.status === 401 || (error.message||'').includes('API key'))
+                    ? 'Chave de API inválida. Verifique o .env e reinicie o servidor.'
+                  : error.status === 429
+                    ? 'Limite de requisições atingido. Aguarde um momento e tente novamente.'
+                  : (error.status === 400 && String(body.message||'').includes('credit'))
+                    ? 'Saldo insuficiente na Anthropic API. Use GEMINI_API_KEY (gratuito) ou adicione créditos em console.anthropic.com.'
+                  : error.message || 'Erro ao chamar a IA.';
+      return res.status(500).json({ success: false, message: msg });
+    }
+  }
 }
 
 FluxoController.uploadAnexoMulter = uploadAnexoMulter;
