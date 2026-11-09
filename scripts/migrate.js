@@ -48,6 +48,9 @@ function criarPool() {
 
 function sslConfig() {
   if (process.env.DB_SSL === 'false') return false;
+  // Rede privada do Railway já é criptografada e o Postgres usa certificado
+  // autoassinado: sem TLS aqui.
+  if ((process.env.DATABASE_URL || '').includes('.railway.internal')) return false;
   const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
   const ca = process.env.DB_SSL_CA;
   return ca ? { ca, rejectUnauthorized } : { rejectUnauthorized };

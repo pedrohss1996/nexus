@@ -7,6 +7,9 @@ require('dotenv').config();
 // informe o CA do provedor em DB_SSL_CA. Só desligue em desenvolvimento local.
 function sslConfig() {
   if (process.env.DB_SSL === 'false') return false;
+  // Rede privada do Railway já é criptografada e o Postgres usa certificado
+  // autoassinado: sem TLS aqui.
+  if ((process.env.DATABASE_URL || '').includes('.railway.internal')) return false;
 
   const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
   const ca = process.env.DB_SSL_CA;
@@ -22,12 +25,17 @@ function sslConfig() {
   return ca ? { ca, rejectUnauthorized } : { rejectUnauthorized };
 }
 
+// DATABASE_URL (Railway) tem prioridade sobre as variáveis DB_* individuais.
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'dataflow',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
+  ...(process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL }
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        database: process.env.DB_NAME || 'dataflow',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+      }),
   ssl: sslConfig(),
   max: 20, // máximo de clientes no pool
   idleTimeoutMillis: 30000,
