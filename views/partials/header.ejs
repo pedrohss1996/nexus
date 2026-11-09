@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" href="/imgs/favicon.png" sizes="192x192">
   <link rel="icon" type="image/png" href="/imgs/favicon.png" sizes="any">
   <link rel="apple-touch-icon" href="/imgs/favicon.png">
-  <link href="/css/output.css" rel="stylesheet">
+  <link href="/css/output.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>" rel="stylesheet">
   <link href="/css/fullwidth-layout.css" rel="stylesheet">
   
   <!-- Quill Editor CSS -->
@@ -67,279 +67,244 @@
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 antialiased transition-colors">
   <% if (typeof user !== 'undefined' && user) { %>
-    <!-- Header + Nav fixos no topo -->
-    <div class="fixed top-0 left-0 right-0 z-50">
-    <!-- Header -->
-    <header class="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700 transition-colors">
-      <div class="w-full px-6">
-        <div class="flex justify-between items-center h-16">
-          <!-- Logo DataFlow -->
-          <div class="flex items-center space-x-3">
-            <a href="/inicio" aria-label="Nexus — início"><img src="/imgs/logo-dataflow.png" alt="Nexus" class="h-9 sm:h-12 w-auto" /></a>
-          </div>
+  <%
+    var D = {
+      inicio: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+      processos: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+      tarefas: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+      documentos: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+      assinaturas: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
+      contratos: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM15 2v5a1 1 0 001 1h5',
+      gestao: 'M3 7h18M3 12h18M3 17h18',
+      cadastros: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+      protocolo: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
+      tramitacao: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+      centros: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+      fornecedores: 'M8 17h8m-8 0a5 5 0 01-.916-4.935 5.002 5.002 0 019.832 0A5 5 0 0116 17m-7-5a3 3 0 11-6 0 3 3 0 016 0zm7 0a3 3 0 11-6 0 3 3 0 016 0z',
+      usuarios: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      grupos: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+      unidades: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+      fluxos: 'M5 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM10 9h6v6h-6zM19 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 12h2.5M16 12h.5',
+      comunicacao: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
+      verificar: 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z',
+      senha: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
+      sair: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
+      seta: 'M19 9l-7 7-7-7'
+    };
+    var svg = function (d, cls) { return '<svg class="' + cls + '" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + d + '"/></svg>'; };
+    var principais = [
+      { href: '/inicio', label: 'Início', icone: 'inicio', nav: '/inicio' },
+      { href: '/processos', label: 'Processos', icone: 'processos', nav: '/processos', exceto: '/processos/tarefas' },
+      { href: '/processos/tarefas', label: 'Minhas Tarefas', icone: 'tarefas', nav: '/processos/tarefas' },
+      { href: '/documentos-pdf', label: 'Documentos', icone: 'documentos', nav: '/documentos-pdf' },
+      { href: '/assinaturas-doc/pendentes', label: 'Assinaturas', icone: 'assinaturas', nav: '/assinaturas-doc' },
+      { href: '/contratos', label: 'Contratos', icone: 'contratos', nav: '/contratos' }
+    ];
+    var menus = [
+      { id: 'gestao', label: 'Gestão', icone: 'gestao', nav: '/protocolo,/tramitacao,/centros-custo,/fornecedores', itens: [
+        { href: '/protocolo', label: 'Protocolos', icone: 'protocolo' },
+        { href: '/tramitacao', label: 'Tramitações', icone: 'tramitacao' },
+        { href: '/centros-custo', label: 'Centros de Custo', icone: 'centros' },
+        { href: '/fornecedores', label: 'Fornecedores', icone: 'fornecedores' }
+      ]},
+      { id: 'cadastros', label: 'Cadastros', icone: 'cadastros', nav: '/cadastros,/grupos,/unidades,/fluxos,/notificacoes/admin', itens: [
+        { href: '/cadastros/usuarios', label: 'Usuários', icone: 'usuarios' },
+        { href: '/grupos', label: 'Grupos', icone: 'grupos' },
+        { href: '/unidades', label: 'Unidades', icone: 'unidades' },
+        { href: '/fluxos', label: 'Fluxos', icone: 'fluxos' }
+      ].concat(user.perfil === 'admin' ? [{ href: '/notificacoes/admin', label: 'Comunicação', icone: 'comunicacao' }] : []) }
+    ];
+    var navLink = 'nav-link flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white transition-colors';
+    var iconeNav = 'hidden min-[1800px]:block w-5 h-5 shrink-0';
+    var menuItem = 'flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors';
+    var iconeMenu = 'w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 shrink-0';
+    var temUnidades = typeof unidades !== 'undefined' && unidades.length > 0;
+  %>
 
-          <!-- Seletor de Unidade -->
-          <div class="hidden md:flex min-w-0 flex-1 justify-center px-3">
-            <form action="/api/selecionar-unidade" method="POST" id="formUnidade" class="w-full max-w-[400px]">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <select name="unidade_id" id="seletorUnidade" class="border border-gray-300 dark:border-slate-600 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-100 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer w-full" aria-label="Unidade">
-                <% if (typeof unidades !== 'undefined' && unidades.length > 0) { %>
-                  <% unidades.forEach(unidade => { %>
-                    <option value="<%= unidade.id %>" <%= unidadeSelecionada == unidade.id ? 'selected' : '' %>>
-                      <%= unidade.nome %>
-                    </option>
-                  <% }); %>
-                <% } else { %>
-                  <option value="">Nenhuma unidade disponível</option>
-                <% } %>
-              </select>
-            </form>
-          </div>
-          <script>
-            // Auto-submit ao mudar unidade
-            document.getElementById('seletorUnidade')?.addEventListener('change', function() {
-              document.getElementById('formUnidade').submit();
-            });
-          </script>
+  <!-- Barra única: logo, navegação, unidade e conta -->
+  <header class="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white shadow-sm transition-colors dark:border-slate-700 dark:bg-slate-900">
+    <div class="flex h-16 items-center gap-2 px-3 sm:px-4 xl:px-6">
+      <button type="button" id="navToggle" class="xl:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800" aria-controls="navPainel" aria-expanded="false" aria-label="Abrir menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
 
-          <!-- User Menu -->
-          <div class="flex items-center space-x-3">
-            <!-- Sininho de Notificações -->
-            <a href="/notificacoes" id="btn-notif" title="Notificações"
-              class="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-              <span id="notif-badge"
-                class="hidden absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none"></span>
-            </a>
+      <a href="/inicio" class="mr-2 shrink-0" aria-label="Nexus — início">
+        <img src="/imgs/logo-dataflow.png" alt="Nexus" class="h-10 w-auto">
+      </a>
 
-            <!-- Dark Mode Toggle -->
-            <button id="themeToggle" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Alternar tema">
-              <!-- Ícone Sol (Light Mode) -->
-              <svg id="sunIcon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-              </svg>
-              <!-- Ícone Lua (Dark Mode) -->
-              <svg id="moonIcon" class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-              </svg>
-            </button>
+      <nav class="hidden xl:flex min-w-0 flex-1 items-center gap-0.5" aria-label="Navegação principal">
+        <% principais.forEach(function (it) { %>
+          <a href="<%= it.href %>" class="<%= navLink %>" data-nav="<%= it.nav %>" data-exceto="<%= it.exceto || '' %>"><%- svg(D[it.icone], iconeNav) %><%= it.label %></a>
+        <% }); %>
+        <% menus.forEach(function (m) { %>
+          <button type="button" class="<%= navLink %>" data-dropdown="<%= m.id %>" data-nav="<%= m.nav %>" aria-haspopup="true" aria-expanded="false" aria-controls="dd-<%= m.id %>">
+            <%- svg(D[m.icone], iconeNav) %><%= m.label %>
+            <%- svg(D.seta, 'w-4 h-4 -ml-0.5 transition-transform duration-200 seta') %>
+          </button>
+        <% }); %>
+      </nav>
 
-            <!-- Perfil e Logout (dropdown ao clicar no usuário) -->
-            <div class="relative flex items-center space-x-3 pl-3 border-l border-gray-200 dark:border-slate-700">
-              <button type="button" id="userMenuBtn" class="flex items-center space-x-2 rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500" title="Menu do usuário" aria-expanded="false" aria-haspopup="true">
-                <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm shrink-0">
-                  <%= user.nome.charAt(0).toUpperCase() %>
-                </div>
-                <div class="hidden lg:block text-left">
-                  <p class="text-sm font-medium text-gray-700 dark:text-gray-100"><%= user.nome %></p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 capitalize"><%= user.perfil %></p>
-                </div>
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 hidden lg:block shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-              <div id="userMenuDropdown" class="hidden absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 py-1 z-[9999]">
-                <a href="/cadastros/usuarios/<%= user.id %>/alterar-senha" class="flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  <svg class="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                  </svg>
-                  Alterar senha
-                </a>
-                <a href="/cadastros/usuarios/<%= user.id %>/editar" class="flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  <svg class="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                  Alterar dados cadastrais
-                </a>
-                <a href="/verificar" class="flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  <svg class="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-                  Verificar assinatura
-                </a>
-                <div class="border-t border-gray-200 dark:border-slate-600 my-1"></div>
-                <a href="/auth/logout" class="flex items-center px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                  <svg class="w-4 h-4 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                  </svg>
-                  Sair
-                </a>
-              </div>
+      <div class="ml-auto flex shrink-0 items-center gap-1">
+        <!-- Unidade em que se está trabalhando -->
+        <form action="/api/selecionar-unidade" method="POST" id="formUnidade" class="hidden md:block">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <select name="unidade_id" id="seletorUnidade" aria-label="Unidade" <%= temUnidades ? '' : 'disabled' %>
+            class="w-44 2xl:w-60 cursor-pointer truncate rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100">
+            <% if (temUnidades) { %>
+              <% unidades.forEach(function (unidade) { %>
+                <option value="<%= unidade.id %>" <%= unidadeSelecionada == unidade.id ? 'selected' : '' %>><%= unidade.nome %></option>
+              <% }); %>
+            <% } else { %>
+              <option value="">Nenhuma unidade</option>
+            <% } %>
+          </select>
+        </form>
+
+        <a href="/notificacoes" id="btn-notif" title="Notificações" aria-label="Notificações"
+          class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span id="notif-badge" class="hidden absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center leading-none"></span>
+        </a>
+
+        <button id="themeToggle" type="button" class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white transition-colors" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+          <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+
+        <div class="relative ml-1 border-l border-gray-200 pl-2 dark:border-slate-700">
+          <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" title="Menu do usuário" aria-expanded="false" aria-haspopup="true" aria-controls="userMenuDropdown">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white"><%= user.nome.charAt(0).toUpperCase() %></span>
+            <span class="hidden 2xl:block text-left">
+              <span class="block text-sm font-medium text-gray-700 dark:text-gray-100"><%= user.nome %></span>
+              <span class="block text-xs capitalize text-gray-500 dark:text-gray-400"><%= user.perfil %></span>
+            </span>
+            <%- svg(D.seta, 'hidden 2xl:block w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400') %>
+          </button>
+          <div id="userMenuDropdown" class="hidden absolute right-0 top-full z-[9999] mt-2 w-60 rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-slate-600 dark:bg-slate-800" role="menu">
+            <div class="px-4 py-2 2xl:hidden">
+              <p class="truncate text-sm font-medium text-gray-900 dark:text-white"><%= user.nome %></p>
+              <p class="text-xs capitalize text-gray-500 dark:text-gray-400"><%= user.perfil %></p>
             </div>
-            <script>
-              (function() {
-                var btn = document.getElementById('userMenuBtn');
-                var dropdown = document.getElementById('userMenuDropdown');
-                if (btn && dropdown) {
-                  btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var isHidden = dropdown.classList.contains('hidden');
-                    dropdown.classList.toggle('hidden', !isHidden);
-                    btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-                  });
-                  document.addEventListener('click', function(e) {
-                    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-                      dropdown.classList.add('hidden');
-                      btn.setAttribute('aria-expanded', 'false');
-                    }
-                  });
-                }
-              })();
-            </script>
+            <a href="/cadastros/usuarios/<%= user.id %>/editar" class="<%= menuItem %>" role="menuitem"><%- svg(D.usuarios, iconeMenu) %>Meus dados</a>
+            <a href="/cadastros/usuarios/<%= user.id %>/alterar-senha" class="<%= menuItem %>" role="menuitem"><%- svg(D.senha, iconeMenu) %>Alterar senha</a>
+            <a href="/verificar" class="<%= menuItem %>" role="menuitem"><%- svg(D.verificar, iconeMenu) %>Verificar assinatura</a>
+            <div class="my-1 border-t border-gray-200 dark:border-slate-600"></div>
+            <a href="/auth/logout" class="flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors" role="menuitem"><%- svg(D.sair, 'w-4 h-4 mr-3 shrink-0') %>Sair</a>
           </div>
         </div>
       </div>
-    </header>
+    </div>
 
-    <!-- Celular: unidade em linha própria, com o nome inteiro visível -->
-    <div class="md:hidden bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-2">
-      <form action="/api/selecionar-unidade" method="POST">
+    <!-- Painel do menu em telas menores (abre pelo ☰) -->
+    <div id="navPainel" class="hidden xl:hidden max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-gray-200 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-900">
+      <form action="/api/selecionar-unidade" method="POST" class="mb-3 md:hidden">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <select name="unidade_id" aria-label="Unidade" onchange="this.form.submit()"
-          class="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-100 bg-white dark:bg-slate-800">
-          <% if (typeof unidades !== 'undefined' && unidades.length > 0) { %>
+        <label class="mb-1 block px-1 text-xs text-gray-500 dark:text-gray-400">Unidade</label>
+        <select name="unidade_id" aria-label="Unidade" onchange="this.form.submit()" <%= temUnidades ? '' : 'disabled' %>
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100">
+          <% if (temUnidades) { %>
             <% unidades.forEach(function (unidade) { %>
               <option value="<%= unidade.id %>" <%= unidadeSelecionada == unidade.id ? 'selected' : '' %>><%= unidade.nome %></option>
             <% }); %>
           <% } else { %>
-            <option value="">Nenhuma unidade disponível</option>
+            <option value="">Nenhuma unidade</option>
           <% } %>
         </select>
       </form>
-    </div>
-
-    <!-- Navigation -->
-    <%
-      var navLink = 'nav-link px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center';
-      var menuItem = 'flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors';
-      var ic = function (d) { return '<svg class="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + d + '"/></svg>'; };
-      var icMenu = function (d) { return '<svg class="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + d + '"/></svg>'; };
-      var D = {
-        inicio: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-        processos: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-        tarefas: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-        documentos: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        assinaturas: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
-        contratos: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM15 2v5a1 1 0 001 1h5',
-        gestao: 'M3 7h18M3 12h18M3 17h18',
-        cadastros: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-        protocolo: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
-        tramitacao: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
-        centros: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
-        fornecedores: 'M8 17h8m-8 0a5 5 0 01-.916-4.935 5.002 5.002 0 019.832 0A5 5 0 0116 17m-7-5a3 3 0 11-6 0 3 3 0 016 0zm7 0a3 3 0 11-6 0 3 3 0 016 0z',
-        usuarios: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-        grupos: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-        unidades: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
-        fluxos: 'M5 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM10 9h6v6h-6zM19 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 12h2.5M16 12h.5',
-        comunicacao: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-        verificar: 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z',
-        seta: 'M19 9l-7 7-7-7'
-      };
-      // Menus suspensos: agrupam o que antes transbordava a barra
-      var menus = [
-        { id: 'gestao', label: 'Gestão', icone: 'gestao', match: ['/protocolo', '/tramitacao', '/centros-custo', '/fornecedores'], itens: [
-          { href: '/protocolo', label: 'Protocolos', icone: 'protocolo' },
-          { href: '/tramitacao', label: 'Tramitações', icone: 'tramitacao' },
-          { href: '/centros-custo', label: 'Centros de Custo', icone: 'centros' },
-          { href: '/fornecedores', label: 'Fornecedores', icone: 'fornecedores' }
-        ]},
-        { id: 'cadastros', label: 'Cadastros', icone: 'cadastros', match: ['/cadastros', '/grupos', '/unidades', '/fluxos', '/notificacoes/admin'], itens: [
-          { href: '/cadastros/usuarios', label: 'Usuários', icone: 'usuarios' },
-          { href: '/grupos', label: 'Grupos', icone: 'grupos' },
-          { href: '/unidades', label: 'Unidades', icone: 'unidades' },
-          { href: '/fluxos', label: 'Fluxos', icone: 'fluxos' }
-        ].concat(user.perfil === 'admin' ? [{ href: '/notificacoes/admin', label: 'Comunicação', icone: 'comunicacao' }] : []) }
-      ];
-    %>
-    <nav class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm transition-colors">
-      <div class="w-full px-4 sm:px-6">
-        <div class="flex items-center space-x-1 overflow-x-auto py-2 scrollbar-thin">
-          <!-- Novo Processo - Botão Destaque -->
-          <a href="/processos/novo" class="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white px-5 py-2.5 mr-1 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg text-sm font-semibold flex items-center whitespace-nowrap">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Novo Processo
-          </a>
-
-          <a href="/inicio" data-nav="/inicio" class="<%= navLink %>"><%- ic(D.inicio) %>Início</a>
-          <a href="/processos" data-nav="/processos" data-exceto="/processos/tarefas" class="<%= navLink %>"><%- ic(D.processos) %>Processos</a>
-          <a href="/processos/tarefas" data-nav="/processos/tarefas" class="<%= navLink %>"><%- ic(D.tarefas) %>Minhas Tarefas</a>
-          <a href="/documentos-pdf" data-nav="/documentos-pdf" class="<%= navLink %>"><%- ic(D.documentos) %>Documentos</a>
-          <a href="/assinaturas-doc/pendentes" data-nav="/assinaturas-doc" class="<%= navLink %>"><%- ic(D.assinaturas) %>Assinaturas</a>
-          <a href="/contratos" data-nav="/contratos" class="<%= navLink %>"><%- ic(D.contratos) %>Contratos</a>
-
-          <% menus.forEach(function (m) { %>
-            <button type="button" class="<%= navLink %>" data-dropdown="<%= m.id %>" data-nav="<%= m.match.join(',') %>" aria-haspopup="true" aria-expanded="false" aria-controls="dd-<%= m.id %>">
-              <%- ic(D[m.icone]) %><%= m.label %>
-              <svg class="w-4 h-4 ml-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= D.seta %>"/></svg>
-            </button>
+      <div class="grid gap-x-6 gap-y-1 sm:grid-cols-3">
+        <div>
+          <% principais.forEach(function (it) { %>
+            <a href="<%= it.href %>" class="<%= navLink %> py-2.5" data-nav="<%= it.nav %>" data-exceto="<%= it.exceto || '' %>"><%- svg(D[it.icone], 'w-5 h-5 shrink-0') %><%= it.label %></a>
           <% }); %>
         </div>
-      </div>
-    </nav>
-
-    <!-- Painéis dos menus suspensos (fora da barra rolável, para não serem cortados) -->
-    <% menus.forEach(function (m) { %>
-      <div id="dd-<%= m.id %>" class="hidden fixed bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-gray-200 dark:border-slate-600 overflow-hidden z-[9999] min-w-[220px] py-1" role="menu">
-        <% m.itens.forEach(function (it) { %>
-          <a href="<%= it.href %>" class="<%= menuItem %>" role="menuitem"><%- icMenu(D[it.icone]) %><%= it.label %></a>
+        <% menus.forEach(function (m) { %>
+          <div>
+            <p class="px-2.5 pb-1 pt-3 text-xs font-medium text-gray-500 dark:text-gray-400 sm:pt-0"><%= m.label %></p>
+            <% m.itens.forEach(function (it) { %>
+              <a href="<%= it.href %>" class="<%= navLink %> py-2.5" data-nav="<%= it.href %>"><%- svg(D[it.icone], 'w-5 h-5 shrink-0') %><%= it.label %></a>
+            <% }); %>
+          </div>
         <% }); %>
       </div>
-    <% }); %>
-
-    <script>
-      (function () {
-        var path = window.location.pathname || '';
-        function casa(lista) {
-          return (lista || '').split(',').filter(Boolean).some(function (m) { return path === m || path.indexOf(m + '/') === 0; });
-        }
-        // Item ativo
-        document.querySelectorAll('.nav-link[data-nav]').forEach(function (el) {
-          if (casa(el.getAttribute('data-nav')) && !casa(el.getAttribute('data-exceto'))) {
-            el.classList.add('nav-link-active');
-            el.setAttribute('aria-current', 'page');
-          }
-        });
-
-        // Menus suspensos
-        var abertos = null;
-        function fechar() {
-          if (!abertos) return;
-          abertos.painel.classList.add('hidden');
-          abertos.btn.setAttribute('aria-expanded', 'false');
-          abertos.btn.querySelector('svg:last-child')?.classList.remove('rotate-180');
-          abertos = null;
-        }
-        function posicionar(btn, painel) {
-          var r = btn.getBoundingClientRect();
-          var esquerda = Math.min(r.left, window.innerWidth - painel.offsetWidth - 8);
-          painel.style.top = (r.bottom + 4) + 'px';
-          painel.style.left = Math.max(8, esquerda) + 'px';
-        }
-        document.querySelectorAll('[data-dropdown]').forEach(function (btn) {
-          var painel = document.getElementById('dd-' + btn.getAttribute('data-dropdown'));
-          btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var eraEste = abertos && abertos.btn === btn;
-            fechar();
-            if (eraEste) return;
-            painel.classList.remove('hidden');
-            posicionar(btn, painel);
-            btn.setAttribute('aria-expanded', 'true');
-            btn.querySelector('svg:last-child')?.classList.add('rotate-180');
-            abertos = { btn: btn, painel: painel };
-          });
-        });
-        document.addEventListener('click', function (e) { if (abertos && !abertos.painel.contains(e.target)) fechar(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fechar(); });
-        window.addEventListener('resize', fechar);
-        window.addEventListener('scroll', fechar, true);
-      })();
-    </script>
     </div>
-    <!-- Espaço para compensar header + nav fixos -->
-    <div class="h-[10.25rem] md:h-[7.5rem] flex-shrink-0 bg-gray-50 dark:bg-slate-900 transition-colors" aria-hidden="true"></div>
-    
+  </header>
+
+  <!-- Painéis dos menus suspensos -->
+  <% menus.forEach(function (m) { %>
+    <div id="dd-<%= m.id %>" class="hidden fixed z-[9999] min-w-[220px] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-2xl dark:border-slate-600 dark:bg-slate-800" role="menu">
+      <% m.itens.forEach(function (it) { %>
+        <a href="<%= it.href %>" class="<%= menuItem %>" role="menuitem"><%- svg(D[it.icone], iconeMenu) %><%= it.label %></a>
+      <% }); %>
+    </div>
+  <% }); %>
+
+  <script>
+    (function () {
+      var path = window.location.pathname || '';
+      function casa(lista) {
+        return (lista || '').split(',').filter(Boolean).some(function (m) { return path === m || path.indexOf(m + '/') === 0; });
+      }
+      // Item ativo
+      document.querySelectorAll('.nav-link[data-nav]').forEach(function (el) {
+        if (casa(el.getAttribute('data-nav')) && !casa(el.getAttribute('data-exceto'))) {
+          el.classList.add('nav-link-active');
+          el.setAttribute('aria-current', 'page');
+        }
+      });
+
+      // Trocar unidade
+      document.getElementById('seletorUnidade')?.addEventListener('change', function () {
+        document.getElementById('formUnidade').submit();
+      });
+
+      // Menu ☰ (telas menores)
+      var toggle = document.getElementById('navToggle');
+      var painel = document.getElementById('navPainel');
+      toggle?.addEventListener('click', function () {
+        var abre = painel.classList.contains('hidden');
+        painel.classList.toggle('hidden', !abre);
+        toggle.setAttribute('aria-expanded', abre ? 'true' : 'false');
+      });
+
+      // Menus suspensos (Gestão, Cadastros) e menu da conta
+      var aberto = null;
+      function fechar() {
+        if (!aberto) return;
+        aberto.painel.classList.add('hidden');
+        aberto.btn.setAttribute('aria-expanded', 'false');
+        aberto.btn.querySelector('.seta')?.classList.remove('rotate-180');
+        aberto = null;
+      }
+      function abrir(btn, p, posicionar) {
+        var eraEste = aberto && aberto.btn === btn;
+        fechar();
+        if (eraEste) return;
+        p.classList.remove('hidden');
+        if (posicionar) {
+          var r = btn.getBoundingClientRect();
+          p.style.top = (r.bottom + 4) + 'px';
+          p.style.left = Math.max(8, Math.min(r.left, window.innerWidth - p.offsetWidth - 8)) + 'px';
+        }
+        btn.setAttribute('aria-expanded', 'true');
+        btn.querySelector('.seta')?.classList.add('rotate-180');
+        aberto = { btn: btn, painel: p };
+      }
+      document.querySelectorAll('[data-dropdown]').forEach(function (btn) {
+        var p = document.getElementById('dd-' + btn.getAttribute('data-dropdown'));
+        btn.addEventListener('click', function (e) { e.stopPropagation(); abrir(btn, p, true); });
+      });
+      var userBtn = document.getElementById('userMenuBtn');
+      var userMenu = document.getElementById('userMenuDropdown');
+      userBtn?.addEventListener('click', function (e) { e.stopPropagation(); abrir(userBtn, userMenu, false); });
+      document.addEventListener('click', function (e) { if (aberto && !aberto.painel.contains(e.target)) fechar(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fechar(); });
+      window.addEventListener('resize', fechar);
+    })();
+  </script>
+
+  <!-- Espaço para compensar a barra fixa -->
+  <div class="h-16 flex-shrink-0" aria-hidden="true"></div>
+
     <!-- Script do Sininho de Notificações -->
     <script>
     (function() {

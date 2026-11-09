@@ -11,10 +11,11 @@
       if (!container) return;
 
       var colors = {
-        success: 'bg-green-600 text-white',
-        error:   'bg-red-600 text-white',
-        warning: 'bg-yellow-500 text-white',
-        info:    'bg-blue-600 text-white',
+        // Cor só no ícone; o cartão segue o tema
+        success: 'text-green-600 dark:text-green-400',
+        error:   'text-red-600 dark:text-red-400',
+        warning: 'text-amber-500 dark:text-amber-400',
+        info:    'text-primary-600 dark:text-primary-300',
       };
       var icons = {
         success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
@@ -24,13 +25,15 @@
       };
 
       var toast = document.createElement('div');
-      toast.className = 'flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg pointer-events-auto max-w-sm transition-all duration-300 opacity-0 translate-y-2 ' + (colors[type] || colors.info);
-      toast.innerHTML = '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">' + (icons[type] || icons.info) + '</svg>' +
-        '<span class="text-sm font-medium flex-1">' + message + '</span>' +
+      toast.className = 'flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 shadow-lg pointer-events-auto max-w-sm transition-all duration-300 opacity-0 translate-y-2 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-100';
+      toast.innerHTML = '<svg class="w-5 h-5 flex-shrink-0 ' + (colors[type] || colors.info) + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">' + (icons[type] || icons.info) + '</svg>' +
+        '<span class="text-sm font-medium flex-1"></span>' +
         '<button onclick="this.parentElement.remove()" class="ml-2 opacity-70 hover:opacity-100">' +
         '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' +
         '</button>';
 
+      // Mensagem como texto, nunca HTML: pode conter dados do usuário
+      toast.querySelector('span').textContent = message;
       container.appendChild(toast);
       requestAnimationFrame(function() {
         requestAnimationFrame(function() {

@@ -1,0 +1,25 @@
+<%#
+  Escolha de acesso: unidades em blocos, grupos como botões de opção.
+  Parâmetros: unidadesAcesso ([{ id, nome, grupos: [{ id, nome }] }]), selecionado (id do grupo), obrigatorio (bool)
+%>
+<% var _sel = typeof selecionado !== 'undefined' && selecionado != null ? String(selecionado) : ''; %>
+<% var _primeiro = true; %>
+<fieldset class="seletor-acesso">
+  <legend class="mb-2 block text-sm font-medium text-ink">Unidade e grupo</legend>
+  <div class="grid gap-2 sm:grid-cols-2">
+    <% unidadesAcesso.forEach(function (un) { %>
+      <div class="rounded-lg border border-line bg-raised px-3 py-2.5">
+        <p class="mb-2 truncate text-sm font-medium text-ink" title="<%= un.nome %>"><%= un.nome %></p>
+        <div class="flex flex-wrap gap-1.5">
+          <% un.grupos.forEach(function (g) {
+               var marcado = _sel ? _sel === String(g.id) : _primeiro; _primeiro = false; %>
+            <label class="cursor-pointer">
+              <input type="radio" name="grupo_id" value="<%= g.id %>" class="peer sr-only" <%= marcado ? 'checked' : '' %> <%= (typeof obrigatorio === 'undefined' || obrigatorio) ? 'required' : '' %>>
+              <span class="chip-opcao"><%= g.nome %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</fieldset>

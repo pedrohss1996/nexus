@@ -206,6 +206,17 @@ app.use((req, res, next) => {
 const CACHE_LONGO = 30 * 24 * 60 * 60 * 1000; // 30 dias
 const CACHE_CURTO = 60 * 60 * 1000;           // 1 hora
 
+// Versão dos assets: hash do CSS gerado. As views pedem
+// /css/output.css?v=<hash>, então um deploy com CSS novo muda o endereço e o
+// navegador não reaproveita o arquivo antigo do cache (antes, por até 1 hora,
+// a página nova aparecia com o CSS da versão anterior).
+try {
+  const cssGerado = require('fs').readFileSync(path.join(__dirname, 'public', 'css', 'output.css'));
+  app.locals.assetVersion = require('crypto').createHash('sha1').update(cssGerado).digest('hex').slice(0, 10);
+} catch (_) {
+  app.locals.assetVersion = String(Date.now());
+}
+
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   lastModified: true,

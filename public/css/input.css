@@ -19,7 +19,7 @@
     --ink: 17 24 39;         /* gray-900 */
     --muted: 75 85 99;       /* gray-600 */
     --negative: 220 38 38;
-    --shell-top: 10.25rem;   /* celular: header + unidade + navegação */
+    --shell-top: 4rem;       /* barra única fixa */
     color-scheme: light;
   }
   .dark {
@@ -34,7 +34,6 @@
     color-scheme: dark;
   }
 
-  @media (min-width: 768px) { :root { --shell-top: 7.5rem; } }
 
   html { -webkit-text-size-adjust: 100%; }
   body {
@@ -136,6 +135,29 @@
   .pill-warn { @apply bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200; }
   .pill-ok { @apply bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200; }
   .pill-bad { @apply bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200; }
+}
+
+/* ==========================================================================
+   Mensagens (sucesso, erro, aviso) e opções em botão
+   Contraste pensado para os dois temas: no escuro, fundo do tom bem escuro
+   com texto claro do mesmo tom.
+   ========================================================================== */
+@layer components {
+  .alerta { @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-sm; }
+  .alerta-ok    { @apply border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/40 dark:text-green-200; }
+  .alerta-erro  { @apply border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/40 dark:text-red-200; }
+  .alerta-aviso { @apply border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100; }
+
+  .chip-opcao {
+    @apply inline-flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-primary-400 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:border-primary-400;
+  }
+  .peer:checked + .chip-opcao { @apply border-primary-600 bg-primary-600 text-white dark:border-primary-500 dark:bg-primary-600; }
+  .peer:focus-visible + .chip-opcao { @apply ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-slate-900; }
+
+  /* Selects nativos: seta própria e cor certa no tema escuro */
+  select { color-scheme: light; }
+  .dark select { color-scheme: dark; }
+  .dark select option, .dark select optgroup { background-color: #1e293b; color: #f1f5f9; }
 }
 
 /* Scrollbar discreta */
