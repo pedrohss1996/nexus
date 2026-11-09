@@ -1,214 +1,205 @@
-<%- include('../partials/header', { title: 'DataFlow - Sistema de Gestão Eletrônica de Documentos', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/header', { title: 'Início - Nexus', user: typeof user !== 'undefined' ? user : null }) %>
+<%
+  // ── Dados da tela ───────────────────────────────────────────────────────
+  var fila = (typeof tarefas !== 'undefined' && tarefas) ? tarefas : { itens: [], total: 0, atrasadasVisiveis: 0 };
+  var nomeUnidade = (typeof unidade !== 'undefined' && unidade && unidade.nome) ? unidade.nome : '';
+  var tz = 'America/Sao_Paulo';
+  var hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz });
 
-<div class="w-full min-h-screen">
-  <!-- Hero / Boas-vindas -->
-  <div class="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-500 to-primary-700 rounded-2xl mx-4 mt-4 mb-6 p-6 md:p-8 text-white shadow-xl">
-    <div class="absolute inset-0 opacity-10">
-      <div class="absolute top-0 right-0 w-96 h-96 bg-secondary-400 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div class="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+  // Prazo em palavras, contado em dias de calendário no fuso de Brasília
+  function diaBR(d) { return new Date(new Date(d).toLocaleString('en-US', { timeZone: tz })).setHours(0, 0, 0, 0); }
+  function prazoTexto(prazo) {
+    if (!prazo) return { texto: 'Sem prazo', atrasado: false };
+    var dias = Math.round((diaBR(prazo) - diaBR(new Date())) / 86400000);
+    if (dias < 0) return { texto: 'Atrasada há ' + (-dias) + (dias === -1 ? ' dia' : ' dias'), atrasado: true };
+    if (dias === 0) return { texto: 'Vence hoje', atrasado: false, hoje: true };
+    if (dias === 1) return { texto: 'Vence amanhã', atrasado: false };
+    return { texto: 'Vence em ' + dias + ' dias', atrasado: false };
+  }
+  function dataCurta(d) { return d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: tz }) : '—'; }
+
+  var acoes = { aprovacao: 'Aprovar', parecer_tecnico: 'Dar parecer', questionario: 'Responder' };
+
+  var statusProtocolo = {
+    aguardando: { label: 'Aguardando', cls: 'pill-warn' },
+    pendente:   { label: 'Pendente',   cls: 'pill-warn' },
+    em_tramite: { label: 'Em trâmite', cls: 'pill-info' },
+    arquivado:  { label: 'Arquivado',  cls: 'pill-neutral' },
+    encerrado:  { label: 'Encerrado',  cls: 'pill-neutral' }
+  };
+
+  // Plano de contas: quanto do orçamento de cada conta raiz já foi distribuído
+  var roots = (typeof planoTree !== 'undefined' && planoTree) ? planoTree : [];
+  var totalOrcado = roots.reduce(function (s, r) { return s + (parseFloat(r.valor) || 0); }, 0);
+  var totalDistribuido = roots.reduce(function (s, r) { return s + (parseFloat(r.valor) || 0) - (parseFloat(r.disponivel) || 0); }, 0);
+  function brl(v) { return (parseFloat(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
+%>
+
+<div class="dash">
+  <!-- Título: o nome da tela, a unidade e o que pede atenção -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="min-w-0">
+      <h1 class="text-2xl font-semibold tracking-tight text-ink">Início</h1>
+      <p class="mt-1 text-sm text-muted">
+        <% if (nomeUnidade) { %><span class="text-ink"><%= nomeUnidade %></span> · <% } %><%= hoje %>
+      </p>
     </div>
-    <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <p class="text-primary-100 text-sm font-medium uppercase tracking-wider mb-1">Sistema de Gestão Eletrônica de Documentos</p>
-        <h1 class="text-2xl md:text-3xl font-bold mb-2">Olá, <%= user.nome.split(' ')[0] %>!</h1>
-        <p class="text-primary-100 text-sm md:text-base max-w-xl">Acompanhe protocolos, tramitações e documentos em um só lugar.</p>
-      </div>
-      <div class="flex-shrink-0 bg-white/15 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/20">
-        <p class="text-primary-100 text-xs font-semibold uppercase tracking-wider">Hoje</p>
-        <p class="text-2xl font-bold"><%= new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) %></p>
-        <p class="text-primary-200 text-sm"><%= new Date().getFullYear() %></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cards de indicadores -->
-  <div class="px-4 mb-6">
-    <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Indicadores</h2>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <a href="/protocolo" class="group bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all block">
-        <div class="flex items-start justify-between mb-2">
-          <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
-            <svg class="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-            </svg>
-          </div>
-          <span class="text-xs font-semibold text-primary-600 dark:text-primary-400">Ativos</span>
-        </div>
-        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Protocolos Ativos</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-0.5"><%= stats.protocolosAtivos %></p>
-      </a>
-
-      <a href="/tramitacao" class="group bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md hover:border-secondary-200 dark:hover:border-secondary-700 transition-all block">
-        <div class="flex items-start justify-between mb-2">
-          <div class="w-10 h-10 rounded-lg bg-secondary-100 dark:bg-secondary-900/40 flex items-center justify-center">
-            <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-            </svg>
-          </div>
-          <% if (stats.tramitacoesPendentes > 0) { %>
-            <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">Atenção</span>
-          <% } else { %>
-            <span class="text-xs font-semibold text-secondary-600 dark:text-secondary-400">Em dia</span>
-          <% } %>
-        </div>
-        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Tramitações Pendentes</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-0.5"><%= stats.tramitacoesPendentes %></p>
-      </a>
-
-      <a href="/documentos-pdf" class="group bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md hover:border-secondary-200 dark:hover:border-secondary-700 transition-all block">
-        <div class="flex items-start justify-between mb-2">
-          <div class="w-10 h-10 rounded-lg bg-secondary-100 dark:bg-secondary-900/40 flex items-center justify-center">
-            <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <span class="text-xs font-semibold text-secondary-600 dark:text-secondary-400">Este mês</span>
-        </div>
-        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Documentos Gerados</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-0.5"><%= stats.documentosGeradosMes %></p>
-      </a>
-
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-        <div class="flex items-start justify-between mb-2">
-          <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
-            <svg class="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-            </svg>
-          </div>
-          <% if (stats.assinaturasPendentes > 0) { %>
-            <span class="text-xs font-semibold text-primary-600 dark:text-primary-400">Aguardando</span>
-          <% } else { %>
-            <span class="text-xs font-semibold text-secondary-600 dark:text-secondary-400">Nenhuma</span>
-          <% } %>
-        </div>
-        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Assinaturas Pendentes</p>
-        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-0.5"><%= stats.assinaturasPendentes %></p>
-      </div>
+    <div class="flex gap-2">
+      <a href="/protocolo/novo" class="btn-secondary">Novo protocolo</a>
+      <a href="/documentos-pdf" class="btn-secondary">Gerar documento</a>
     </div>
   </div>
 
-  <!-- Ações rápidas -->
-  <div class="px-4 mb-6">
-    <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Ações Rápidas</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <a href="/protocolo/novo" class="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all group">
-        <div class="w-12 h-12 rounded-xl bg-primary-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-        </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Novo Protocolo</span>
-      </a>
-      <a href="/documentos-pdf/novo" class="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-secondary-300 dark:hover:border-secondary-600 hover:shadow-md transition-all group">
-        <div class="w-12 h-12 rounded-xl bg-secondary-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-        </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Criar Documento</span>
-      </a>
-      <a href="/tramitacao" class="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all group">
-        <div class="w-12 h-12 rounded-xl bg-primary-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-          </svg>
-        </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Ver Tramitações</span>
-      </a>
-      <a href="/contratos" class="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-secondary-300 dark:hover:border-secondary-600 hover:shadow-md transition-all group">
-        <div class="w-12 h-12 rounded-xl bg-secondary-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 2v5a1 1 0 001 1h5"/>
-          </svg>
-        </div>
-        <span class="text-sm font-semibold text-gray-900 dark:text-white text-center">Contratos</span>
-      </a>
-    </div>
+  <% if (fila.total > 0) { %>
+    <p class="mt-4 text-[15px] text-ink">
+      <strong class="font-semibold"><%= fila.total %> <%= fila.total === 1 ? 'tarefa espera' : 'tarefas esperam' %> por você</strong><% if (fila.atrasadasVisiveis > 0) { %>,
+      <span class="font-semibold text-negative"><%= fila.atrasadasVisiveis %> <%= fila.atrasadasVisiveis === 1 ? 'atrasada' : 'atrasadas' %></span><% } %>.
+    </p>
+  <% } %>
+
+  <!-- Indicadores: uma faixa, quatro números, cada um leva à sua lista -->
+  <div class="dash-kpis mt-6">
+    <a href="/processos/tarefas" class="dash-kpi">
+      <span class="dash-kpi-label">Minhas tarefas</span>
+      <span class="dash-kpi-value"><%= fila.total %></span>
+    </a>
+    <a href="/assinaturas-doc/pendentes" class="dash-kpi">
+      <span class="dash-kpi-label">Assinaturas pendentes</span>
+      <span class="dash-kpi-value"><%= stats.assinaturasPendentes %></span>
+    </a>
+    <a href="/tramitacao" class="dash-kpi">
+      <span class="dash-kpi-label">Tramitações a receber</span>
+      <span class="dash-kpi-value"><%= stats.tramitacoesPendentes %></span>
+    </a>
+    <a href="/protocolo" class="dash-kpi">
+      <span class="dash-kpi-label">Protocolos em aberto</span>
+      <span class="dash-kpi-value"><%= stats.protocolosAtivos %></span>
+    </a>
   </div>
 
-  <!-- Detalhamento de Orçamento -->
-  <div class="px-4 mb-6">
-    <%- include('../partials/detalhamento-orcamento', { planoTree: typeof planoTree !== 'undefined' ? planoTree : [], unidade: typeof unidade !== 'undefined' ? unidade : null, showLink: typeof showLink !== 'undefined' ? showLink : false }) %>
-  </div>
-
-  <!-- Protocolos recentes e Tramitações pendentes -->
-  <div class="px-4 pb-8">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h2 class="text-base font-bold text-gray-900 dark:text-white">Protocolos Recentes</h2>
-          <a href="/protocolo" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:underline">Ver todos</a>
-        </div>
-        <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-          <% if (protocolosRecentes && protocolosRecentes.length > 0) { %>
-            <% protocolosRecentes.forEach(function(p) { %>
-              <a href="/protocolo/<%= p.id %>" class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors block">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                    </svg>
-                  </div>
-                  <div class="min-w-0">
-                    <p class="font-semibold text-gray-900 dark:text-white text-sm"><%= p.numero_protocolo || '—' %></p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= p.tipo_documento %> — <%= p.data %></p>
-                  </div>
-                </div>
-                <%
-                  var statusClass = {
-                    'em_tramite': 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200',
-                    'pendente': 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
-                    'arquivado': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                    'encerrado': 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/50 dark:text-secondary-200',
-                  }[p.status] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-                  var statusLabel = {
-                    'em_tramite': 'Em Trâmite',
-                    'pendente': 'Pendente',
-                    'arquivado': 'Arquivado',
-                    'encerrado': 'Encerrado',
-                  }[p.status] || p.status;
-                %>
-                <span class="px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 <%= statusClass %>"><%= statusLabel %></span>
+  <div class="dash-grid mt-6">
+    <!-- Bloco principal: a fila do usuário -->
+    <section class="panel lg:col-span-8" aria-labelledby="t-tarefas">
+      <header class="panel-head">
+        <h2 id="t-tarefas" class="panel-title">Minhas tarefas</h2>
+        <a href="/processos/tarefas" class="panel-link">Ver todas<% if (fila.total > fila.itens.length) { %> (<%= fila.total %>)<% } %></a>
+      </header>
+      <% if (fila.itens.length === 0) { %>
+        <p class="panel-empty">Nenhuma etapa de processo esperando por você nesta unidade.
+          <a href="/processos" class="panel-link">Ver processos</a></p>
+      <% } else { %>
+        <ul class="divide-y divide-line">
+          <% fila.itens.forEach(function (t) { var pz = prazoTexto(t.prazo); %>
+            <li>
+              <a href="/processos/<%= t.processo_id %>" class="row-link grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 px-5 py-3">
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-medium text-ink"><%= t.titulo %></span>
+                  <span class="block truncate text-[13px] text-muted">
+                    <span class="num"><%= t.numero_processo %></span> · <%= t.etapa_nome %><% if (t.grupo_nome) { %> · <%= t.grupo_nome %><% } %>
+                  </span>
+                </span>
+                <span class="text-right">
+                  <span class="block text-sm <%= pz.atrasado ? 'font-medium text-negative' : (pz.hoje ? 'font-medium text-ink' : 'text-muted') %>"><%= pz.texto %></span>
+                  <span class="block text-[13px] text-muted"><%= acoes[t.tipo_acao] || 'Concluir etapa' %><% if (t.exige_assinatura) { %> · exige assinatura<% } %></span>
+                </span>
               </a>
-            <% }); %>
-          <% } else { %>
-            <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Nenhum protocolo encontrado.</p>
-          <% } %>
-        </div>
-      </div>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
 
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h2 class="text-base font-bold text-gray-900 dark:text-white">Tramitações Pendentes</h2>
-          <a href="/tramitacao" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:underline">Ver todas</a>
-        </div>
-        <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-          <% if (tramitacoesPendentes && tramitacoesPendentes.length > 0) { %>
-            <% tramitacoesPendentes.forEach(function(t) { %>
-              <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-secondary-50 dark:hover:bg-secondary-900/20 transition-colors">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-lg bg-secondary-100 dark:bg-secondary-900/40 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-secondary-600 dark:text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
-                    </svg>
-                  </div>
-                  <div class="min-w-0">
-                    <p class="font-semibold text-gray-900 dark:text-white text-sm"><%= t.numero_protocolo || '—' %></p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">Para: <%= t.destino_nome || 'Não definido' %> · <%= t.data_envio %></p>
-                  </div>
-                </div>
-                <a href="/tramitacao" class="bg-secondary-500 hover:bg-secondary-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0">
-                  Receber
-                </a>
-              </div>
+    <!-- Ao lado: o que chegou de outra unidade e precisa ser recebido -->
+    <section class="panel lg:col-span-4" aria-labelledby="t-tram">
+      <header class="panel-head">
+        <h2 id="t-tram" class="panel-title">Tramitações a receber</h2>
+        <a href="/tramitacao" class="panel-link">Ver todas</a>
+      </header>
+      <% if (!tramitacoesPendentes || tramitacoesPendentes.length === 0) { %>
+        <p class="panel-empty">Nada aguardando recebimento.</p>
+      <% } else { %>
+        <ul class="divide-y divide-line">
+          <% tramitacoesPendentes.forEach(function (t) { %>
+            <li>
+              <a href="/protocolo/<%= t.protocolo_id %>" class="row-link flex items-center justify-between gap-3 px-5 py-3">
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-medium text-ink num"><%= t.numero_protocolo || '—' %></span>
+                  <span class="block truncate text-[13px] text-muted"><%= t.tipo_documento %> · para <%= t.destino_nome || 'destino não definido' %></span>
+                </span>
+                <span class="shrink-0 text-[13px] text-muted num"><%= t.data_envio %></span>
+              </a>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+
+    <!-- Protocolos recentes -->
+    <section class="panel lg:col-span-7" aria-labelledby="t-prot">
+      <header class="panel-head">
+        <h2 id="t-prot" class="panel-title">Protocolos recentes</h2>
+        <a href="/protocolo" class="panel-link">Ver todos</a>
+      </header>
+      <% if (!protocolosRecentes || protocolosRecentes.length === 0) { %>
+        <p class="panel-empty">Nenhum protocolo registrado nesta unidade. <a href="/protocolo/novo" class="panel-link">Registrar protocolo</a></p>
+      <% } else { %>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-line">
+              <th class="px-5 py-2 text-left">Número</th>
+              <th class="px-3 py-2 text-left">Assunto</th>
+              <th class="px-3 py-2 text-left">Situação</th>
+              <th class="px-5 py-2 text-right">Data</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <% protocolosRecentes.forEach(function (p) { var st = statusProtocolo[p.status] || { label: p.status, cls: 'pill-neutral' }; %>
+              <tr class="row-link">
+                <td class="px-5 py-2.5 whitespace-nowrap"><a href="/protocolo/<%= p.id %>" class="font-medium text-ink hover:underline num"><%= p.numero_protocolo || '—' %></a></td>
+                <td class="max-w-[16rem] truncate px-3 py-2.5 text-muted"><%= p.assunto || p.tipo_documento %></td>
+                <td class="px-3 py-2.5"><span class="pill <%= st.cls %>"><%= st.label %></span></td>
+                <td class="px-5 py-2.5 text-right text-muted num"><%= p.data %></td>
+              </tr>
             <% }); %>
-          <% } else { %>
-            <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Nenhuma tramitação pendente.</p>
-          <% } %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <!-- Plano de contas da unidade -->
+    <section class="panel lg:col-span-5" aria-labelledby="t-orc">
+      <header class="panel-head">
+        <h2 id="t-orc" class="panel-title">Plano de contas</h2>
+        <% if (typeof unidade !== 'undefined' && unidade) { %>
+          <a href="/unidades/<%= unidade.id %>/plano-contas" class="panel-link">Abrir plano</a>
+        <% } %>
+      </header>
+      <% if (roots.length === 0) { %>
+        <p class="panel-empty">Esta unidade ainda não tem plano de contas.
+          <% if (typeof unidade !== 'undefined' && unidade) { %><a href="/unidades/<%= unidade.id %>/plano-contas" class="panel-link">Cadastrar contas</a><% } %></p>
+      <% } else { %>
+        <div class="px-5 pb-2 pt-1">
+          <p class="text-sm text-muted">Orçado <span class="num font-semibold text-ink"><%= brl(totalOrcado) %></span></p>
+          <p class="text-[13px] text-muted"><span class="num"><%= brl(totalDistribuido) %></span> distribuídos em subcontas (<span class="num"><%= pct(totalDistribuido, totalOrcado) %>%</span>)</p>
         </div>
-      </div>
-    </div>
+        <ul class="px-5 pb-4">
+          <% roots.slice(0, 5).forEach(function (c) {
+               var v = parseFloat(c.valor) || 0; var dist = v - (parseFloat(c.disponivel) || 0); var p = pct(dist, v); %>
+            <li class="py-2">
+              <div class="flex items-baseline justify-between gap-3 text-sm">
+                <span class="min-w-0 truncate text-ink"><span class="num text-muted"><%= c.codigo %></span> <%= c.nome %></span>
+                <span class="num shrink-0 text-ink"><%= brl(v) %></span>
+              </div>
+              <div class="mt-1.5 h-1.5 rounded-full bg-active" role="img" aria-label="<%= p %>% distribuído">
+                <div class="h-full rounded-full bg-primary-500" style="width: <%= Math.min(p, 100) %>%"></div>
+              </div>
+            </li>
+          <% }); %>
+          <% if (roots.length > 5) { %><li class="pt-1 text-[13px] text-muted">e mais <%= roots.length - 5 %> contas</li><% } %>
+        </ul>
+      <% } %>
+    </section>
   </div>
 </div>
 

@@ -15,7 +15,7 @@
     display: flex !important;
     flex-direction: column !important;
     /* altura = 100vh menos a navbar fixa de 7.5rem (120px) */
-    height: calc(100vh - 7.5rem) !important;
+    height: calc(100vh - var(--shell-top)) !important;
     min-height: unset !important;
     background: #e8eaed !important;
   }
@@ -443,8 +443,8 @@
       return;
     }
 
-    // Altura disponível = viewport − navbar fixa (7.5rem = 120px) − cabeçalho do editor
-    var navbarH = 120;
+    // Altura disponível = viewport − barra do celular (0 no desktop) − cabeçalho do editor
+    var navbarH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--shell-top"), 10) || 0;
     var headerH = document.getElementById('ed-header').offsetHeight || 52;
     var joditH  = Math.max(400, window.innerHeight - navbarH - headerH);
 

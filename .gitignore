@@ -34,3 +34,6 @@ build/
 # Temporary files
 tmp/
 temp/
+
+# Artefatos locais de revisão de design
+.taste-skill/

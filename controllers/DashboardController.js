@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const PlanoContas = require('../models/PlanoContas');
 const Unidade = require('../models/Unidade');
+const FluxoEngine = require('../services/FluxoEngine');
 const { unidadeDaRequisicao, semUnidade } = require('../utils/unidadeScope');
 
 class DashboardController {
@@ -32,12 +33,18 @@ class DashboardController {
         total: parseFloat(orcamentoQuery.rows[0].total || 0),
         percentual: orcamentoQuery.rows[0].total > 0
           ? Math.round((parseFloat(orcamentoQuery.rows[0].utilizado || 0) / parseFloat(orcamentoQuery.rows[0].total || 0)) * 100)
-          : 0,
-        categorias: [
-          { nome: 'Operações', percentual: 74, cor: 'blue' },
-          { nome: 'TI', percentual: 81, cor: 'amber' },
-          { nome: 'Marketing', percentual: 99, cor: 'red' }
-        ]
+          : 0
+      };
+
+      // Fila do usuário: etapas de processo esperando por ele (a mesma regra
+      // de /processos/tarefas). É a primeira coisa que a tela inicial responde.
+      const tarefasLinhas = await FluxoEngine
+        .tarefasDoUsuario(req.user, unidadeId, { pagina: 1, porPagina: 6 })
+        .catch(() => []);
+      const tarefas = {
+        itens: tarefasLinhas,
+        total: tarefasLinhas.length ? parseInt(tarefasLinhas[0]._total, 10) || 0 : 0,
+        atrasadasVisiveis: tarefasLinhas.filter(t => t.atrasada).length
       };
 
       // Estatísticas reais em paralelo
@@ -103,10 +110,11 @@ class DashboardController {
       };
 
       res.render('dashboard/index', {
-        title: 'Dashboard - DataFlow',
+        title: 'Início - Nexus',
         user: req.user,
         orcamento,
         stats,
+        tarefas,
         protocolosRecentes: protocolosRecentesRes.rows,
         tramitacoesPendentes: tramitacoesPendentesListRes.rows,
         planoTree,

@@ -109,20 +109,21 @@
         </div>
       </div>
       <!-- Mini cards financeiros -->
-      <div class="grid grid-cols-3 gap-3 text-center flex-shrink-0">
-        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 min-w-[100px]">
-          <p class="text-[10px] font-medium text-blue-600 dark:text-blue-400 uppercase">Contratado</p>
-          <p class="text-sm font-bold text-blue-800 dark:text-blue-200"><%= fmtMoney(fin.valor_contratado) %></p>
+      <!-- Valores do contrato: uma faixa dividida, rótulo sobre valor, em tinta -->
+      <dl class="grid grid-cols-3 divide-x divide-line rounded-lg border border-line flex-shrink-0 text-right">
+        <div class="px-4 py-2 min-w-[120px]">
+          <dt class="text-xs text-muted">Contratado</dt>
+          <dd class="num text-base font-semibold text-ink"><%= fmtMoney(fin.valor_contratado) %></dd>
         </div>
-        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2 min-w-[100px]">
-          <p class="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase">Executado</p>
-          <p class="text-sm font-bold text-green-800 dark:text-green-200"><%= fmtMoney(fin.valor_executado) %></p>
+        <div class="px-4 py-2 min-w-[120px]">
+          <dt class="text-xs text-muted">Executado</dt>
+          <dd class="num text-base font-semibold text-ink"><%= fmtMoney(fin.valor_executado) %></dd>
         </div>
-        <div class="bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2 min-w-[100px]">
-          <p class="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase">Restante</p>
-          <p class="text-sm font-bold text-gray-800 dark:text-gray-200"><%= fmtMoney(fin.valor_restante) %></p>
+        <div class="px-4 py-2 min-w-[120px]">
+          <dt class="text-xs text-muted">Restante</dt>
+          <dd class="num text-base font-semibold text-ink"><%= fmtMoney(fin.valor_restante) %></dd>
         </div>
-      </div>
+      </dl>
     </div>
     <!-- Barra de execução -->
     <% if (fin.valor_contratado > 0) { %>
