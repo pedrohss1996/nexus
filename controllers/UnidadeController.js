@@ -4,6 +4,7 @@ const Usuario  = require('../models/Usuario');
 const PlanoContas = require('../models/PlanoContas');
 const { auditLog } = require('../utils/logger');
 const { query } = require('../config/database');
+const acesso = require('../services/acesso');
 const multer = require('multer');
 const path   = require('path');
 const fs     = require('fs');
@@ -177,6 +178,12 @@ class UnidadeController {
     try {
       const campos = UnidadeController._extrairCampos(req.body);
       const unidade = await Unidade.criar({ ...campos, criado_por: req.user.id });
+      // Toda unidade nasce com o grupo "Geral" e com quem a criou dentro dele:
+      // sem grupo, ninguém conseguia ser vinculado à unidade nova.
+      try {
+        const grupoGeral = await acesso.garantirGrupoGeral(unidade.id);
+        await acesso.concederAcesso({ usuarioId: req.user.id, grupoId: grupoGeral, isLider: true, quem: req.user });
+      } catch (e) { console.error('Erro ao criar grupo padrão da unidade:', e); }
       try { auditLog('UNIDADE_CRIADA', req.user.id, { unidade_id: unidade.id, nome: campos.nome }); } catch (_) {}
       await registrarHistorico(unidade.id, `Unidade "${unidade.nome}" criada`, 'criacao', req.user.id);
       res.redirect(`/unidades/${unidade.id}`);
@@ -321,7 +328,17 @@ class UnidadeController {
       const { id: unidadeId } = req.params;
       const { grupo_id, usuario_id, is_lider } = req.body;
       if (!grupo_id || !usuario_id) return res.redirect(`/unidades/${unidadeId}?erro=grupo_usuario_obrigatorio&aba=grupos`);
-      await Grupo.adicionarUsuario(grupo_id, usuario_id, unidadeId, is_lider === 'true' || is_lider === 'on', req.user.id);
+      // A unidade vem do grupo; um grupo de outra unidade é recusado
+      const g = await query('SELECT unidade_id FROM grupos WHERE id = $1', [grupo_id]);
+      if (!g.rows.length || String(g.rows[0].unidade_id) !== String(unidadeId)) {
+        return res.redirect(`/unidades/${unidadeId}?erro=grupo_de_outra_unidade&aba=grupos`);
+      }
+      try {
+        await acesso.concederAcesso({ usuarioId: usuario_id, grupoId: grupo_id, isLider: is_lider === 'true' || is_lider === 'on', quem: req.user });
+      } catch (e) {
+        if (e instanceof acesso.ErroAcesso) return res.redirect(`/unidades/${unidadeId}?erro=sem_permissao&aba=grupos`);
+        throw e;
+      }
       try { auditLog('USUARIO_VINCULADO_GRUPO', req.user.id, { unidade_id: unidadeId, grupo_id, usuario_id }); } catch (_) {}
       res.redirect(`/unidades/${unidadeId}?aba=grupos`);
     } catch (error) {

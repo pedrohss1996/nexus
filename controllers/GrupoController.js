@@ -4,6 +4,7 @@
 const Grupo = require('../models/Grupo');
 const Unidade = require('../models/Unidade');
 const { auditLog } = require('../utils/logger');
+const acesso = require('../services/acesso');
 
 class GrupoController {
   // Listar todos os grupos (por padrão só da unidade selecionada)
@@ -271,7 +272,7 @@ class GrupoController {
       const { usuario_id, unidade_id, is_lider } = req.body;
 
       // Validações
-      if (!usuario_id || !unidade_id) {
+      if (!usuario_id) {
         const grupo = await Grupo.buscarPorId(id);
         const Usuario = require('../models/Usuario');
         const usuarios = await Usuario.buscarTodos({ ativo: true });
@@ -284,16 +285,19 @@ class GrupoController {
           grupo,
           usuarios,
           unidades,
-          erro: 'Usuário e unidade são obrigatórios'
+          erro: 'Escolha o usuário'
         });
       }
 
-      await Grupo.adicionarUsuario(id, usuario_id, unidade_id, is_lider === 'true', req.user.id);
+      // A unidade é sempre a do grupo; o campo unidade_id do formulário é ignorado
+      const grupoAlvo = await acesso.concederAcesso({
+        usuarioId: usuario_id, grupoId: id, isLider: is_lider === 'true' || is_lider === 'on', quem: req.user
+      });
 
-      await auditLog('GRUPO_MEMBRO_ADICIONADO', req.user.id, { 
-        grupo_id: id, 
-        usuario_id, 
-        unidade_id, 
+      await auditLog('GRUPO_MEMBRO_ADICIONADO', req.user.id, {
+        grupo_id: id,
+        usuario_id,
+        unidade_id: grupoAlvo.unidade_id,
         is_lider 
       });
 
@@ -301,8 +305,8 @@ class GrupoController {
     } catch (error) {
       console.error('Erro ao adicionar membro:', error);
       
-      // Se for erro de duplicata
-      if (error.code === '23505') {
+      // Regra de acesso recusada (ex.: gestor de outra unidade) ou duplicata
+      if (error instanceof acesso.ErroAcesso || error.code === '23505') {
         const grupo = await Grupo.buscarPorId(req.params.id);
         const Usuario = require('../models/Usuario');
         const usuarios = await Usuario.buscarTodos({ ativo: true });
@@ -315,7 +319,7 @@ class GrupoController {
           grupo,
           usuarios,
           unidades,
-          erro: 'Este usuário já está neste grupo nesta unidade'
+          erro: error instanceof acesso.ErroAcesso ? error.message : 'Este usuário já está neste grupo'
         });
       }
 

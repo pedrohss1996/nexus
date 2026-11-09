@@ -11,31 +11,30 @@
    ========================================================================== */
 @layer base {
   :root {
-    --ground: 242 244 247;   /* #f2f4f7 */
+    --ground: 249 250 251;   /* gray-50 */
     --surface: 255 255 255;
-    --raised: 248 249 251;
-    --active: 231 233 237;   /* item ativo do menu, hover de linha */
-    --line: 228 231 235;     /* #e4e7eb — bordas de cartão */
-    --ink: 17 17 17;
-    --muted: 95 99 104;      /* #5f6368 — 6:1 no branco */
-    --negative: 196 36 42;
-    --shell-top: 48px;       /* altura da barra do celular */
+    --raised: 249 250 251;
+    --active: 243 244 246;   /* gray-100 */
+    --line: 229 231 235;     /* gray-200 */
+    --ink: 17 24 39;         /* gray-900 */
+    --muted: 75 85 99;       /* gray-600 */
+    --negative: 220 38 38;
+    --shell-top: 10.25rem;   /* celular: header + unidade + navegação */
     color-scheme: light;
   }
   .dark {
-    --ground: 18 18 18;      /* #121212 */
-    --surface: 28 28 28;     /* #1c1c1c */
-    --raised: 36 36 36;
-    --active: 46 46 46;
-    --line: 46 46 46;        /* #2e2e2e */
-    --ink: 245 245 245;
-    --muted: 170 170 170;    /* #aaa — 7:1 no #1c1c1c */
-    --negative: 239 108 112;
+    --ground: 15 23 42;      /* slate-900 */
+    --surface: 30 41 59;     /* slate-800 */
+    --raised: 39 52 73;
+    --active: 51 65 85;      /* slate-700 */
+    --line: 51 65 85;
+    --ink: 241 245 249;
+    --muted: 148 163 184;    /* slate-400 */
+    --negative: 248 113 113;
     color-scheme: dark;
   }
-  @media (min-width: 1024px) {
-    :root { --shell-top: 0px; }
-  }
+
+  @media (min-width: 768px) { :root { --shell-top: 7.5rem; } }
 
   html { -webkit-text-size-adjust: 100%; }
   body {
@@ -46,29 +45,6 @@
 
   /* Números alinham coluna a coluna em tabelas e indicadores */
   td, th, .num, input[type="number"] { font-variant-numeric: tabular-nums; }
-
-  /* Cabeçalhos de tabela: discretos, em caixa de frase, sem faixa de fundo.
-     Muitas views usam "uppercase tracking-wider" no <th> — neutralizado aqui
-     para não precisar mexer em cada tabela. */
-  thead th {
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    font-weight: 500 !important;
-    font-size: 0.8125rem !important;
-    color: rgb(var(--muted)) !important;
-  }
-  thead, thead tr { background: transparent !important; }
-
-  /* Rótulos minúsculos em caixa alta espaçada viram caixa de frase legível */
-  .uppercase.tracking-wide,
-  .uppercase.tracking-wider,
-  .uppercase.tracking-widest,
-  .uppercase.text-xs,
-  .uppercase.text-\[10px\],
-  .uppercase.text-\[11px\] {
-    text-transform: none;
-    letter-spacing: 0;
-  }
 
   /* Foco visível e consistente em qualquer controle */
   :focus-visible {
@@ -83,7 +59,6 @@
    Sombras só no que flutua: menus, diálogos, toasts (shadow-lg e acima).
    ========================================================================== */
 @layer utilities {
-  .shadow-sm, .shadow, .shadow-md { box-shadow: none !important; }
   /* Piso de legibilidade: nada abaixo de 11px */
   .text-\[9px\], .text-\[10px\] { font-size: 0.6875rem !important; }
 }
@@ -99,69 +74,17 @@
   .btn {
     @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 text-sm font-medium transition-colors;
   }
-  /* Ação principal: quase-preto no claro, branco no escuro — uma por tela */
+  /* Ação principal na cor da marca */
   .btn-primary {
-    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200;
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-700;
   }
   .btn-secondary {
     @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-line bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-active;
   }
 
   .input-field {
-    @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-ink focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-neutral-600 dark:bg-neutral-800;
+    @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-ink focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-600 dark:bg-slate-800;
   }
-
-  /* ── Moldura do app ─────────────────────────────────────────────────── */
-  .shell-main {
-    min-height: 100vh;
-  }
-  @media (min-width: 1024px) {
-    .shell-main { padding-left: 15rem; }  /* 240px do menu lateral */
-  }
-
-  .shell-topbar {
-    @apply sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-line bg-ground px-2;
-    height: var(--shell-top);
-  }
-  .shell-icon-btn {
-    @apply inline-flex h-10 w-10 items-center justify-center rounded-md text-muted transition-colors hover:bg-active hover:text-ink;
-  }
-
-  .shell-sidebar {
-    @apply fixed inset-y-0 left-0 z-50 hidden w-60 flex-col border-r border-line bg-ground;
-  }
-  @media (min-width: 1024px) {
-    .shell-sidebar { display: flex; }
-  }
-  /* No celular o menu abre como folha à esquerda, quase tela cheia */
-  .shell-sidebar.is-open {
-    display: flex;
-    width: min(20rem, 88vw);
-    box-shadow: 0 10px 40px rgb(0 0 0 / 0.25);
-  }
-
-  .shell-group {
-    @apply px-2 pb-1 pt-5 text-xs font-medium text-muted;
-  }
-  .shell-link {
-    @apply flex h-8 items-center gap-2.5 rounded-md px-2 text-sm text-muted transition-colors hover:bg-active hover:text-ink;
-  }
-  @media (max-width: 1023px) {
-    .shell-link { height: 2.75rem; }   /* alvo de toque de 44px */
-  }
-  .shell-link.is-active {
-    @apply bg-active font-medium text-ink;
-  }
-  .shell-select {
-    @apply h-9 w-full cursor-pointer rounded-md border border-gray-300 bg-surface px-2.5 text-sm font-medium text-ink focus:border-primary-500 focus:outline-none dark:border-neutral-600;
-  }
-  .shell-menu {
-    @apply absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden rounded-md border border-line bg-surface py-1 shadow-lg;
-  }
-  .shell-menu a, .shell-menu button {
-    @apply block w-full px-3 py-2 text-left text-sm text-ink hover:bg-active;
-  }
-  .shell-menu a.text-negative { color: rgb(var(--negative)); }
 
   .notif-badge {
     @apply absolute right-1.5 top-1.5 min-w-[1.125rem] rounded-full bg-red-600 px-1 text-center text-[11px] font-semibold leading-[1.125rem] text-white;
@@ -176,7 +99,7 @@
    ========================================================================== */
 @layer components {
   /* Canvas: 32px de margem no desktop, 16px no celular */
-  .dash { @apply mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8; }
+  .dash { @apply mx-auto w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8; }
 
   /* Grade de 12 colunas, um único espaçamento (16px) */
   .dash-grid { @apply grid grid-cols-1 gap-4 lg:grid-cols-12; align-items: start; }
@@ -208,7 +131,7 @@
 
   /* Pills de status: tinta pálida com texto escuro do mesmo tom */
   .pill { @apply inline-flex h-5 flex-none items-center whitespace-nowrap rounded px-1.5 text-xs font-medium; }
-  .pill-neutral { @apply bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-neutral-200; }
+  .pill-neutral { @apply bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200; }
   .pill-info { @apply bg-primary-50 text-primary-800 dark:bg-primary-950 dark:text-primary-200; }
   .pill-warn { @apply bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200; }
   .pill-ok { @apply bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200; }
@@ -218,6 +141,6 @@
 /* Scrollbar discreta */
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-  .scrollbar-thin::-webkit-scrollbar-track { @apply rounded bg-gray-100 dark:bg-neutral-800; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { @apply rounded bg-gray-300 hover:bg-gray-400 dark:bg-neutral-600; }
+  .scrollbar-thin::-webkit-scrollbar-track { @apply rounded bg-gray-100 dark:bg-slate-800; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { @apply rounded bg-gray-300 hover:bg-gray-400 dark:bg-slate-600; }
 }

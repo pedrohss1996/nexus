@@ -1,7 +1,8 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Usuário - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
+<% var valores = usuario || (typeof dados !== 'undefined' ? dados : null); %>
 <div class="w-full px-6 py-6">
-  <div class="max-w-3xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     <!-- Breadcrumb -->
     <nav class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-5">
       <a href="/cadastros/usuarios" class="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Usuários</a>
@@ -9,6 +10,7 @@
       <span class="text-gray-900 dark:text-white font-medium"><%= usuario ? 'Editar usuário' : 'Novo usuário' %></span>
     </nav>
 
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
         <h1 class="text-lg font-bold text-gray-900 dark:text-white"><%= usuario ? 'Editar usuário' : 'Novo usuário' %></h1>
@@ -34,13 +36,13 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome Completo <span class="text-red-500">*</span></label>
-              <input type="text" id="nome" name="nome" value="<%= usuario ? usuario.nome : '' %>" required maxlength="255"
+              <input type="text" id="nome" name="nome" value="<%= valores && valores.nome ? valores.nome : '' %>" required maxlength="255"
                 placeholder="João da Silva"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail <span class="text-red-500">*</span></label>
-              <input type="email" id="email" name="email" value="<%= usuario ? usuario.email : '' %>" required maxlength="255"
+              <input type="email" id="email" name="email" value="<%= valores && valores.email ? valores.email : '' %>" required maxlength="255"
                 placeholder="joao@exemplo.com"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
@@ -67,7 +69,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Perfil de Acesso <span class="text-red-500">*</span></label>
             <div class="grid grid-cols-3 gap-3">
               <label class="cursor-pointer">
-                <input type="radio" name="perfil" value="usuario" <%= !usuario || usuario.perfil === 'usuario' ? 'checked' : '' %> required class="sr-only peer">
+                <input type="radio" name="perfil" value="usuario" <%= !valores || !valores.perfil || valores.perfil === 'usuario' ? 'checked' : '' %> required class="sr-only peer">
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
                   <svg class="w-5 h-5 text-gray-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Usuário</span>
@@ -75,7 +77,7 @@
                 </div>
               </label>
               <label class="cursor-pointer">
-                <input type="radio" name="perfil" value="gestor" <%= usuario && usuario.perfil === 'gestor' ? 'checked' : '' %> class="sr-only peer">
+                <input type="radio" name="perfil" value="gestor" <%= valores && valores.perfil === 'gestor' ? 'checked' : '' %> class="sr-only peer">
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
                   <svg class="w-5 h-5 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Gestor</span>
@@ -83,7 +85,7 @@
                 </div>
               </label>
               <label class="cursor-pointer">
-                <input type="radio" name="perfil" value="admin" <%= usuario && usuario.perfil === 'admin' ? 'checked' : '' %> class="sr-only peer">
+                <input type="radio" name="perfil" value="admin" <%= valores && valores.perfil === 'admin' ? 'checked' : '' %> class="sr-only peer">
                 <div class="flex flex-col items-center p-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-50 dark:peer-checked:bg-cyan-900/20 hover:border-cyan-300 transition-colors text-center cursor-pointer">
                   <svg class="w-5 h-5 text-red-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">Admin</span>
@@ -91,6 +93,30 @@
                 </div>
               </label>
             </div>
+          </div>
+          <% } %>
+
+          <% if (!usuario) { %>
+          <!-- Acesso inicial: sem isso o usuário loga e não enxerga nenhuma unidade -->
+          <div class="mt-5">
+            <label for="grupo_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Acesso à unidade <span class="text-red-500">*</span></label>
+            <% var gruposAcesso = typeof unidadesAcesso !== 'undefined' ? unidadesAcesso : []; %>
+            <% if (gruposAcesso.length === 0) { %>
+              <p class="text-sm text-muted">Nenhuma unidade ativa disponível. <a href="/unidades/novo" class="panel-link">Cadastre uma unidade</a> primeiro.</p>
+            <% } else { %>
+              <% var escolhido = (valores && valores.grupo_id) ? String(valores.grupo_id) : String(typeof grupoSugerido !== 'undefined' && grupoSugerido ? grupoSugerido : ''); %>
+              <select id="grupo_id" name="grupo_id" required aria-describedby="grupo_id_ajuda"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <% gruposAcesso.forEach(function (un) { %>
+                  <optgroup label="<%= un.nome %>">
+                    <% un.grupos.forEach(function (g) { %>
+                      <option value="<%= g.id %>" <%= escolhido === String(g.id) ? 'selected' : '' %>><%= un.nome %> — <%= g.nome %></option>
+                    <% }); %>
+                  </optgroup>
+                <% }); %>
+              </select>
+              <p id="grupo_id_ajuda" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Unidade e grupo em que o usuário vai trabalhar. Outros acessos podem ser dados depois, na página do usuário.</p>
+            <% } %>
           </div>
           <% } %>
         </div>
@@ -106,26 +132,26 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label for="cpf" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CPF</label>
-              <input type="text" id="cpf" name="cpf" value="<%= usuario && usuario.cpf ? usuario.cpf : '' %>" maxlength="14"
+              <input type="text" id="cpf" name="cpf" value="<%= valores && valores.cpf ? valores.cpf : '' %>" maxlength="14"
                 placeholder="000.000.000-00"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
               <label for="telefone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Telefone / Celular</label>
-              <input type="text" id="telefone" name="telefone" value="<%= usuario && usuario.telefone ? usuario.telefone : '' %>" maxlength="25"
+              <input type="text" id="telefone" name="telefone" value="<%= valores && valores.telefone ? valores.telefone : '' %>" maxlength="25"
                 placeholder="(00) 90000-0000"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
               <label for="matricula" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Matrícula</label>
-              <input type="text" id="matricula" name="matricula" value="<%= usuario && usuario.matricula ? usuario.matricula : '' %>" maxlength="50"
+              <input type="text" id="matricula" name="matricula" value="<%= valores && valores.matricula ? valores.matricula : '' %>" maxlength="50"
                 placeholder="Ex: 2024001"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
           </div>
           <div class="mt-4">
             <label for="cargo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cargo / Função</label>
-            <input type="text" id="cargo" name="cargo" value="<%= usuario && usuario.cargo ? usuario.cargo : '' %>" maxlength="150"
+            <input type="text" id="cargo" name="cargo" value="<%= valores && valores.cargo ? valores.cargo : '' %>" maxlength="150"
               placeholder="Ex: Médico, Enfermeiro, Analista Administrativo..."
               class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
           </div>
@@ -142,19 +168,19 @@
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label for="cep" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CEP</label>
-              <input type="text" id="cep" name="cep" value="<%= usuario && usuario.cep ? usuario.cep : '' %>" maxlength="10"
+              <input type="text" id="cep" name="cep" value="<%= valores && valores.cep ? valores.cep : '' %>" maxlength="10"
                 placeholder="00000-000"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div class="sm:col-span-2">
               <label for="logradouro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Logradouro</label>
-              <input type="text" id="logradouro" name="logradouro" value="<%= usuario && usuario.logradouro ? usuario.logradouro : '' %>" maxlength="255"
+              <input type="text" id="logradouro" name="logradouro" value="<%= valores && valores.logradouro ? valores.logradouro : '' %>" maxlength="255"
                 placeholder="Rua, Avenida, Travessa..."
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
               <label for="numero" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número</label>
-              <input type="text" id="numero" name="numero" value="<%= usuario && usuario.numero ? usuario.numero : '' %>" maxlength="20"
+              <input type="text" id="numero" name="numero" value="<%= valores && valores.numero ? valores.numero : '' %>" maxlength="20"
                 placeholder="123"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
@@ -162,20 +188,20 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div>
               <label for="complemento" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Complemento</label>
-              <input type="text" id="complemento" name="complemento" value="<%= usuario && usuario.complemento ? usuario.complemento : '' %>" maxlength="100"
+              <input type="text" id="complemento" name="complemento" value="<%= valores && valores.complemento ? valores.complemento : '' %>" maxlength="100"
                 placeholder="Apto, Bloco..."
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div>
               <label for="bairro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bairro</label>
-              <input type="text" id="bairro" name="bairro" value="<%= usuario && usuario.bairro ? usuario.bairro : '' %>" maxlength="100"
+              <input type="text" id="bairro" name="bairro" value="<%= valores && valores.bairro ? valores.bairro : '' %>" maxlength="100"
                 placeholder="Centro, Vila Nova..."
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
             </div>
             <div class="grid grid-cols-3 gap-2">
               <div class="col-span-2">
                 <label for="cidade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
-                <input type="text" id="cidade" name="cidade" value="<%= usuario && usuario.cidade ? usuario.cidade : '' %>" maxlength="100"
+                <input type="text" id="cidade" name="cidade" value="<%= valores && valores.cidade ? valores.cidade : '' %>" maxlength="100"
                   placeholder="São Paulo"
                   class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
               </div>
@@ -185,7 +211,7 @@
                   class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-2 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
                   <option value="">--</option>
                   <% ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].forEach(function(uf){ %>
-                    <option value="<%= uf %>" <%= usuario && usuario.estado === uf ? 'selected' : '' %>><%= uf %></option>
+                    <option value="<%= uf %>" <%= valores && valores.estado === uf ? 'selected' : '' %>><%= uf %></option>
                   <% }); %>
                 </select>
               </div>
@@ -207,14 +233,65 @@
       </form>
     </div>
 
-    <% if (usuario && typeof user !== 'undefined' && user.perfil === 'admin') { %>
-    <div class="mt-3 text-center">
-      <a href="/cadastros/usuarios/<%= usuario.id %>/alterar-senha"
-        class="text-sm text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
-        Alterar senha deste usuário
-      </a>
+    <!-- Coluna da direita: acesso às unidades e conta -->
+    <aside class="space-y-4 xl:sticky xl:top-[8.5rem]">
+      <% if (usuario) { %>
+        <%
+          var acs = typeof acessosUsuario !== 'undefined' ? acessosUsuario : [];
+          var ativos = acs.filter(function (a) { return a.unidade_ativa; });
+          var podeGerirAcesso = typeof user !== 'undefined' && (user.perfil === 'admin' || user.perfil === 'gestor');
+        %>
+        <section class="panel">
+          <header class="panel-head">
+            <h2 class="panel-title">Acesso às unidades</h2>
+            <% if (podeGerirAcesso) { %><a href="/cadastros/usuarios/<%= usuario.id %>/vinculos" class="panel-link">Gerenciar</a><% } %>
+          </header>
+          <% if (ativos.length === 0) { %>
+            <p class="mx-5 mb-5 mt-1 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+              <% if (usuario.perfil === 'admin') { %>
+                Administrador sem grupo em unidade ativa: enxerga tudo, mas não recebe tarefas de fluxo.
+              <% } else { %>
+                Sem acesso a nenhuma unidade ativa: este usuário entra mas não vê nada.
+              <% } %>
+              <% if (podeGerirAcesso) { %><a href="/cadastros/usuarios/<%= usuario.id %>/vinculos" class="font-medium underline">Dar acesso</a><% } %>
+            </p>
+          <% } %>
+          <% if (acs.length) { %>
+            <ul class="divide-y divide-line pb-2">
+              <% acs.forEach(function (a) { %>
+                <li class="px-5 py-2.5">
+                  <p class="truncate text-sm font-medium <%= a.unidade_ativa ? 'text-ink' : 'text-muted line-through' %>"><%= a.unidade_nome %></p>
+                  <p class="truncate text-[13px] text-muted">Grupo <%= a.grupo_nome %><% if (a.is_lider) { %> · líder<% } %><% if (!a.unidade_ativa) { %> · unidade desativada<% } %></p>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head"><h2 class="panel-title">Conta</h2></header>
+          <div class="space-y-2 px-5 pb-5 text-sm">
+            <p class="text-muted">Situação: <span class="font-medium text-ink"><%= usuario.ativo === false ? 'Desativado' : 'Ativo' %></span></p>
+            <a href="/cadastros/usuarios/<%= usuario.id %>/alterar-senha" class="panel-link block">Alterar senha</a>
+            <% if (podeGerirAcesso) { %><a href="/cadastros/usuarios/<%= usuario.id %>" class="panel-link block">Ver página do usuário</a><% } %>
+          </div>
+        </section>
+      <% } else { %>
+        <section class="panel">
+          <header class="panel-head"><h2 class="panel-title">Perfis de acesso</h2></header>
+          <dl class="space-y-3 px-5 pb-5 text-sm">
+            <div><dt class="font-medium text-ink">Usuário</dt><dd class="text-muted">Trabalha nas unidades em que tem acesso: abre processos, cumpre as etapas do seu grupo, assina documentos.</dd></div>
+            <div><dt class="font-medium text-ink">Gestor</dt><dd class="text-muted">Além disso, cadastra grupos e dá acesso a outras pessoas nas unidades em que trabalha.</dd></div>
+            <div><dt class="font-medium text-ink">Admin</dt><dd class="text-muted">Enxerga e administra todas as unidades, usuários e fluxos.</dd></div>
+          </dl>
+        </section>
+        <section class="panel">
+          <header class="panel-head"><h2 class="panel-title">Acesso à unidade</h2></header>
+          <p class="px-5 pb-5 text-sm text-muted">O usuário já é criado com acesso à unidade e ao grupo escolhidos. Toda unidade tem o grupo <span class="text-ink">Geral</span>; use grupos como Compras ou Farmácia para quem recebe etapas de fluxo daquela área. Outros acessos são dados depois, em <span class="text-ink">Gerenciar acesso</span>.</p>
+        </section>
+      <% } %>
+    </aside>
     </div>
-    <% } %>
   </div>
 </div>
 

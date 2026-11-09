@@ -42,5 +42,6 @@ router.get('/:id/vinculos', requireRole(['admin', 'gestor']), UsuarioController.
 
 // Adicionar vínculo
 router.post('/:id/vinculos', requireRole(['admin', 'gestor']), UsuarioController.adicionarVinculo);
+router.post('/:id/vinculos/:grupoId/remover', requireRole(['admin', 'gestor']), UsuarioController.removerVinculo);
 
 module.exports = router;

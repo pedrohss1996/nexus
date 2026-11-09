@@ -4,6 +4,8 @@
 const Usuario = require('../models/Usuario');
 const Grupo = require('../models/Grupo');
 const { auditLog } = require('../utils/logger');
+const acesso = require('../services/acesso');
+const { unidadeDaRequisicao } = require('../utils/unidadeScope');
 
 class UsuarioController {
   // Listar todos os usuários
@@ -72,7 +74,8 @@ class UsuarioController {
         title: 'Novo Usuário - DataFlow',
         user: req.user,
         usuario: null,
-        erro: null
+        erro: null,
+        ...(await UsuarioController._opcoesAcesso(req))
       });
     } catch (error) {
       console.error('Erro ao carregar formulário:', error);
@@ -83,39 +86,34 @@ class UsuarioController {
     }
   }
 
-  // Criar novo usuário
+  // Opções do campo "Acesso" (unidade → grupo) e o padrão sugerido:
+  // o grupo Geral da unidade em que quem cadastra está trabalhando.
+  static async _opcoesAcesso(req) {
+    const grupos = await acesso.gruposDisponiveis(req.user);
+    const unidadeAtual = unidadeDaRequisicao(req);
+    const sugerido = grupos.find(g => g.unidade_id === unidadeAtual) || grupos[0] || null;
+    return { unidadesAcesso: acesso.porUnidade(grupos), grupoSugerido: sugerido ? sugerido.id : null };
+  }
+
+  // Criar novo usuário — já com acesso a uma unidade, para não nascer
+  // uma conta que loga mas não enxerga nada.
   static async criar(req, res) {
+    const reRender = async (erro) => res.render('usuarios/form', {
+      title: 'Novo Usuário - DataFlow', user: req.user,
+      usuario: null, dados: req.body, erro,
+      ...(await UsuarioController._opcoesAcesso(req))
+    });
+
     try {
-      const { nome, email, senha, confirmar_senha, perfil,
+      const { nome, email, senha, confirmar_senha, perfil, grupo_id,
               cpf, telefone, cargo, matricula,
               cep, logradouro, numero, complemento, bairro, cidade, estado } = req.body;
 
-      if (!nome || !email || !senha || !confirmar_senha) {
-        return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow', user: req.user,
-          usuario: req.body, erro: 'Nome, e-mail e senha são obrigatórios'
-        });
-      }
-      if (senha !== confirmar_senha) {
-        return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow', user: req.user,
-          usuario: req.body, erro: 'As senhas não coincidem'
-        });
-      }
-      if (senha.length < 6) {
-        return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow', user: req.user,
-          usuario: req.body, erro: 'A senha deve ter no mínimo 6 caracteres'
-        });
-      }
-
-      const emailExiste = await Usuario.emailExiste(email);
-      if (emailExiste) {
-        return res.render('usuarios/form', {
-          title: 'Novo Usuário - DataFlow', user: req.user,
-          usuario: req.body, erro: 'Este email já está cadastrado'
-        });
-      }
+      if (!nome || !email || !senha || !confirmar_senha) return reRender('Nome, e-mail e senha são obrigatórios');
+      if (senha !== confirmar_senha) return reRender('As senhas não coincidem');
+      if (senha.length < 6) return reRender('A senha deve ter no mínimo 6 caracteres');
+      if (!grupo_id) return reRender('Escolha a unidade a que o usuário terá acesso');
+      if (await Usuario.emailExiste(email)) return reRender('Este email já está cadastrado');
 
       const usuario = await Usuario.criar({
         nome, email, senha, perfil: perfil || 'usuario',
@@ -123,14 +121,22 @@ class UsuarioController {
         cep, logradouro, numero, complemento, bairro, cidade, estado
       });
 
-      await auditLog('USUARIO_CRIADO', req.user.id, { usuario_id: usuario.id, nome, email, perfil });
+      let avisoAcesso = '';
+      try {
+        await acesso.concederAcesso({ usuarioId: usuario.id, grupoId: grupo_id, quem: req.user });
+      } catch (e) {
+        // O usuário já existe; avisa e leva direto à tela de acesso
+        avisoAcesso = e instanceof acesso.ErroAcesso ? e.message : 'Não foi possível dar o acesso inicial.';
+      }
+
+      await auditLog('USUARIO_CRIADO', req.user.id, { usuario_id: usuario.id, nome, email, perfil, grupo_id });
+      if (avisoAcesso) {
+        return res.redirect(`/cadastros/usuarios/${usuario.id}/vinculos?erro=${encodeURIComponent(avisoAcesso)}`);
+      }
       res.redirect(`/cadastros/usuarios/${usuario.id}`);
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      res.render('usuarios/form', {
-        title: 'Novo Usuário - DataFlow', user: req.user,
-        usuario: req.body, erro: 'Erro ao criar usuário. Tente novamente.'
-      });
+      return reRender('Erro ao criar usuário. Tente novamente.');
     }
   }
 
@@ -151,7 +157,9 @@ class UsuarioController {
         title: `Editar ${usuario.nome} - DataFlow`,
         user: req.user,
         usuario,
-        erro: null
+        erro: null,
+        // Coluna da direita: em quais unidades a pessoa trabalha
+        acessosUsuario: await acesso.acessosDoUsuario(id)
       });
     } catch (error) {
       console.error('Erro ao carregar formulário:', error);
@@ -339,82 +347,100 @@ class UsuarioController {
     }
   }
 
-  // Gerenciar vínculos (grupos e unidades)
+  // Acesso às unidades: em quais unidades (e grupos) o usuário trabalha
   static async gerenciarVinculos(req, res) {
     try {
       const { id } = req.params;
       const usuario = await Usuario.buscarPorId(id);
-      
       if (!usuario) {
-        return res.status(404).render('error', {
-          title: 'Erro - DataFlow',
-          message: 'Usuário não encontrado'
-        });
+        return res.status(404).render('error', { title: 'Erro - DataFlow', message: 'Usuário não encontrado' });
       }
 
-      const Grupo = require('../models/Grupo');
-      const Unidade = require('../models/Unidade');
-      const { query } = require('../config/database');
+      const [acessos, grupos] = await Promise.all([
+        acesso.acessosDoUsuario(id),
+        acesso.gruposDisponiveis(req.user)
+      ]);
 
-      // Buscar todos os grupos e unidades
-      const grupos = await Grupo.buscarTodos();
-      const unidades = await Unidade.buscarTodas();
+      // Não oferecer de novo o grupo em que o usuário já está
+      const jaTem = new Set(acessos.map(a => a.grupo_id));
+      const disponiveis = grupos.filter(g => !jaTem.has(g.id));
 
-      // Buscar vínculos atuais com detalhes
-      const vinculos = await query(`
-        SELECT 
-          ug.usuario_id,
-          ug.grupo_id,
-          ug.unidade_id,
-          ug.is_lider,
-          ug.criado_em as vinculo_criado_em,
-          g.nome as grupo_nome,
-          g.descricao as grupo_descricao,
-          u.nome as unidade_nome
-        FROM usuarios_grupos ug
-        INNER JOIN grupos g ON ug.grupo_id = g.id
-        INNER JOIN unidades u ON ug.unidade_id = u.id
-        WHERE ug.usuario_id = $1
-        ORDER BY u.nome, g.nome
-      `, [id]);
+      // Acessos agrupados por unidade, para a lista
+      const porUnidade = [];
+      for (const a of acessos) {
+        let u = porUnidade.find(x => x.id === a.unidade_id);
+        if (!u) { u = { id: a.unidade_id, nome: a.unidade_nome, ativa: a.unidade_ativa, grupos: [] }; porUnidade.push(u); }
+        u.grupos.push(a);
+      }
 
       res.render('usuarios/gerenciar-vinculos', {
-        title: `Gerenciar Vínculos - ${usuario.nome} - DataFlow`,
+        title: `Acesso de ${usuario.nome} - Nexus`,
         user: req.user,
         usuario,
-        grupos,
-        unidades,
-        vinculos: vinculos.rows
+        acessos: porUnidade,
+        unidadesAcesso: acesso.porUnidade(disponiveis),
+        ok: req.query.ok || null,
+        erro: req.query.erro || null
       });
     } catch (error) {
-      console.error('Erro ao carregar vínculos:', error);
-      res.status(500).render('error', {
-        title: 'Erro - DataFlow',
-        message: 'Erro ao carregar vínculos'
-      });
+      console.error('Erro ao carregar acessos:', error);
+      res.status(500).render('error', { title: 'Erro - DataFlow', message: 'Erro ao carregar acessos do usuário' });
     }
   }
 
-  // Adicionar vínculo
+  // Dar acesso: só o grupo é escolhido; a unidade é a do grupo
   static async adicionarVinculo(req, res) {
+    const { id } = req.params;
+    const voltar = (q) => res.redirect(`/cadastros/usuarios/${id}/vinculos?${q}`);
     try {
-      const { id } = req.params;
-      const { grupo_id, unidade_id, is_lider } = req.body;
-
-      const Grupo = require('../models/Grupo');
-      await Grupo.adicionarUsuario(grupo_id, id, unidade_id, is_lider === 'true', req.user.id);
-
-      await auditLog('USUARIO_VINCULO_ADICIONADO', req.user.id, { 
-        usuario_id: id,
-        grupo_id, 
-        unidade_id, 
-        is_lider 
+      const { grupo_id, is_lider } = req.body;
+      const grupo = await acesso.concederAcesso({
+        usuarioId: id, grupoId: grupo_id, isLider: is_lider === 'true' || is_lider === 'on', quem: req.user
       });
-
-      res.redirect(`/cadastros/usuarios/${id}/vinculos`);
+      await auditLog('USUARIO_VINCULO_ADICIONADO', req.user.id, {
+        usuario_id: id, grupo_id: grupo.id, unidade_id: grupo.unidade_id, is_lider: !!is_lider
+      });
+      voltar('ok=' + encodeURIComponent(`Acesso a ${grupo.unidade_nome} (${grupo.nome}) concedido.`));
     } catch (error) {
-      console.error('Erro ao adicionar vínculo:', error);
-      res.redirect(`/cadastros/usuarios/${req.params.id}/vinculos`);
+      if (error instanceof acesso.ErroAcesso) return voltar('erro=' + encodeURIComponent(error.message));
+      console.error('Erro ao dar acesso:', error);
+      voltar('erro=' + encodeURIComponent('Não foi possível dar o acesso. Tente novamente.'));
+    }
+  }
+
+  // Remover acesso a um grupo
+  static async removerVinculo(req, res) {
+    const { id, grupoId } = req.params;
+    const voltar = (q) => res.redirect(`/cadastros/usuarios/${id}/vinculos?${q}`);
+    try {
+      const { query } = require('../config/database');
+      const r = await query(
+        `SELECT ug.unidade_id, g.nome AS grupo_nome, u.nome AS unidade_nome
+           FROM usuarios_grupos ug
+           JOIN grupos g ON g.id = ug.grupo_id
+           JOIN unidades u ON u.id = ug.unidade_id
+          WHERE ug.usuario_id = $1 AND ug.grupo_id = $2`,
+        [id, grupoId]
+      );
+      const vinculo = r.rows[0];
+      if (!vinculo) return voltar('erro=' + encodeURIComponent('Esse acesso já não existe.'));
+
+      if (req.user.perfil !== 'admin') {
+        const pode = await query(
+          'SELECT 1 FROM usuarios_grupos WHERE usuario_id = $1 AND unidade_id = $2 LIMIT 1',
+          [req.user.id, vinculo.unidade_id]
+        );
+        if (!pode.rows.length) {
+          return voltar('erro=' + encodeURIComponent('Você só pode alterar acessos das unidades em que trabalha.'));
+        }
+      }
+
+      await Grupo.removerUsuario(grupoId, id);
+      await auditLog('USUARIO_VINCULO_REMOVIDO', req.user.id, { usuario_id: id, grupo_id: grupoId, unidade_id: vinculo.unidade_id });
+      voltar('ok=' + encodeURIComponent(`Acesso a ${vinculo.unidade_nome} (${vinculo.grupo_nome}) removido.`));
+    } catch (error) {
+      console.error('Erro ao remover acesso:', error);
+      voltar('erro=' + encodeURIComponent('Não foi possível remover o acesso.'));
     }
   }
 }

@@ -1,162 +1,107 @@
-<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Gerenciar Vínculos - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Acesso - Nexus', user: typeof user !== 'undefined' ? user : null }) %>
+<%
+  var totalUnidadesAtivas = acessos.filter(function (u) { return u.ativa; }).length;
+  var podeLiderar = typeof user !== 'undefined' && (user.perfil === 'admin' || user.perfil === 'gestor');
+%>
 
-<div class="space-y-6">
-  <!-- Breadcrumb -->
-  <nav class="flex text-sm text-gray-600">
-    <a href="/cadastros/usuarios" class="hover:text-teal-600">Usuários</a>
-    <span class="mx-2">/</span>
-    <a href="/cadastros/usuarios/<%= usuario.id %>" class="hover:text-teal-600"><%= usuario.nome %></a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900">Gerenciar Vínculos</span>
+<div class="dash">
+  <nav class="mb-3 text-sm text-muted" aria-label="Trilha">
+    <a href="/cadastros/usuarios" class="hover:text-ink">Usuários</a>
+    <span class="mx-1.5">/</span>
+    <a href="/cadastros/usuarios/<%= usuario.id %>" class="hover:text-ink"><%= usuario.nome %></a>
   </nav>
 
-  <!-- Cabeçalho -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex items-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl mr-4 bg-primary-50 text-primary-700 dark:bg-neutral-800 dark:text-primary-300">
-        <%= usuario.nome.charAt(0).toUpperCase() %>
-      </div>
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900"><%= usuario.nome %></h1>
-        <p class="text-sm text-gray-600"><%= usuario.email %></p>
-      </div>
-    </div>
-  </div>
+  <h1 class="text-2xl font-semibold tracking-tight text-ink">Acesso às unidades</h1>
+  <p class="mt-1 text-sm text-muted">
+    <span class="text-ink"><%= usuario.nome %></span> · <%= usuario.email %>
+    <% if (usuario.perfil === 'admin') { %> · administrador: enxerga todas as unidades, os grupos abaixo definem só as tarefas que recebe<% } %>
+  </p>
 
-  <!-- Adicionar Novo Vínculo -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Adicionar Novo Vínculo</h2>
-    
-    <form method="POST" action="/cadastros/usuarios/<%= usuario.id %>/vinculos" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Unidade</label>
-        <select name="unidade_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-          <option value="">Selecione...</option>
-          <% unidades.forEach(unidade => { %>
-            <option value="<%= unidade.id %>"><%= unidade.nome %></option>
-          <% }); %>
-        </select>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Grupo</label>
-        <select name="grupo_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-          <option value="">Selecione...</option>
-          <% grupos.forEach(grupo => { %>
-            <option value="<%= grupo.id %>" data-unidade="<%= grupo.unidade_id %>">
-              <%= grupo.nome %> (<%= grupo.unidade_nome %>)
-            </option>
-          <% }); %>
-        </select>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Função</label>
-        <select name="is_lider" required class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-          <option value="false">Membro</option>
-          <option value="true">Líder</option>
-        </select>
-      </div>
-      
-      <div class="flex items-end">
-        <button type="submit" class="w-full px-4 py-2 rounded-lg transition-all text-sm font-medium bg-neutral-900 text-white hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
-          Adicionar
-        </button>
-      </div>
-    </form>
-  </div>
+  <% if (ok) { %>
+    <p class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200" role="status"><%= ok %></p>
+  <% } %>
+  <% if (erro) { %>
+    <p class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200" role="alert"><%= erro %></p>
+  <% } %>
 
-  <!-- Vínculos Atuais -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-6">Vínculos Atuais</h2>
-    
-    <% if (vinculos.length === 0) { %>
-      <div class="text-center py-12">
-        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-        </svg>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nenhum vínculo ainda</h3>
-        <p class="text-gray-600">Adicione o primeiro vínculo usando o formulário acima.</p>
-      </div>
+  <% if (totalUnidadesAtivas === 0 && usuario.perfil !== 'admin') { %>
+    <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+      Este usuário não tem acesso a nenhuma unidade ativa: ele entra no sistema mas não vê nada. Dê acesso abaixo.
+    </p>
+  <% } %>
+
+  <div class="mt-6 grid items-start gap-4 lg:grid-cols-2">
+  <!-- Dar acesso: um único campo, unidade → grupo -->
+  <section class="panel" aria-labelledby="t-dar">
+    <header class="panel-head">
+      <h2 id="t-dar" class="panel-title">Dar acesso</h2>
+    </header>
+    <% if (unidadesAcesso.length === 0) { %>
+      <p class="panel-empty">Não há outra unidade ou grupo disponível para este usuário.
+        <% if (typeof user !== 'undefined' && user.perfil === 'admin') { %><a href="/unidades/novo" class="panel-link">Cadastrar unidade</a><% } %></p>
     <% } else { %>
-      <!-- Agrupar por Unidade -->
-      <% 
-        const vinculosPorUnidade = {};
-        vinculos.forEach(v => {
-          if (!vinculosPorUnidade[v.unidade_nome]) {
-            vinculosPorUnidade[v.unidade_nome] = [];
-          }
-          vinculosPorUnidade[v.unidade_nome].push(v);
-        });
-      %>
-      
-      <div class="space-y-6">
-        <% Object.keys(vinculosPorUnidade).forEach(unidadeNome => { %>
-          <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center mb-4">
-              <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-              </svg>
-              <h3 class="text-lg font-semibold text-gray-900"><%= unidadeNome %></h3>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              <% vinculosPorUnidade[unidadeNome].forEach(vinculo => { %>
-                <div class="border border-gray-200 rounded-lg p-3 hover:border-teal-500 transition-colors">
-                  <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-semibold text-gray-900 text-sm"><%= vinculo.grupo_nome %></h4>
-                    <% if (vinculo.is_lider) { %>
-                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                        Líder
-                      </span>
-                    <% } else { %>
-                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Membro
-                      </span>
-                    <% } %>
-                  </div>
-                  <p class="text-xs text-gray-600 mb-3">
-                    Desde <%= new Date(vinculo.vinculo_criado_em).toLocaleDateString('pt-BR') %>
-                  </p>
-                  <% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-                    <button 
-                      onclick="removerVinculo(<%= vinculo.grupo_id %>, <%= vinculo.usuario_id %>)"
-                      class="text-xs text-red-600 hover:text-red-900 font-medium"
-                    >
-                      Remover
-                    </button>
-                  <% } %>
-                </div>
-              <% }); %>
-            </div>
-          </div>
-        <% }); %>
-      </div>
+      <form method="POST" action="/cadastros/usuarios/<%= usuario.id %>/vinculos" class="flex flex-col gap-3 px-5 pb-5 sm:flex-row sm:items-end">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="min-w-0 flex-1">
+          <label for="grupo_id" class="mb-1.5 block text-sm font-medium text-ink">Unidade e grupo</label>
+          <select id="grupo_id" name="grupo_id" required class="input-field">
+            <% unidadesAcesso.forEach(function (un) { %>
+              <optgroup label="<%= un.nome %>">
+                <% un.grupos.forEach(function (g) { %>
+                  <option value="<%= g.id %>"><%= un.nome %> — <%= g.nome %></option>
+                <% }); %>
+              </optgroup>
+            <% }); %>
+          </select>
+        </div>
+        <% if (podeLiderar) { %>
+          <label class="flex h-10 items-center gap-2 text-sm text-ink">
+            <input type="checkbox" name="is_lider" value="true" class="h-4 w-4 rounded border-gray-300">
+            Líder do grupo
+          </label>
+        <% } %>
+        <button type="submit" class="btn-primary h-10">Dar acesso</button>
+      </form>
     <% } %>
-  </div>
-</div>
+  </section>
 
-<% if (user.perfil === 'admin' || user.perfil === 'gestor') { %>
-<script>
-async function removerVinculo(grupoId, usuarioId) {
-  if (!confirm('Deseja realmente remover este vínculo?')) return;
-  
-  try {
-    const response = await fetch(`/grupos/${grupoId}/membros/${usuarioId}`, {
-      method: 'DELETE'
-    });
-    
-    if (response.ok) {
-      location.reload();
-    } else {
-      alert('Erro ao remover vínculo');
-    }
-  } catch (error) {
-    alert('Erro ao remover vínculo');
-  }
-}
-</script>
-<% } %>
+  <!-- Acessos atuais, por unidade -->
+  <section class="panel" aria-labelledby="t-atuais">
+    <header class="panel-head">
+      <h2 id="t-atuais" class="panel-title">Acessos atuais</h2>
+      <span class="text-sm text-muted"><%= totalUnidadesAtivas %> <%= totalUnidadesAtivas === 1 ? 'unidade ativa' : 'unidades ativas' %></span>
+    </header>
+    <% if (acessos.length === 0) { %>
+      <p class="panel-empty">Nenhum acesso ainda.</p>
+    <% } else { %>
+      <ul class="divide-y divide-line">
+        <% acessos.forEach(function (un) { %>
+          <% un.grupos.forEach(function (g, i) { %>
+            <li class="flex items-center justify-between gap-4 px-5 py-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium <%= un.ativa ? 'text-ink' : 'text-muted line-through' %>"><%= un.nome %></p>
+                <p class="truncate text-[13px] text-muted">
+                  Grupo <%= g.grupo_nome %><% if (g.is_lider) { %> · líder<% } %><% if (!un.ativa) { %> · unidade desativada<% } %>
+                </p>
+              </div>
+              <form method="POST" action="/cadastros/usuarios/<%= usuario.id %>/vinculos/<%= g.grupo_id %>/remover"
+                    onsubmit="return confirm('Remover o acesso de <%= usuario.nome.replace(/'/g, '') %> a <%= un.nome.replace(/'/g, '') %> (<%= g.grupo_nome.replace(/'/g, '') %>)?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="text-sm font-medium text-negative hover:underline">Remover</button>
+              </form>
+            </li>
+          <% }); %>
+        <% }); %>
+      </ul>
+    <% } %>
+  </section>
+
+  </div>
+
+  <p class="mt-4 max-w-3xl text-[13px] text-muted">
+    O acesso a uma unidade vem da participação em um grupo dela. Toda unidade tem o grupo <span class="text-ink">Geral</span>;
+    grupos como Compras ou Farmácia servem para receber as etapas de fluxo daquela área.
+  </p>
+</div>
 
 <%- include('../partials/footer') %>

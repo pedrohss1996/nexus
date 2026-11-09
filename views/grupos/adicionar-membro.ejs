@@ -56,34 +56,11 @@
         <p class="text-xs text-gray-500 mt-1">Selecione o usuário que deseja adicionar ao grupo</p>
       </div>
 
-      <!-- Unidade -->
+      <!-- Unidade: sempre a do grupo -->
       <div>
-        <label for="unidade_id" class="block text-sm font-medium text-gray-700 mb-2">
-          Unidade <span class="text-red-500">*</span>
-        </label>
-        <select 
-          id="unidade_id" 
-          name="unidade_id" 
-          required
-          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-        >
-          <option value="">Selecione uma unidade</option>
-          <% unidades.forEach(unidade => { %>
-            <option value="<%= unidade.id %>" <%= grupo.unidade_id == unidade.id ? 'selected' : '' %>>
-              <%= unidade.nome %>
-              <% if (unidade.cd_tipo == 1) { %>
-                (Hospital)
-              <% } else if (unidade.cd_tipo == 2) { %>
-                (Clínica)
-              <% } else if (unidade.cd_tipo == 3) { %>
-                (Departamento)
-              <% } %>
-            </option>
-          <% }); %>
-        </select>
-        <p class="text-xs text-gray-500 mt-1">
-          O usuário será vinculado ao grupo <strong><%= grupo.nome %></strong> nesta unidade específica
-        </p>
+        <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidade</p>
+        <p class="text-sm text-gray-900 dark:text-white"><%= (unidades.find(function (u) { return u.id == grupo.unidade_id; }) || {}).nome || '—' %></p>
+        <p class="text-xs text-gray-500 mt-1">O grupo <strong><%= grupo.nome %></strong> pertence a esta unidade; o usuário passa a ter acesso a ela.</p>
       </div>
 
       <!-- Função -->
@@ -145,7 +122,7 @@
         </a>
         <button 
           type="submit" 
-          class="px-8 py-2.5 rounded-lg transition-all font-medium text-sm bg-neutral-900 text-white hover:bg-black dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+          class="px-8 py-2.5 rounded-lg transition-all font-medium text-sm bg-primary-600 text-white hover:bg-primary-700"
         >
           Adicionar Membro
         </button>
