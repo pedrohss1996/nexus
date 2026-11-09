@@ -30,10 +30,10 @@ async function seedUsuarioMarlon() {
     // Criar usuário
     console.log('👤 Inserindo usuário no banco...');
     const resultado = await query(
-      `INSERT INTO usuarios (nome, email, senha, perfil, ativo, criado_em, atualizado_em)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO usuarios (nome, email, login, senha, perfil, ativo, criado_em, atualizado_em)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING id, nome, email, perfil, ativo, criado_em`,
-      ['Marlon', 'marlon@teste.com.br', senhaHash, 'admin', true]
+      ['Marlon', 'marlon@teste.com.br', 'marlon', senhaHash, 'admin', true]
     );
 
     const usuario = resultado.rows[0];

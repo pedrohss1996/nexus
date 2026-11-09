@@ -16,11 +16,11 @@ async function seed() {
 
     if (adminExists.rows.length === 0) {
       await query(
-        `INSERT INTO usuarios (nome, email, senha, perfil, ativo)
-         VALUES ($1, $2, $3, $4, true)`,
-        ['Administrador', 'admin@dataflow.com', senhaHash, 'admin']
+        `INSERT INTO usuarios (nome, email, login, senha, perfil, ativo)
+         VALUES ($1, $2, $3, $4, $5, true)`,
+        ['Administrador', 'admin@dataflow.com', 'admin', senhaHash, 'admin']
       );
-      console.log('✅ Usuário admin criado: admin@dataflow.com / admin123');
+      console.log('✅ Usuário admin criado: login "admin" / senha admin123 — troque a senha no primeiro acesso');
     } else {
       console.log('ℹ️  Usuário admin já existe');
     }

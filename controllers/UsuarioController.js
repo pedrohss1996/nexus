@@ -113,10 +113,14 @@ class UsuarioController {
       if (senha !== confirmar_senha) return reRender('As senhas não coincidem');
       if (senha.length < 6) return reRender('A senha deve ter no mínimo 6 caracteres');
       if (!grupo_id) return reRender('Escolha a unidade a que o usuário terá acesso');
+      if (!Usuario.loginValido(req.body.login)) {
+        return reRender('Nome de usuário inválido: use de 3 a 60 caracteres entre letras minúsculas, números, ponto, hífen ou sublinhado');
+      }
+      if (await Usuario.loginExiste(req.body.login)) return reRender('Este nome de usuário já está em uso');
       if (await Usuario.emailExiste(email)) return reRender('Este email já está cadastrado');
 
       const usuario = await Usuario.criar({
-        nome, email, senha, perfil: perfil || 'usuario',
+        nome, email, login: req.body.login, senha, perfil: perfil || 'usuario',
         cpf, telefone, cargo, matricula,
         cep, logradouro, numero, complemento, bairro, cidade, estado
       });
@@ -203,6 +207,22 @@ class UsuarioController {
         cep, logradouro, numero, complemento, bairro, cidade, estado
       };
       if (isAdmin && !isSelf) dados.perfil = perfil;
+
+      // Nome de usuário: só o admin altera
+      if (isAdmin && req.body.login !== undefined) {
+        const erroLogin = !Usuario.loginValido(req.body.login)
+          ? 'Nome de usuário inválido: use de 3 a 60 caracteres entre letras minúsculas, números, ponto, hífen ou sublinhado'
+          : (await Usuario.loginExiste(req.body.login, id) ? 'Este nome de usuário já está em uso' : null);
+        if (erroLogin) {
+          const atual = await Usuario.buscarPorId(id);
+          return res.render('usuarios/form', {
+            title: `Editar ${atual.nome} - DataFlow`, user: req.user,
+            usuario: atual, dados: { ...atual, ...req.body }, erro: erroLogin,
+            acessosUsuario: await acesso.acessosDoUsuario(id)
+          });
+        }
+        dados.login = req.body.login;
+      }
 
       const usuario = await Usuario.atualizar(id, dados);
       if (!usuario) {
@@ -426,11 +446,8 @@ class UsuarioController {
       if (!vinculo) return voltar('erro=' + encodeURIComponent('Esse acesso já não existe.'));
 
       if (req.user.perfil !== 'admin') {
-        const pode = await query(
-          'SELECT 1 FROM usuarios_grupos WHERE usuario_id = $1 AND unidade_id = $2 LIMIT 1',
-          [req.user.id, vinculo.unidade_id]
-        );
-        if (!pode.rows.length) {
+        const Unidade = require('../models/Unidade');
+        if (!(await Unidade.usuarioTemAcesso(req.user.id, req.user.perfil, vinculo.unidade_id))) {
           return voltar('erro=' + encodeURIComponent('Você só pode alterar acessos das unidades em que trabalha.'));
         }
       }

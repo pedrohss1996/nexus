@@ -87,8 +87,17 @@ describe('login com falha', () => {
   test('usuário inexistente responde 401', async () => {
     respostaQuery = { rows: [] };
     const res = resFake();
-    await AuthController.login({ body: { email: 'x@x.com', senha: 'qualquer' }, ip: '1.2.3.4' }, res);
+    await AuthController.login({ body: { usuario: 'ninguem', senha: 'qualquer' }, ip: '1.2.3.4' }, res);
     assert.strictEqual(res.statusCode, 401);
     assert.strictEqual(res.renderView, 'auth/login');
+  });
+
+  test('busca a conta pelo nome de usuário, sem diferenciar maiúsculas', async () => {
+    consultas.length = 0;
+    respostaQuery = { rows: [] };
+    await AuthController.login({ body: { usuario: '  Pedro.Santos ', senha: 'x' }, ip: '1.2.3.4' }, resFake());
+    const c = consultas.find(q => /FROM usuarios/.test(q.sql));
+    assert.match(c.sql, /lower\(login\) = lower\(\$1\)/);
+    assert.deepStrictEqual(c.params, ['Pedro.Santos']);
   });
 });

@@ -3,6 +3,13 @@
 
 const { query } = require('../config/database');
 
+// Verdadeiro quando o usuário $1 participa de alguma unidade ativa com
+// acesso_total (ex.: "Administrador"): ele acessa todas as unidades ativas.
+const SQL_TEM_ACESSO_TOTAL = `EXISTS (
+  SELECT 1 FROM usuarios_grupos ugt
+  JOIN unidades ut ON ut.id = ugt.unidade_id
+  WHERE ugt.usuario_id = $1 AND ut.acesso_total = true AND ut.ativo = true)`;
+
 class Unidade {
   // Criar nova unidade
   static async criar(dados) {
@@ -75,10 +82,12 @@ class Unidade {
     }
 
     const sql = `
-      SELECT DISTINCT u.*
+      SELECT u.*
       FROM unidades u
-      INNER JOIN usuarios_grupos ug ON ug.unidade_id = u.id
-      WHERE ug.usuario_id = $1 AND u.ativo = true
+      WHERE u.ativo = true
+        AND (EXISTS (SELECT 1 FROM usuarios_grupos ug
+                      WHERE ug.usuario_id = $1 AND ug.unidade_id = u.id)
+             OR ${SQL_TEM_ACESSO_TOTAL})
       ORDER BY u.nome ASC
     `;
     const resultado = await query(sql, [usuarioId]);
@@ -97,9 +106,11 @@ class Unidade {
 
     const sql = `
       SELECT 1
-      FROM usuarios_grupos ug
-      INNER JOIN unidades u ON u.id = ug.unidade_id
-      WHERE ug.usuario_id = $1 AND ug.unidade_id = $2 AND u.ativo = true
+      FROM unidades u
+      WHERE u.id = $2 AND u.ativo = true
+        AND (EXISTS (SELECT 1 FROM usuarios_grupos ug
+                      WHERE ug.usuario_id = $1 AND ug.unidade_id = u.id)
+             OR ${SQL_TEM_ACESSO_TOTAL})
       LIMIT 1
     `;
     const resultado = await query(sql, [usuarioId, id]);

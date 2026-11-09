@@ -8,7 +8,7 @@
  * produz uma conta que loga mas não funciona.
  *
  * Uso:
- *   node scripts/criar-usuario.js --nome "Fulano" --email f@x.com [opções]
+ *   node scripts/criar-usuario.js --nome "Fulano" --email f@x.com [--login fulano] [opções]
  *
  * Opções:
  *   --perfil   admin | gestor | usuario     (padrão: usuario)
@@ -102,12 +102,24 @@ function gerarSenha(tamanho = 16) {
     }
     const grupoId = grupo.rows[0].id;
 
+    // Nome de usuário (é com ele que se entra): --login, ou a parte do e-mail antes do "@"
+    const login = String(args.login || args.email.split('@')[0]).trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,60}$/.test(login)) {
+      console.error(`❌ Nome de usuário inválido: "${login}". Use --login com 3 a 60 caracteres (letras, números, . _ -).`);
+      process.exit(1);
+    }
+    const loginEmUso = await query('SELECT 1 FROM usuarios WHERE lower(login) = $1', [login]);
+    if (loginEmUso.rows.length) {
+      console.error(`❌ O nome de usuário "${login}" já está em uso. Escolha outro com --login.`);
+      process.exit(1);
+    }
+
     const hash = await bcrypt.hash(senha, 10);
     const novo = await query(
-      `INSERT INTO usuarios (nome, email, senha, perfil, ativo, criado_em)
-       VALUES ($1, $2, $3, $4, true, NOW())
+      `INSERT INTO usuarios (nome, email, login, senha, perfil, ativo, criado_em)
+       VALUES ($1, $2, $3, $4, $5, true, NOW())
        RETURNING id`,
-      [args.nome, args.email, hash, perfil]
+      [args.nome, args.email, login, hash, perfil]
     );
     const usuarioId = novo.rows[0].id;
 
@@ -120,6 +132,7 @@ function gerarSenha(tamanho = 16) {
     console.log('✅ Usuário criado\n');
     console.log(`   id      : ${usuarioId}`);
     console.log(`   nome    : ${args.nome}`);
+    console.log(`   login   : ${login}`);
     console.log(`   e-mail  : ${args.email}`);
     console.log(`   perfil  : ${perfil}`);
     console.log(`   unidade : ${unidadeId} — ${unidade.rows[0].nome}`);

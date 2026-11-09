@@ -55,7 +55,8 @@ class GrupoController {
         title: `${grupo.nome} - DataFlow`,
         user: req.user,
         grupo,
-        membros
+        membros,
+        ok: req.query.ok || null
       });
     } catch (error) {
       console.error('Erro ao buscar grupo:', error);
@@ -227,106 +228,81 @@ class GrupoController {
     }
   }
 
-  // Exibir formulário de adicionar membro
+  // Formulário de adicionar membros: vários usuários de uma vez
   static async formAdicionarMembro(req, res) {
     try {
       const { id } = req.params;
       const grupo = await Grupo.buscarPorId(id);
-      
       if (!grupo) {
-        return res.status(404).render('error', {
-          title: 'Erro - DataFlow',
-          message: 'Grupo não encontrado'
-        });
+        return res.status(404).render('error', { title: 'Erro - DataFlow', message: 'Grupo não encontrado' });
       }
-
-      // Buscar todos os usuários ativos
-      const Usuario = require('../models/Usuario');
-      const usuarios = await Usuario.buscarTodos({ ativo: true });
-
-      // Buscar todas as unidades ativas
-      const Unidade = require('../models/Unidade');
-      const unidades = await Unidade.buscarTodas();
-
-      res.render('grupos/adicionar-membro', {
-        title: `Adicionar Membro - ${grupo.nome} - DataFlow`,
-        user: req.user,
-        grupo,
-        usuarios,
-        unidades,
-        erro: null
-      });
+      return GrupoController._renderAdicionar(req, res, grupo, { erro: null });
     } catch (error) {
       console.error('Erro ao carregar formulário:', error);
-      res.status(500).render('error', {
-        title: 'Erro - DataFlow',
-        message: 'Erro ao carregar formulário'
-      });
+      res.status(500).render('error', { title: 'Erro - DataFlow', message: 'Erro ao carregar formulário' });
     }
   }
 
-  // Adicionar membro ao grupo
+  static async _renderAdicionar(req, res, grupo, { erro, marcados = [] }) {
+    const Usuario = require('../models/Usuario');
+    const [usuarios, membros, unidade] = await Promise.all([
+      Usuario.buscarTodos({ ativo: true }),
+      Grupo.buscarMembros(grupo.id),
+      Unidade.buscarPorId(grupo.unidade_id)
+    ]);
+    const idsMembros = new Set(membros.map(m => m.id));
+    return res.render('grupos/adicionar-membro', {
+      title: `Adicionar membros - ${grupo.nome} - Nexus`,
+      user: req.user,
+      grupo,
+      unidade,
+      usuarios: usuarios.map(u => ({ ...u, jaMembro: idsMembros.has(u.id) })),
+      marcados: marcados.map(String),
+      erro
+    });
+  }
+
+  // Adicionar membros: aceita um ou vários usuario_id. A unidade é a do grupo.
   static async adicionarMembro(req, res) {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
-      const { usuario_id, unidade_id, is_lider } = req.body;
-
-      // Validações
-      if (!usuario_id) {
-        const grupo = await Grupo.buscarPorId(id);
-        const Usuario = require('../models/Usuario');
-        const usuarios = await Usuario.buscarTodos({ ativo: true });
-        const Unidade = require('../models/Unidade');
-        const unidades = await Unidade.buscarTodas();
-
-        return res.render('grupos/adicionar-membro', {
-          title: `Adicionar Membro - ${grupo.nome} - DataFlow`,
-          user: req.user,
-          grupo,
-          usuarios,
-          unidades,
-          erro: 'Escolha o usuário'
-        });
+      const grupo = await Grupo.buscarPorId(id);
+      if (!grupo) {
+        return res.status(404).render('error', { title: 'Erro - DataFlow', message: 'Grupo não encontrado' });
       }
 
-      // A unidade é sempre a do grupo; o campo unidade_id do formulário é ignorado
-      const grupoAlvo = await acesso.concederAcesso({
-        usuarioId: usuario_id, grupoId: id, isLider: is_lider === 'true' || is_lider === 'on', quem: req.user
+      const ids = [].concat(req.body.usuario_id || req.body['usuario_id[]'] || [])
+        .map(v => parseInt(v, 10)).filter(Boolean);
+      const lider = req.body.is_lider === 'true' || req.body.is_lider === 'on';
+
+      if (ids.length === 0) {
+        return GrupoController._renderAdicionar(req, res, grupo, { erro: 'Marque pelo menos um usuário.' });
+      }
+
+      let adicionados = 0;
+      const falhas = [];
+      for (const usuarioId of [...new Set(ids)]) {
+        try {
+          await acesso.concederAcesso({ usuarioId, grupoId: id, isLider: lider, quem: req.user });
+          adicionados++;
+        } catch (e) {
+          if (e instanceof acesso.ErroAcesso) { falhas.push(e.message); continue; }
+          throw e;
+        }
+      }
+
+      await auditLog('GRUPO_MEMBROS_ADICIONADOS', req.user.id, {
+        grupo_id: id, unidade_id: grupo.unidade_id, usuarios: ids, is_lider: lider
       });
 
-      await auditLog('GRUPO_MEMBRO_ADICIONADO', req.user.id, {
-        grupo_id: id,
-        usuario_id,
-        unidade_id: grupoAlvo.unidade_id,
-        is_lider 
-      });
-
-      res.redirect(`/grupos/${id}`);
+      if (adicionados === 0) {
+        return GrupoController._renderAdicionar(req, res, grupo, { erro: falhas[0] || 'Nenhum usuário foi adicionado.', marcados: ids });
+      }
+      const msg = adicionados === 1 ? '1 usuário adicionado ao grupo.' : `${adicionados} usuários adicionados ao grupo.`;
+      res.redirect(`/grupos/${id}?ok=${encodeURIComponent(msg)}`);
     } catch (error) {
-      console.error('Erro ao adicionar membro:', error);
-      
-      // Regra de acesso recusada (ex.: gestor de outra unidade) ou duplicata
-      if (error instanceof acesso.ErroAcesso || error.code === '23505') {
-        const grupo = await Grupo.buscarPorId(req.params.id);
-        const Usuario = require('../models/Usuario');
-        const usuarios = await Usuario.buscarTodos({ ativo: true });
-        const Unidade = require('../models/Unidade');
-        const unidades = await Unidade.buscarTodas();
-
-        return res.render('grupos/adicionar-membro', {
-          title: `Adicionar Membro - ${grupo.nome} - DataFlow`,
-          user: req.user,
-          grupo,
-          usuarios,
-          unidades,
-          erro: error instanceof acesso.ErroAcesso ? error.message : 'Este usuário já está neste grupo'
-        });
-      }
-
-      res.status(500).render('error', {
-        title: 'Erro - DataFlow',
-        message: 'Erro ao adicionar membro'
-      });
+      console.error('Erro ao adicionar membros:', error);
+      res.status(500).render('error', { title: 'Erro - DataFlow', message: 'Erro ao adicionar membros' });
     }
   }
 

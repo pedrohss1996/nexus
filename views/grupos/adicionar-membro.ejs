@@ -1,134 +1,131 @@
-<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Adicionar Membro - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Adicionar membros - Nexus', user: typeof user !== 'undefined' ? user : null }) %>
+<%
+  var disponiveis = usuarios.filter(function (u) { return !u.jaMembro; });
+  var jaMembros = usuarios.length - disponiveis.length;
+  var marcadosSet = (typeof marcados !== 'undefined' ? marcados : []);
+%>
 
-<div class="max-w-2xl mx-auto space-y-6">
-  <!-- Breadcrumb -->
-  <nav class="flex text-sm text-gray-600">
-    <a href="/grupos" class="hover:text-teal-600">Grupos</a>
-    <span class="mx-2">/</span>
-    <a href="/grupos/<%= grupo.id %>" class="hover:text-teal-600"><%= grupo.nome %></a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900">Adicionar Membro</span>
+<div class="dash">
+  <nav class="mb-3 text-sm text-muted" aria-label="Trilha">
+    <a href="/grupos" class="hover:text-ink">Grupos</a>
+    <span class="mx-1.5">/</span>
+    <a href="/grupos/<%= grupo.id %>" class="hover:text-ink"><%= grupo.nome %></a>
   </nav>
 
-  <!-- Formulário -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-    <div class="flex items-center mb-6">
-      <div class="p-3 bg-teal-100 rounded-lg mr-4">
-        <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-        </svg>
-      </div>
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Adicionar Membro ao Grupo</h1>
-        <p class="text-sm text-gray-600 mt-1">Grupo: <%= grupo.nome %></p>
-      </div>
-    </div>
+  <h1 class="text-2xl font-semibold tracking-tight text-ink">Adicionar membros</h1>
+  <p class="mt-1 text-sm text-muted">
+    Grupo <span class="text-ink"><%= grupo.nome %></span>
+    <% if (unidade) { %> · unidade <span class="text-ink"><%= unidade.nome %></span><% } %>
+    · quem entrar no grupo passa a ter acesso a esta unidade
+  </p>
 
-    <% if (erro) { %>
-      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center">
-        <svg class="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-red-800 font-medium"><%= erro %></p>
-      </div>
-    <% } %>
+  <% if (erro) { %>
+    <p class="alerta alerta-erro mt-4" role="alert"><%= erro %></p>
+  <% } %>
 
-    <form method="POST" action="/grupos/<%= grupo.id %>/membros" class="space-y-6">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <!-- Usuário -->
-      <div>
-        <label for="usuario_id" class="block text-sm font-medium text-gray-700 mb-2">
-          Usuário <span class="text-red-500">*</span>
+  <form method="POST" action="/grupos/<%= grupo.id %>/membros" class="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <!-- Lista de usuários com seleção múltipla -->
+    <section class="panel">
+      <header class="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
+        <label class="flex items-center gap-2 text-sm font-medium text-ink">
+          <input type="checkbox" id="marcarTodos" class="h-4 w-4 rounded border-gray-300 text-primary-600 dark:border-slate-500 dark:bg-slate-700">
+          Selecionar todos
         </label>
-        <select 
-          id="usuario_id" 
-          name="usuario_id" 
-          required
-          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-        >
-          <option value="">Selecione um usuário</option>
-          <% usuarios.forEach(usuario => { %>
-            <option value="<%= usuario.id %>">
-              <%= usuario.nome %> (<%= usuario.email %>) - <%= usuario.perfil %>
-            </option>
+        <div class="relative ml-auto w-full sm:w-72">
+          <input type="search" id="buscaUsuario" placeholder="Buscar por nome, e-mail ou cargo" aria-label="Buscar usuário"
+            class="input-field pl-9">
+          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"/></svg>
+        </div>
+      </header>
+
+      <% if (usuarios.length === 0) { %>
+        <p class="panel-empty mt-5">Nenhum usuário ativo cadastrado. <a href="/cadastros/usuarios/novo" class="panel-link">Cadastrar usuário</a></p>
+      <% } else { %>
+        <ul id="listaUsuarios" class="max-h-[60vh] divide-y divide-line overflow-y-auto">
+          <% usuarios.forEach(function (u) { %>
+            <li data-busca="<%= (u.nome + ' ' + (u.email || '') + ' ' + (u.cargo || '') + ' ' + (u.login || '')).toLowerCase() %>">
+              <label class="flex items-center gap-3 px-5 py-2.5 <%= u.jaMembro ? 'opacity-60' : 'cursor-pointer hover:bg-raised' %>">
+                <input type="checkbox" name="usuario_id" value="<%= u.id %>"
+                  class="seletor-usuario h-4 w-4 rounded border-gray-300 text-primary-600 dark:border-slate-500 dark:bg-slate-700"
+                  <%= u.jaMembro ? 'checked disabled' : '' %> <%= marcadosSet.indexOf(String(u.id)) >= 0 ? 'checked' : '' %>>
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700 dark:bg-slate-700 dark:text-primary-200"><%= u.nome.charAt(0).toUpperCase() %></span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-ink"><%= u.nome %></span>
+                  <span class="block truncate text-[13px] text-muted"><% if (u.login) { %><%= u.login %> · <% } %><%= u.email %><% if (u.cargo) { %> · <%= u.cargo %><% } %></span>
+                </span>
+                <span class="shrink-0 text-[13px] text-muted"><%= u.jaMembro ? 'já está no grupo' : u.perfil %></span>
+              </label>
+            </li>
           <% }); %>
-        </select>
-        <p class="text-xs text-gray-500 mt-1">Selecione o usuário que deseja adicionar ao grupo</p>
-      </div>
+        </ul>
+        <p id="semResultado" class="hidden px-5 py-6 text-sm text-muted">Nenhum usuário encontrado para essa busca.</p>
+      <% } %>
+    </section>
 
-      <!-- Unidade: sempre a do grupo -->
-      <div>
-        <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidade</p>
-        <p class="text-sm text-gray-900 dark:text-white"><%= (unidades.find(function (u) { return u.id == grupo.unidade_id; }) || {}).nome || '—' %></p>
-        <p class="text-xs text-gray-500 mt-1">O grupo <strong><%= grupo.nome %></strong> pertence a esta unidade; o usuário passa a ter acesso a ela.</p>
-      </div>
-
-      <!-- Função -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">
-          Função no Grupo <span class="text-red-500">*</span>
+    <!-- Resumo e ação -->
+    <aside class="panel lg:sticky lg:top-20">
+      <div class="space-y-4 p-5">
+        <p class="text-sm text-muted">
+          <span id="contador" class="text-2xl font-semibold text-ink num">0</span>
+          <span id="contadorRotulo">selecionados</span>
+        </p>
+        <p class="text-[13px] text-muted"><%= disponiveis.length %> disponíveis · <%= jaMembros %> já no grupo</p>
+        <label class="flex items-center gap-2 text-sm text-ink">
+          <input type="checkbox" name="is_lider" value="true" class="h-4 w-4 rounded border-gray-300 text-primary-600 dark:border-slate-500 dark:bg-slate-700">
+          Adicionar como líderes
         </label>
-        <div class="space-y-3">
-          <label class="flex items-start p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-            <input 
-              type="radio" 
-              name="is_lider" 
-              value="false" 
-              checked
-              class="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500"
-            >
-            <div class="ml-3">
-              <span class="block text-sm font-medium text-gray-900">Membro</span>
-              <span class="block text-xs text-gray-500">Participante regular do grupo</span>
-            </div>
-          </label>
-          
-          <label class="flex items-start p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-            <input 
-              type="radio" 
-              name="is_lider" 
-              value="true"
-              class="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500"
-            >
-            <div class="ml-3">
-              <span class="block text-sm font-medium text-gray-900">Líder</span>
-              <span class="block text-xs text-gray-500">Coordenador/responsável pelo grupo</span>
-            </div>
-          </label>
-        </div>
+        <button type="submit" id="btnAdicionar" class="btn-primary w-full" disabled>Adicionar ao grupo</button>
+        <a href="/grupos/<%= grupo.id %>" class="block text-center text-sm text-muted hover:text-ink">Cancelar</a>
       </div>
-
-      <!-- Exemplo Visual -->
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div class="flex">
-          <svg class="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <div class="text-sm text-blue-800">
-            <p class="font-medium mb-1">Como funciona:</p>
-            <p class="mb-2">Um usuário pode estar no mesmo grupo em diferentes unidades com funções diferentes.</p>
-            <p class="text-xs">
-              <strong>Exemplo:</strong> João pode ser <strong>Líder</strong> do grupo "TI" no <strong>Hospital São Lucas</strong> 
-              e <strong>Membro</strong> do grupo "TI" na <strong>Clínica Ortopédica</strong>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Botões -->
-      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-        <a href="/grupos/<%= grupo.id %>" class="text-gray-600 hover:text-gray-900 font-medium text-sm">
-          Cancelar
-        </a>
-        <button 
-          type="submit" 
-          class="px-8 py-2.5 rounded-lg transition-all font-medium text-sm bg-primary-600 text-white hover:bg-primary-700"
-        >
-          Adicionar Membro
-        </button>
-      </div>
-    </form>
-  </div>
+    </aside>
+  </form>
 </div>
+
+<script>
+  (function () {
+    var lista = document.getElementById('listaUsuarios');
+    if (!lista) return;
+    var busca = document.getElementById('buscaUsuario');
+    var todos = document.getElementById('marcarTodos');
+    var contador = document.getElementById('contador');
+    var rotulo = document.getElementById('contadorRotulo');
+    var btn = document.getElementById('btnAdicionar');
+    var vazio = document.getElementById('semResultado');
+    var itens = Array.prototype.slice.call(lista.querySelectorAll('li'));
+    function caixa(li) { return li.querySelector('.seletor-usuario'); }
+    function livres() { return itens.filter(function (li) { return !li.hidden && !caixa(li).disabled; }); }
+
+    function atualizar() {
+      var n = itens.filter(function (li) { var c = caixa(li); return c.checked && !c.disabled; }).length;
+      contador.textContent = n;
+      rotulo.textContent = n === 1 ? 'selecionado' : 'selecionados';
+      btn.disabled = n === 0;
+      btn.textContent = n > 1 ? 'Adicionar ' + n + ' ao grupo' : 'Adicionar ao grupo';
+      var vis = livres();
+      todos.checked = vis.length > 0 && vis.every(function (li) { return caixa(li).checked; });
+      todos.indeterminate = !todos.checked && vis.some(function (li) { return caixa(li).checked; });
+    }
+
+    busca.addEventListener('input', function () {
+      var termo = busca.value.trim().toLowerCase();
+      var visiveis = 0;
+      itens.forEach(function (li) {
+        li.hidden = !!termo && li.getAttribute('data-busca').indexOf(termo) < 0;
+        if (!li.hidden) visiveis++;
+      });
+      vazio.classList.toggle('hidden', visiveis > 0);
+      atualizar();
+    });
+    // "Selecionar todos" vale para os usuários visíveis (respeita a busca)
+    todos.addEventListener('change', function () {
+      livres().forEach(function (li) { caixa(li).checked = todos.checked; });
+      atualizar();
+    });
+    lista.addEventListener('change', atualizar);
+    atualizar();
+  })();
+</script>
 
 <%- include('../partials/footer') %>

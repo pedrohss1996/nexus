@@ -18,6 +18,7 @@
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const { registrarIO } = require('./notificar');
+const Unidade = require('../models/Unidade');
 
 const socketHandler = (io) => {
   registrarIO(io);
@@ -44,18 +45,11 @@ const socketHandler = (io) => {
       }
 
       // Unidades com vínculo — admin acessa todas
-      const unidades = usuario.rows[0].perfil === 'admin'
-        ? await query('SELECT id FROM unidades WHERE ativo = true')
-        : await query(
-            `SELECT DISTINCT ug.unidade_id AS id
-             FROM usuarios_grupos ug
-             INNER JOIN unidades u ON u.id = ug.unidade_id
-             WHERE ug.usuario_id = $1 AND u.ativo = true`,
-            [decoded.userId]
-          );
+      // (inclui quem é membro da unidade administradora, que acessa todas)
+      const unidades = await Unidade.buscarPorUsuario(decoded.userId, usuario.rows[0].perfil);
 
       socket.usuario = usuario.rows[0];
-      socket.unidadesPermitidas = unidades.rows.map(r => r.id);
+      socket.unidadesPermitidas = unidades.map(r => r.id);
       next();
     } catch (error) {
       next(new Error('Token inválido'));

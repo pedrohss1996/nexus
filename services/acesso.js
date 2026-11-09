@@ -11,6 +11,7 @@
 
 const { query } = require('../config/database');
 const Grupo = require('../models/Grupo');
+const Unidade = require('../models/Unidade');
 
 const NOME_GRUPO_PADRAO = 'Geral';
 
@@ -19,15 +20,18 @@ class ErroAcesso extends Error {}
 // Grupos que `quem` pode usar para dar acesso, já com a unidade de cada um.
 // Admin vê todos; gestor só os das unidades a que ele próprio tem acesso.
 async function gruposDisponiveis(quem) {
+  // Gestor: unidades em que trabalha — ou todas, se for da unidade administradora
   const filtro = quem.perfil === 'admin'
     ? ''
-    : `AND u.id IN (SELECT unidade_id FROM usuarios_grupos WHERE usuario_id = $1)`;
+    : `AND (u.id IN (SELECT unidade_id FROM usuarios_grupos WHERE usuario_id = $1)
+            OR EXISTS (SELECT 1 FROM usuarios_grupos ugt JOIN unidades ut ON ut.id = ugt.unidade_id
+                        WHERE ugt.usuario_id = $1 AND ut.acesso_total AND ut.ativo))`;
   const r = await query(
-    `SELECT g.id, g.nome, g.unidade_id, u.nome AS unidade_nome
+    `SELECT g.id, g.nome, g.unidade_id, u.nome AS unidade_nome, u.acesso_total
        FROM grupos g
        JOIN unidades u ON u.id = g.unidade_id
       WHERE g.ativo = true AND u.ativo = true ${filtro}
-      ORDER BY u.nome, (g.nome <> '${NOME_GRUPO_PADRAO}'), g.nome`,
+      ORDER BY u.acesso_total DESC, u.nome, (g.nome <> '${NOME_GRUPO_PADRAO}'), g.nome`,
     quem.perfil === 'admin' ? [] : [quem.id]
   );
   return r.rows;
@@ -37,7 +41,7 @@ async function gruposDisponiveis(quem) {
 function porUnidade(grupos) {
   const mapa = new Map();
   for (const g of grupos) {
-    if (!mapa.has(g.unidade_id)) mapa.set(g.unidade_id, { id: g.unidade_id, nome: g.unidade_nome, grupos: [] });
+    if (!mapa.has(g.unidade_id)) mapa.set(g.unidade_id, { id: g.unidade_id, nome: g.unidade_nome, acessoTotal: !!g.acesso_total, grupos: [] });
     mapa.get(g.unidade_id).grupos.push(g);
   }
   return [...mapa.values()];
@@ -72,12 +76,8 @@ async function concederAcesso({ usuarioId, grupoId, isLider = false, quem }) {
   const grupo = r.rows[0];
   if (!grupo) throw new ErroAcesso('Grupo não encontrado ou unidade inativa.');
 
-  if (quem && quem.perfil !== 'admin') {
-    const pode = await query(
-      'SELECT 1 FROM usuarios_grupos WHERE usuario_id = $1 AND unidade_id = $2 LIMIT 1',
-      [quem.id, grupo.unidade_id]
-    );
-    if (!pode.rows.length) throw new ErroAcesso('Você só pode dar acesso às unidades em que trabalha.');
+  if (quem && quem.perfil !== 'admin' && !(await Unidade.usuarioTemAcesso(quem.id, quem.perfil, grupo.unidade_id))) {
+    throw new ErroAcesso('Você só pode dar acesso às unidades em que trabalha.');
   }
 
   await Grupo.adicionarUsuario(gid, uid, grupo.unidade_id, !!isLider, quem ? quem.id : null);

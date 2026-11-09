@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
-const { validateLogin } = require('../middlewares/validation');
 const { auditLog } = require('../utils/logger');
 class AuthController {
   // Mostrar página de login
@@ -19,18 +18,14 @@ class AuthController {
   // Processar login
   static async login(req, res) {
     try {
-      // Aceitar tanto 'email' quanto 'usuario' no campo
-      const email = req.body.email || req.body.usuario;
+      // Acesso pelo nome de usuário (login), sem diferenciar maiúsculas
+      const login = String(req.body.usuario || '').trim();
       const senha = req.body.senha;
-
-      // Validar entrada
-      await validateLogin[0].run(req);
-      await validateLogin[1].run(req);
 
       // Buscar usuário
       const result = await query(
-        'SELECT id, nome, email, senha, perfil, ativo FROM usuarios WHERE email = $1',
-        [email]
+        'SELECT id, nome, email, login, senha, perfil, ativo FROM usuarios WHERE lower(login) = lower($1)',
+        [login]
       );
 
       // Falhas respondem 401 (não 200): o loginLimiter usa
@@ -44,7 +39,7 @@ class AuthController {
       });
 
       if (result.rows.length === 0) {
-        return falhar('Email ou senha inválidos');
+        return falhar('Usuário ou senha inválidos');
       }
 
       const user = result.rows[0];
@@ -53,8 +48,8 @@ class AuthController {
       // senha, quais e-mails existem no sistema.
       const senhaValida = await bcrypt.compare(senha || '', user.senha);
       if (!senhaValida) {
-        auditLog('TENTATIVA_LOGIN_INVALIDA', null, { email, ip: req.ip });
-        return falhar('Email ou senha inválidos');
+        auditLog('TENTATIVA_LOGIN_INVALIDA', null, { login, ip: req.ip });
+        return falhar('Usuário ou senha inválidos');
       }
 
       if (!user.ativo) {
@@ -81,7 +76,7 @@ class AuthController {
       });
 
       // Registrar login bem-sucedido
-      auditLog('LOGIN_SUCESSO', user.id, { email, ip: req.ip });
+      auditLog('LOGIN_SUCESSO', user.id, { login: user.login, ip: req.ip });
 
       // Redirecionar para início
       res.redirect('/inicio');

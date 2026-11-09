@@ -1,6 +1,6 @@
 <%- include('../partials/header', { title: typeof title !== 'undefined' ? title : 'Usuário - DataFlow', user: typeof user !== 'undefined' ? user : null }) %>
 
-<% var valores = usuario || (typeof dados !== 'undefined' ? dados : null); %>
+<% var valores = (typeof dados !== 'undefined' && dados) ? dados : usuario; %>
 <div class="w-full px-6 py-6">
   <div class="max-w-7xl mx-auto">
     <!-- Breadcrumb -->
@@ -45,6 +45,19 @@
               <input type="email" id="email" name="email" value="<%= valores && valores.email ? valores.email : '' %>" required maxlength="255"
                 placeholder="joao@exemplo.com"
                 class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+            </div>
+          </div>
+
+          <!-- Nome de usuário: é com ele que a pessoa entra no sistema -->
+          <% var podeEditarLogin = !usuario || (typeof user !== 'undefined' && user.perfil === 'admin'); %>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="login" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome de usuário <span class="text-red-500">*</span></label>
+              <input type="text" id="login" name="login" value="<%= valores && valores.login ? valores.login : '' %>"
+                <%= podeEditarLogin ? 'required' : 'readonly' %> minlength="3" maxlength="60" pattern="[a-zA-Z0-9._\-]{3,60}"
+                autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="joao.silva" aria-describedby="login_ajuda"
+                class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors <%= podeEditarLogin ? '' : 'opacity-70 cursor-not-allowed' %>">
+              <p id="login_ajuda" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Usado para entrar no sistema. Letras, números, ponto, hífen ou sublinhado.<% if (!podeEditarLogin) { %> Só um administrador pode alterar.<% } %></p>
             </div>
           </div>
 
@@ -286,6 +299,23 @@
 </div>
 
 <script>
+  // Nome de usuário: no cadastro novo, sugere a parte do e-mail antes do "@"
+  // enquanto a pessoa não tiver digitado um login próprio.
+  (function () {
+    var email = document.getElementById('email');
+    var login = document.getElementById('login');
+    if (!email || !login || login.readOnly) return;
+    var editado = login.value !== '';
+    login.addEventListener('input', function () {
+      editado = login.value !== '';
+      login.value = login.value.toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    });
+    email.addEventListener('input', function () {
+      if (editado) return;
+      login.value = email.value.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    });
+  })();
+
   // Máscara CPF
   document.getElementById('cpf').addEventListener('input', function(e) {
     var v = e.target.value.replace(/\D/g, '').slice(0, 11);

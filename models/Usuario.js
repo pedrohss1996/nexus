@@ -11,16 +11,16 @@ class Usuario {
     
     const sql = `
       INSERT INTO usuarios
-        (nome, email, senha, perfil, ativo,
+        (nome, email, login, senha, perfil, ativo,
          cpf, telefone, cargo, matricula,
          cep, logradouro, numero, complemento, bairro, cidade, estado)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-      RETURNING id, nome, email, perfil, ativo, criado_em,
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+      RETURNING id, nome, email, login, perfil, ativo, criado_em,
                 cpf, telefone, cargo, matricula,
                 cep, logradouro, numero, complemento, bairro, cidade, estado
     `;
     const valores = [
-      dados.nome, dados.email, senhaHash,
+      dados.nome, dados.email, Usuario.normalizarLogin(dados.login), senhaHash,
       dados.perfil || 'usuario',
       dados.ativo !== undefined ? dados.ativo : true,
       dados.cpf       || null,
@@ -42,7 +42,7 @@ class Usuario {
   // Buscar todos os usuários
   static async buscarTodos(filtros = {}) {
     let sql = `
-      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em,
+      SELECT id, nome, email, login, perfil, ativo, criado_em, atualizado_em,
              cpf, telefone, cargo, matricula,
              cep, logradouro, numero, complemento, bairro, cidade, estado
       FROM usuarios
@@ -78,7 +78,7 @@ class Usuario {
   // Buscar usuário por ID
   static async buscarPorId(id) {
     const sql = `
-      SELECT id, nome, email, perfil, ativo, criado_em, atualizado_em,
+      SELECT id, nome, email, login, perfil, ativo, criado_em, atualizado_em,
              cpf, telefone, cargo, matricula,
              cep, logradouro, numero, complemento, bairro, cidade, estado
       FROM usuarios
@@ -105,7 +105,8 @@ class Usuario {
     const valores = [];
     let n = 1;
 
-    const simples = ['nome','email','perfil','cpf','telefone','cargo','matricula',
+    if (dados.login !== undefined) dados.login = Usuario.normalizarLogin(dados.login);
+    const simples = ['nome','email','login','perfil','cpf','telefone','cargo','matricula',
                      'cep','logradouro','numero','complemento','bairro','cidade','estado'];
     for (const campo of simples) {
       if (dados[campo] !== undefined) {
@@ -189,6 +190,23 @@ class Usuario {
   }
 
   // Verificar se email já existe
+  // Nome de usuário: minúsculas, letras, números, ponto, hífen e sublinhado
+  static normalizarLogin(login) {
+    return String(login || '').trim().toLowerCase();
+  }
+
+  static loginValido(login) {
+    return /^[a-z0-9._-]{3,60}$/.test(Usuario.normalizarLogin(login));
+  }
+
+  static async loginExiste(login, excluirId = null) {
+    let sql = 'SELECT 1 FROM usuarios WHERE lower(login) = $1';
+    const valores = [Usuario.normalizarLogin(login)];
+    if (excluirId) { sql += ' AND id != $2'; valores.push(excluirId); }
+    const r = await query(sql + ' LIMIT 1', valores);
+    return r.rows.length > 0;
+  }
+
   static async emailExiste(email, excluirId = null) {
     let sql = 'SELECT COUNT(*) as count FROM usuarios WHERE email = $1';
     const valores = [email];

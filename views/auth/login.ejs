@@ -247,11 +247,14 @@
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input
           type="text"
-          name="email"
-          id="email"
+          name="usuario"
+          id="usuario"
           required
           class="input-light"
-          placeholder="Nome de usuário ou e-mail"
+          placeholder="Nome de usuário"
+          aria-label="Nome de usuário"
+          autocapitalize="none"
+          spellcheck="false"
           autocomplete="username"
         />
 
@@ -290,7 +293,7 @@
   <script>
   /* ── Formulário + transição de saída ── */
   (function () {
-    var email     = document.getElementById('email');
+    var email     = document.getElementById('usuario');
     var senha     = document.getElementById('senha');
     var btnEye    = document.getElementById('btnEye');
     var btnEntrar = document.getElementById('btnEntrar');
