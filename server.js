@@ -19,7 +19,10 @@ const morgan = require('morgan');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const rateLimit = require('express-rate-limit');
+const { pool } = require('./config/database');
+const { jsonParaScript, sanitizarDocumento } = require('./utils/sanitizarHtml');
 
 // Importar rotas
 const authRoutes = require('./routes/authRoutes');
@@ -46,6 +49,7 @@ const NotificacaoController = require('./controllers/NotificacaoController');
 
 // Importar middlewares
 const errorHandler = require('./middlewares/errorHandler');
+const { csrf } = require('./middlewares/csrf');
 const { authenticateToken } = require('./middlewares/authMiddleware');
 const loadUnidades = require('./middlewares/loadUnidades');
 
@@ -53,6 +57,12 @@ const loadUnidades = require('./middlewares/loadUnidades');
 const socketHandler = require('./sockets/socketHandler');
 
 const app = express();
+
+// Confiar no proxy reverso (Railway/Nginx/Heroku).
+// Sem isto, req.ip devolve o IP do proxy: o rate limit passa a ser global
+// (10 logins falhos derrubam o login de todos) e a auditoria grava IP errado.
+app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 1));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -108,21 +118,38 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Session configuration
+// Armazenada no PostgreSQL: o MemoryStore padrão vaza memória, perde todas as
+// sessões a cada deploy e não funciona com múltiplas instâncias.
 app.use(session({
+  store: new pgSession({
+    pool,
+    tableName: 'user_sessions',
+    createTableIfMissing: true,
+    pruneSessionInterval: 60 * 60 // limpa sessões expiradas a cada hora
+  }),
+  name: 'dataflow.sid',
   secret: process.env.SESSION_SECRET || 'change-this-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 horas
   }
 }));
 
+// Proteção CSRF — depois dos parsers de corpo e do cookie-parser, para poder
+// ler _csrf do body, e antes de qualquer rota que altere estado.
+app.use(csrf);
+
 // Flash messages (usa session; req.flash() grava, res.locals.flash é lido na view)
+// Só toca na sessão quando existe flash de fato: atribuir em toda requisição
+// marcava a sessão como modificada, anulando o saveUninitialized:false e
+// gravando uma linha no banco para cada visitante anônimo.
 app.use((req, res, next) => {
   res.locals.flash = req.session.flash || {};
-  req.session.flash = {};
+  if (req.session.flash) delete req.session.flash;
   req.flash = (type, message) => {
     if (!req.session.flash) req.session.flash = {};
     req.session.flash[type] = message;
@@ -134,9 +161,34 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Arquivos estáticos com configuração de MIME types
+// Serialização segura para blocos <script> nas views.
+// JSON.stringify não escapa "</script>", então dados do banco contendo essa
+// sequência quebrariam fora do bloco e virariam HTML executável.
+app.use((req, res, next) => {
+  res.locals.jsonSeguro = jsonParaScript;
+  // Defesa em profundidade para os pontos que renderizam HTML cru: a escrita já
+  // sanitiza, mas registros gravados antes desta mudança seguem no banco.
+  res.locals.htmlSeguro = sanitizarDocumento;
+  next();
+});
+
+// Arquivos estáticos com configuração de MIME types.
+// Sem maxAge o Express envia "Cache-Control: public, max-age=0" e o browser
+// revalida cada asset a cada navegação — um roundtrip por arquivo, mesmo quando
+// nada mudou. Bibliotecas de terceiros ficam com cache longo; o CSS/JS próprio
+// depende do ETag, que o Express já envia, para invalidar após um deploy.
+const CACHE_LONGO = 30 * 24 * 60 * 60 * 1000; // 30 dias
+const CACHE_CURTO = 60 * 60 * 1000;           // 1 hora
+
 app.use(express.static(path.join(__dirname, 'public'), {
+  etag: true,
+  lastModified: true,
+  maxAge: CACHE_CURTO,
   setHeaders: (res, filePath) => {
+    // Bibliotecas versionadas por diretório praticamente não mudam
+    if (filePath.includes(`${path.sep}libs${path.sep}`) || filePath.includes(`${path.sep}imgs${path.sep}`)) {
+      res.setHeader('Cache-Control', `public, max-age=${CACHE_LONGO / 1000}`);
+    }
     if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
     } else if (filePath.endsWith('.js')) {
@@ -197,27 +249,40 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rota para testar CSS
-app.get('/test-css', (req, res) => {
-  const fs = require('fs');
-  const cssPath = path.join(__dirname, 'public', 'css', 'output.css');
-  const exists = fs.existsSync(cssPath);
-  const stats = exists ? fs.statSync(cssPath) : null;
-  
-  res.json({
-    cssExists: exists,
-    cssPath: cssPath,
-    cssSize: stats ? stats.size : 0,
-    publicPath: path.join(__dirname, 'public')
+// Rota de diagnóstico do CSS — só fora de produção: expõe caminhos absolutos
+// do servidor, informação útil para quem estiver sondando a aplicação.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/test-css', (req, res) => {
+    const fs = require('fs');
+    const cssPath = path.join(__dirname, 'public', 'css', 'output.css');
+    const exists = fs.existsSync(cssPath);
+    const stats = exists ? fs.statSync(cssPath) : null;
+
+    res.json({
+      cssExists: exists,
+      cssPath: cssPath,
+      cssSize: stats ? stats.size : 0,
+      publicPath: path.join(__dirname, 'public')
+    });
   });
-});
+}
 
 // Socket.io
 socketHandler(io);
 
-// ── Verificador de aniversários (roda no boot + a cada 24h) ─────────────────
-NotificacaoController.verificarAniversarios();
-setInterval(() => NotificacaoController.verificarAniversarios(), 24 * 60 * 60 * 1000);
+// ── Verificador de aniversários ────────────────────────────────────────────
+// Com múltiplas réplicas, cada instância dispararia as mesmas notificações;
+// ENABLE_SCHEDULER=false desliga o agendador nas réplicas extras.
+// A primeira execução espera o servidor subir para não competir com o boot.
+if (process.env.ENABLE_SCHEDULER !== 'false') {
+  const UM_DIA = 24 * 60 * 60 * 1000;
+  const rodar = () => {
+    NotificacaoController.verificarAniversarios()
+      .catch(err => console.error('❌ Erro ao verificar aniversários:', err.message));
+  };
+  setTimeout(rodar, 30 * 1000).unref();
+  setInterval(rodar, UM_DIA).unref();
+}
 
 // Error handler (deve ser o último middleware)
 app.use(errorHandler);

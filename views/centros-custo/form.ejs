@@ -19,7 +19,9 @@
         </div>
       <% } %>
 
-      <form method="POST" action="<%= centro ? `/centros-custo/${centro.id}` : '/centros-custo' %>" class="p-6 space-y-5">
+      <form method="POST" action="<%= centro ? `/centros-custo/${centro.id}` : '/centros-custo' %>
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="p-6 space-y-5">
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

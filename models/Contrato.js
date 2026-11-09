@@ -29,7 +29,7 @@ class Contrato {
     return r.rows[0];
   }
 
-  static async atualizar(id, dados) {
+  static async atualizar(id, dados, unidadeId) {
     const sql = `
       UPDATE contratos SET
         nome=$1, tipo=$2, descricao=$3, fornecedor_id=$4, empresa_contratada=$5,
@@ -38,7 +38,7 @@ class Contrato {
         indice_reajuste=$12, indice_reajuste_outro=$13,
         data_inicio=$14, data_termino=$15, prazo_meses=$16, data_proximo_reajuste=$17,
         status=$18, unidade_id=$19, atualizado_em=NOW()
-      WHERE id=$20
+      WHERE id=$20 AND unidade_id=$21
       RETURNING *`;
     const v = [
       dados.nome, dados.tipo, dados.descricao || null,
@@ -49,13 +49,17 @@ class Contrato {
       dados.indice_reajuste || null, dados.indice_reajuste_outro || null,
       dados.data_inicio || null, dados.data_termino || null,
       dados.prazo_meses || null, dados.data_proximo_reajuste || null,
-      dados.status || 'ativo', dados.unidade_id || null, id
+      // A unidade não pode ser trocada por um payload do cliente: mantém-se a
+      // unidade ativa, que é a mesma exigida no WHERE.
+      dados.status || 'ativo', unidadeId, id, unidadeId
     ];
     const r = await query(sql, v);
     return r.rows[0];
   }
 
-  static async buscarPorId(id) {
+  // unidadeId é obrigatório em todas as leituras: um contrato de outra unidade
+  // deve se comportar como inexistente, não como "acesso negado".
+  static async buscarPorId(id, unidadeId) {
     const sql = `
       SELECT c.*,
         f.razao_social AS fornecedor_nome, f.nome_fantasia AS fornecedor_fantasia, f.cnpj AS fornecedor_cnpj,
@@ -63,8 +67,8 @@ class Contrato {
       FROM contratos c
       LEFT JOIN fornecedores f ON f.id = c.fornecedor_id
       LEFT JOIN usuarios u ON u.id = c.responsavel_interno_id
-      WHERE c.id = $1`;
-    const r = await query(sql, [id]);
+      WHERE c.id = $1 AND c.unidade_id = $2`;
+    const r = await query(sql, [id, unidadeId]);
     return r.rows[0];
   }
 
@@ -76,9 +80,9 @@ class Contrato {
       FROM contratos c
       LEFT JOIN fornecedores f ON f.id = c.fornecedor_id
       LEFT JOIN usuarios u ON u.id = c.responsavel_interno_id
-      WHERE 1=1`;
-    const v = [];
-    let n = 1;
+      WHERE c.unidade_id = $1`;
+    const v = [filtros.unidade_id ?? null];
+    let n = 2;
 
     if (filtros.status) { sql += ` AND c.status = $${n}`; v.push(filtros.status); n++; }
     if (filtros.tipo) { sql += ` AND c.tipo = $${n}`; v.push(filtros.tipo); n++; }
@@ -94,24 +98,38 @@ class Contrato {
       v.push(filtros.mes + '-01'); n++;
     }
     sql += ' ORDER BY c.criado_em DESC';
+
+    // Paginação opcional: quando `pag` vem preenchido a query devolve também a
+    // coluna _total (COUNT(*) OVER()), evitando uma segunda ida ao banco.
+    if (filtros.pag) {
+      sql = sql.replace('SELECT c.*,', 'SELECT c.*, COUNT(*) OVER() AS _total,');
+      sql += ` LIMIT $${n} OFFSET $${n + 1}`;
+      v.push(filtros.pag.porPagina, filtros.pag.offset);
+    }
+
     const r = await query(sql, v);
     return r.rows;
   }
 
-  static async excluir(id) {
-    await query('DELETE FROM contratos WHERE id = $1', [id]);
+  static async excluir(id, unidadeId) {
+    const r = await query(
+      'DELETE FROM contratos WHERE id = $1 AND unidade_id = $2 RETURNING id',
+      [id, unidadeId]
+    );
+    return r.rows[0];
   }
 
-  static async cancelar(id, motivo) {
+  static async cancelar(id, motivo, unidadeId) {
     const r = await query(
-      `UPDATE contratos SET status='cancelado', motivo_cancelamento=$2, data_cancelamento=NOW(), atualizado_em=NOW() WHERE id=$1 RETURNING *`,
-      [id, motivo]
+      `UPDATE contratos SET status='cancelado', motivo_cancelamento=$2, data_cancelamento=NOW(), atualizado_em=NOW()
+       WHERE id=$1 AND unidade_id=$3 RETURNING *`,
+      [id, motivo, unidadeId]
     );
     return r.rows[0];
   }
 
   // ─── Dashboard / Estatísticas ─────────────────────────────────────
-  static async dashboard() {
+  static async dashboard(unidadeId) {
     const [stats, porTipo, porStatus, porDepto] = await Promise.all([
       query(`
         SELECT
@@ -126,40 +144,44 @@ class Contrato {
           COUNT(*) FILTER (WHERE data_termino BETWEEN NOW() AND NOW() + INTERVAL '90 days' AND status='ativo') AS vencendo_90,
           COUNT(*) AS total
         FROM contratos
-      `),
-      query(`SELECT tipo, COUNT(*) AS qtd FROM contratos WHERE status IN ('ativo','em_renovacao') GROUP BY tipo ORDER BY qtd DESC`),
-      query(`SELECT status, COUNT(*) AS qtd FROM contratos GROUP BY status`),
-      query(`SELECT departamento_responsavel AS depto, COUNT(*) AS qtd FROM contratos WHERE departamento_responsavel IS NOT NULL GROUP BY departamento_responsavel ORDER BY qtd DESC LIMIT 10`)
+        WHERE unidade_id = $1
+      `, [unidadeId]),
+      query(`SELECT tipo, COUNT(*) AS qtd FROM contratos WHERE status IN ('ativo','em_renovacao') AND unidade_id = $1 GROUP BY tipo ORDER BY qtd DESC`, [unidadeId]),
+      query(`SELECT status, COUNT(*) AS qtd FROM contratos WHERE unidade_id = $1 GROUP BY status`, [unidadeId]),
+      query(`SELECT departamento_responsavel AS depto, COUNT(*) AS qtd FROM contratos WHERE departamento_responsavel IS NOT NULL AND unidade_id = $1 GROUP BY departamento_responsavel ORDER BY qtd DESC LIMIT 10`, [unidadeId])
     ]);
     return { stats: stats.rows[0], porTipo: porTipo.rows, porStatus: porStatus.rows, porDepto: porDepto.rows };
   }
 
   // ─── Alertas ──────────────────────────────────────────────────────
-  static async alertas() {
+  static async alertas(unidadeId) {
     const [vencendo, reajustes, obrigacoesAtrasadas, slaFora] = await Promise.all([
       query(`
         SELECT id, codigo, nome, data_termino, status,
           EXTRACT(DAY FROM data_termino - NOW())::int AS dias_restantes
         FROM contratos
         WHERE status = 'ativo' AND data_termino BETWEEN NOW() AND NOW() + INTERVAL '90 days'
-        ORDER BY data_termino ASC`),
+          AND unidade_id = $1
+        ORDER BY data_termino ASC`, [unidadeId]),
       query(`
         SELECT id, codigo, nome, data_proximo_reajuste, indice_reajuste
         FROM contratos
         WHERE status = 'ativo' AND data_proximo_reajuste BETWEEN NOW() AND NOW() + INTERVAL '60 days'
-        ORDER BY data_proximo_reajuste ASC`),
+          AND unidade_id = $1
+        ORDER BY data_proximo_reajuste ASC`, [unidadeId]),
       query(`
         SELECT o.*, c.codigo AS contrato_codigo, c.nome AS contrato_nome
         FROM contrato_obrigacoes o
         JOIN contratos c ON c.id = o.contrato_id
-        WHERE o.status = 'atrasado' OR (o.status = 'pendente' AND o.prazo < NOW())
-        ORDER BY o.prazo ASC`),
+        WHERE (o.status = 'atrasado' OR (o.status = 'pendente' AND o.prazo < NOW()))
+          AND c.unidade_id = $1
+        ORDER BY o.prazo ASC`, [unidadeId]),
       query(`
         SELECT s.*, c.codigo AS contrato_codigo, c.nome AS contrato_nome
         FROM contrato_slas s
         JOIN contratos c ON c.id = s.contrato_id
-        WHERE s.status = 'fora'
-        ORDER BY s.data_medicao DESC LIMIT 20`)
+        WHERE s.status = 'fora' AND c.unidade_id = $1
+        ORDER BY s.data_medicao DESC LIMIT 20`, [unidadeId])
     ]);
     return { vencendo: vencendo.rows, reajustes: reajustes.rows, obrigacoesAtrasadas: obrigacoesAtrasadas.rows, slaFora: slaFora.rows };
   }
@@ -304,7 +326,7 @@ class Contrato {
   }
 
   // ─── Gráfico: custo mensal por período ─────────────────────────────
-  static async custoMensalPorPeriodo(dataInicio, dataFim) {
+  static async custoMensalPorPeriodo(dataInicio, dataFim, unidadeId) {
     const sql = `
       SELECT
         TO_CHAR(mes, 'YYYY-MM') AS ano_mes,
@@ -314,6 +336,7 @@ class Contrato {
       FROM generate_series($1::date, $2::date, '1 month'::interval) AS mes
       LEFT JOIN contratos c ON
         c.status IN ('ativo', 'em_renovacao')
+        AND c.unidade_id = $3
         AND c.data_inicio IS NOT NULL
         AND c.data_termino IS NOT NULL
         AND c.valor_mensal IS NOT NULL
@@ -322,7 +345,7 @@ class Contrato {
         AND c.data_termino >= mes::date
       GROUP BY mes
       ORDER BY mes`;
-    const r = await query(sql, [dataInicio, dataFim]);
+    const r = await query(sql, [dataInicio, dataFim, unidadeId]);
     return r.rows;
   }
 
@@ -337,9 +360,26 @@ class Contrato {
     return 'CTR-' + String(num).padStart(4, '0');
   }
 
-  static async listarDepartamentos() {
-    const r = await query(`SELECT DISTINCT departamento_responsavel AS d FROM contratos WHERE departamento_responsavel IS NOT NULL ORDER BY 1`);
+  static async listarDepartamentos(unidadeId) {
+    const r = await query(
+      `SELECT DISTINCT departamento_responsavel AS d FROM contratos
+       WHERE departamento_responsavel IS NOT NULL AND unidade_id = $1 ORDER BY 1`,
+      [unidadeId]
+    );
     return r.rows.map(row => row.d);
+  }
+
+  // Confirma que um contrato pertence à unidade ativa — usado antes de operar
+  // sobre sub-recursos (obrigações, pagamentos, SLAs, aditivos, anexos), cujo
+  // contrato_id chega pelo corpo da requisição.
+  static async pertenceAUnidade(contratoId, unidadeId) {
+    const id = parseInt(contratoId, 10);
+    if (!id || Number.isNaN(id) || !unidadeId) return false;
+    const r = await query(
+      'SELECT 1 FROM contratos WHERE id = $1 AND unidade_id = $2 LIMIT 1',
+      [id, unidadeId]
+    );
+    return r.rows.length > 0;
   }
 }
 

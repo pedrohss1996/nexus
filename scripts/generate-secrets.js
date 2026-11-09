@@ -8,10 +8,9 @@ const jwtSecret = crypto.randomBytes(32).toString('hex');
 const sessionSecret = crypto.randomBytes(32).toString('hex');
 
 console.log('🔐 Secrets gerados com sucesso!');
-console.log('\n📋 Adicione estas linhas ao seu arquivo .env:\n');
-console.log(`JWT_SECRET=${jwtSecret}`);
-console.log(`SESSION_SECRET=${sessionSecret}`);
-console.log('\n⚠️  IMPORTANTE: Mantenha estes secrets em segurança!');
+console.log('\n⚠️  IMPORTANTE: os valores NÃO são exibidos no terminal para não');
+console.log('   vazarem em histórico de shell, logs de CI ou gravação de tela.');
+console.log('   Leia-os diretamente do arquivo .env após a gravação.');
 
 // Tentar atualizar o .env automaticamente (se existir)
 const envPath = path.join(__dirname, '../.env');

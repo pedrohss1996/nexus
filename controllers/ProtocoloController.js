@@ -1,27 +1,37 @@
 const pool = require('../config/database');
+const { unidadeDaRequisicao } = require('../utils/unidadeScope');
+const { lerPaginacao, montarMeta, limitOffset } = require('../utils/paginacao');
 
 class ProtocoloController {
   // Listar todos os protocolos
   async index(req, res) {
     try {
-      const { unidadeSelecionada } = req.session;
-      
+      const unidadeSelecionada = unidadeDaRequisicao(req);
+
+      const pag = lerPaginacao(req);
+      const { sql: limite, valores: valoresLimite } = limitOffset(2, pag);
+
       const result = await pool.query(`
-        SELECT 
+        SELECT
           p.*,
           u.nome as unidade_nome,
           us.nome as criado_por_nome,
-          (SELECT COUNT(*) FROM tramitacoes WHERE protocolo_id = p.id) as total_tramitacoes
+          (SELECT COUNT(*) FROM tramitacoes WHERE protocolo_id = p.id) as total_tramitacoes,
+          COUNT(*) OVER() AS _total
         FROM protocolos p
         LEFT JOIN unidades u ON p.unidade_id = u.id
         LEFT JOIN usuarios us ON p.criado_por = us.id
         WHERE p.unidade_id = $1
-        ORDER BY p.criado_em DESC
-      `, [unidadeSelecionada]);
+        ORDER BY p.criado_em DESC` + limite,
+        [unidadeSelecionada, ...valoresLimite]
+      );
+
+      const { itens, meta } = montarMeta(pag, result.rows, '/protocolo', req.query);
 
       res.render('protocolo/index', {
         title: 'Protocolo Eletrônico - E-DOC',
-        protocolos: result.rows,
+        protocolos: itens,
+        meta,
         user: req.user,
         unidades: req.unidades,
         unidadeSelecionada

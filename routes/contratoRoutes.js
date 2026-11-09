@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const ContratoController = require('../controllers/ContratoController');
+const contratoDaUnidade = require('../middlewares/contratoScope');
+const { requireRole } = require('../middlewares/authMiddleware');
 
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'contratos');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -31,38 +33,45 @@ const upload = multer({
   }
 });
 
+// Todo :id de contrato é validado contra a unidade ativa antes de qualquer
+// handler — inclusive antes do multer, para não gravar anexo de contrato alheio.
+router.param('id', contratoDaUnidade);
+
+// Contratos são documentos jurídico-financeiros: escrita restrita a admin/gestor
+const podeEscrever = requireRole(['admin', 'gestor']);
+
 // CRUD principal
 router.get('/', ContratoController.index);
-router.get('/novo', ContratoController.formNovo);
-router.post('/', ContratoController.criar);
+router.get('/novo', podeEscrever, ContratoController.formNovo);
+router.post('/', podeEscrever, ContratoController.criar);
 router.get('/:id', ContratoController.detalhes);
-router.get('/:id/editar', ContratoController.formEditar);
-router.post('/:id', ContratoController.atualizar);
-router.delete('/:id', ContratoController.excluir);
-router.post('/:id/excluir', ContratoController.excluir);
-router.post('/:id/cancelar', ContratoController.cancelar);
+router.get('/:id/editar', podeEscrever, ContratoController.formEditar);
+router.post('/:id', podeEscrever, ContratoController.atualizar);
+router.delete('/:id', requireRole(['admin']), ContratoController.excluir);
+router.post('/:id/excluir', requireRole(['admin']), ContratoController.excluir);
+router.post('/:id/cancelar', podeEscrever, ContratoController.cancelar);
 
 // Obrigações
-router.post('/:id/obrigacoes', ContratoController.criarObrigacao);
-router.post('/:id/obrigacoes/:obrigacaoId', ContratoController.atualizarObrigacao);
-router.post('/:id/obrigacoes/:obrigacaoId/excluir', ContratoController.excluirObrigacao);
+router.post('/:id/obrigacoes', podeEscrever, ContratoController.criarObrigacao);
+router.post('/:id/obrigacoes/:obrigacaoId', podeEscrever, ContratoController.atualizarObrigacao);
+router.post('/:id/obrigacoes/:obrigacaoId/excluir', podeEscrever, ContratoController.excluirObrigacao);
 
 // Pagamentos
-router.post('/:id/pagamentos', ContratoController.criarPagamento);
-router.post('/:id/pagamentos/:pagamentoId/excluir', ContratoController.excluirPagamento);
+router.post('/:id/pagamentos', podeEscrever, ContratoController.criarPagamento);
+router.post('/:id/pagamentos/:pagamentoId/excluir', podeEscrever, ContratoController.excluirPagamento);
 
 // SLAs
-router.post('/:id/slas', ContratoController.criarSLA);
-router.post('/:id/slas/:slaId/excluir', ContratoController.excluirSLA);
+router.post('/:id/slas', podeEscrever, ContratoController.criarSLA);
+router.post('/:id/slas/:slaId/excluir', podeEscrever, ContratoController.excluirSLA);
 
 // Aditivos
-router.post('/:id/aditivos', ContratoController.criarAditivo);
-router.post('/:id/aditivos/:aditivoId/excluir', ContratoController.excluirAditivo);
+router.post('/:id/aditivos', podeEscrever, ContratoController.criarAditivo);
+router.post('/:id/aditivos/:aditivoId/excluir', podeEscrever, ContratoController.excluirAditivo);
 
 // Anexos
-router.post('/:id/anexos', upload.single('anexo'), (req, res, next) => {
+router.post('/:id/anexos', podeEscrever, upload.single('anexo'), (req, res, next) => {
   ContratoController.uploadAnexo(req, res).catch(next);
 });
-router.post('/:id/anexos/:anexoId/excluir', ContratoController.excluirAnexo);
+router.post('/:id/anexos/:anexoId/excluir', podeEscrever, ContratoController.excluirAnexo);
 
 module.exports = router;

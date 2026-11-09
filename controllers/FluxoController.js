@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { auditLog } = require('../utils/logger');
+const FluxoEngine = require('../services/FluxoEngine');
 const Grupo = require('../models/Grupo');
 const Unidade = require('../models/Unidade');
 const path = require('path');
@@ -192,9 +193,14 @@ class FluxoController {
         } catch (_) { /* tabela fluxo_etapa_anexos pode não existir */ }
       }
 
+      // Diagnostico do desenho: aponta o que impediria o fluxo de rodar antes
+      // que alguem descubra com um processo travado no meio do caminho.
+      const diagnostico = await FluxoEngine.validarDesenho(id);
+
       res.render('fluxos/configurar', {
         title: 'Configurar Fluxo - DataFlow',
         user: req.user,
+        diagnostico,
         fluxo: fluxo.rows[0],
         etapas: etapas.rows,
         edges: edges.rows,

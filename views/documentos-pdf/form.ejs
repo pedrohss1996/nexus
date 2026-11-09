@@ -16,6 +16,7 @@
 
   <!-- Formulário -->
   <form action="<%= action %>" method="POST" class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <!-- Nome -->
     <div class="mb-6">
       <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

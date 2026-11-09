@@ -611,3 +611,6 @@ function _buildDocumentoEstadoAtual(htmlBase, todasAssinaturas, baseUrl) {
 }
 
 module.exports = AssinaturaDocController;
+
+// Expostos para teste — funções puras de integridade da assinatura
+module.exports._internals = { gerarHashAssinatura, hashConteudo, unwrapAssinaturaVars };

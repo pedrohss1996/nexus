@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
+const { unidadeDaRequisicao, semUnidade } = require('../utils/unidadeScope');
+const { sanitizarDocumento } = require('../utils/sanitizarHtml');
+const { lerPaginacao, montarMeta, limitOffset } = require('../utils/paginacao');
 const { gerarPDF, extrairVariaveis, extrairVariaveisAssinatura, substituirVariaveis } = require('../utils/pdfGeneratorAdvanced');
 const path = require('path');
 const fs = require('fs');
@@ -75,7 +78,10 @@ class DocumentoPDFController {
   // Criar novo template
   static async criar(req, res) {
     try {
-      const { nome, descricao, tipo_documento, conteudo_html, configuracoes } = req.body;
+      const { nome, descricao, tipo_documento, configuracoes } = req.body;
+      // Sanitiza na escrita: o HTML vem de editor WYSIWYG e era gravado cru,
+      // virando XSS armazenado ao ser renderizado com <%- %> na listagem.
+      const conteudo_html = sanitizarDocumento(req.body.conteudo_html);
 
       // Extrair variáveis automaticamente do HTML
       const variaveis = extrairVariaveis(conteudo_html);
@@ -144,7 +150,10 @@ class DocumentoPDFController {
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
-      const { nome, descricao, tipo_documento, conteudo_html, configuracoes } = req.body;
+      const { nome, descricao, tipo_documento, configuracoes } = req.body;
+      // Sanitiza na escrita: o HTML vem de editor WYSIWYG e era gravado cru,
+      // virando XSS armazenado ao ser renderizado com <%- %> na listagem.
+      const conteudo_html = sanitizarDocumento(req.body.conteudo_html);
 
       // Extrair variáveis automaticamente do HTML
       const variaveis = extrairVariaveis(conteudo_html);
@@ -299,7 +308,9 @@ class DocumentoPDFController {
             nomeArquivo,
             0,
             req.user.id,
-            req.user.unidade_id || null,
+            // req.user.unidade_id nunca é carregado pelo authMiddleware — usar a
+            // unidade ativa da sessão, já validada em loadUnidades.
+            unidadeDaRequisicao(req),
             htmlParaSalvar,     // variáveis preenchidas, {{ASSINATURA:X}} intactos para assinar depois
             tokenAssinatura,
             requerAssinatura ? 'pendente' : 'nao_requer'
@@ -420,20 +431,35 @@ class DocumentoPDFController {
   // Listar documentos gerados
   static async historico(req, res) {
     try {
+      if (semUnidade(req, res)) return;
+      const unidadeId = unidadeDaRequisicao(req);
+
+      const pag = lerPaginacao(req);
+      const { sql: limite, valores: valoresLimite } = limitOffset(2, pag);
+
+      // Não seleciona d.* de propósito: documentos_gerados guarda conteudo_html
+      // inteiro, que o histórico não usa e pesaria megabytes por página.
       const documentos = await query(
-        `SELECT d.*, t.nome as template_nome, u.nome as gerador_nome, un.nome as unidade_nome
+        `SELECT d.id, d.titulo, d.nome_arquivo, d.gerado_em, d.status_assinatura,
+                d.token_assinatura, d.template_id, d.gerado_por, d.unidade_id,
+                t.nome as template_nome, u.nome as gerador_nome, un.nome as unidade_nome,
+                COUNT(*) OVER() AS _total
          FROM documentos_gerados d
          LEFT JOIN templates_pdf t ON d.template_id = t.id
          LEFT JOIN usuarios u ON d.gerado_por = u.id
          LEFT JOIN unidades un ON d.unidade_id = un.id
-         ORDER BY d.gerado_em DESC
-         LIMIT 100`
+         WHERE d.unidade_id = $1
+         ORDER BY d.gerado_em DESC` + limite,
+        [unidadeId, ...valoresLimite]
       );
+
+      const { itens, meta } = montarMeta(pag, documentos.rows, '/documentos-pdf/historico', req.query);
 
       res.render('documentos-pdf/historico', {
         title: 'Histórico de Documentos - DataFlow',
         user: req.user,
-        documentos: documentos.rows
+        documentos: itens,
+        meta
       });
     } catch (error) {
       console.error('Erro ao listar histórico:', error);

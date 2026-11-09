@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const { esperaJson } = require('../utils/requestType');
 
 // Middleware de autenticação JWT
 const authenticateToken = async (req, res, next) => {
@@ -12,7 +13,7 @@ const authenticateToken = async (req, res, next) => {
     const cookieToken = req.cookies?.token || token;
 
     if (!cookieToken) {
-      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      if (esperaJson(req)) {
         return res.status(401).json({
           success: false,
           message: 'Sessão expirada. Faça login novamente.'
@@ -21,12 +22,17 @@ const authenticateToken = async (req, res, next) => {
       return res.redirect('/auth/login');
     }
 
-    // Verificar e decodificar token
-    const jwtSecret = process.env.JWT_SECRET || 'mock-secret-key-for-development-only';
+    // Verificar e decodificar token.
+    // Sem fallback: um segredo padrão conhecido permitiria forjar qualquer
+    // token caso a variável sumisse em dev/staging.
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET não configurado — autenticação indisponível');
+    }
     const decoded = jwt.verify(cookieToken, jwtSecret);
 
     if (decoded.mock) {
-      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      if (esperaJson(req)) {
         return res.status(401).json({
           success: false,
           message: 'Sessão inválida. Faça login novamente.'
@@ -44,7 +50,7 @@ const authenticateToken = async (req, res, next) => {
       );
 
         if (result.rows.length === 0) {
-        if (req.path.startsWith('/api/')) {
+        if (esperaJson(req)) {
           return res.status(401).json({
             success: false,
             message: 'Usuário não encontrado ou inativo'
@@ -61,7 +67,7 @@ const authenticateToken = async (req, res, next) => {
     }
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      if (req.path.startsWith('/api/')) {
+      if (esperaJson(req)) {
         return res.status(401).json({
           success: false,
           message: 'Token inválido ou expirado'
@@ -79,7 +85,7 @@ const requireRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
       // Se for requisição de API, retornar JSON
-      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      if (esperaJson(req)) {
         return res.status(401).json({
           success: false,
           message: 'Autenticação necessária'
@@ -97,7 +103,7 @@ const requireRole = (roles) => {
       console.log(`⚠️  Acesso negado: Usuário ${req.user.email} (perfil: ${req.user.perfil}) tentou acessar recurso que requer perfil: ${rolesArray.join(', ')}`);
       
       // Se for requisição de API, retornar JSON
-      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      if (esperaJson(req)) {
         return res.status(403).json({
           success: false,
           message: 'Permissão insuficiente'
@@ -119,7 +125,7 @@ const requireRole = (roles) => {
 const allowSelfOrRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+      if (esperaJson(req)) {
         return res.status(401).json({ success: false, message: 'Autenticação necessária' });
       }
       return res.redirect('/auth/login');
@@ -129,7 +135,7 @@ const allowSelfOrRole = (roles) => {
     const rolesArray = Array.isArray(roles) ? roles : [roles];
     const hasRole = rolesArray.includes(req.user.perfil);
     if (isSelf || hasRole) return next();
-    if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+    if (esperaJson(req)) {
       return res.status(403).json({ success: false, message: 'Permissão insuficiente' });
     }
     return res.status(403).render('error', {

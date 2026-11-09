@@ -22,7 +22,7 @@
 </div>
 
 <script>
-  window.__PLANO_TREE__ = <%- JSON.stringify(typeof tree !== 'undefined' ? tree : []) %>;
+  window.__PLANO_TREE__ = <%- jsonSeguro(typeof tree !== 'undefined' ? tree : []) %>;
   window.__UNIDADE_ID__ = '<%= unidade.id %>';
   window.__CAN_EDIT__ = <%= (user && (user.perfil === 'admin' || user.perfil === 'gestor')) ? 'true' : 'false' %>;
 </script>

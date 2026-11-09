@@ -485,6 +485,23 @@
       </div>
     </div>
 
+    <!-- Diagnóstico do desenho: problemas que impediriam o fluxo de rodar -->
+    <% if (typeof diagnostico !== 'undefined' && diagnostico.problemas.length > 0) { %>
+      <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-700 <%= diagnostico.valido ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-red-50 dark:bg-red-900/20' %>">
+        <p class="text-xs font-semibold uppercase tracking-wider mb-1.5 <%= diagnostico.valido ? 'text-amber-800 dark:text-amber-300' : 'text-red-800 dark:text-red-300' %>">
+          <%= diagnostico.valido ? 'Avisos no desenho' : 'O fluxo não pode ser executado' %>
+        </p>
+        <ul class="space-y-0.5">
+          <% diagnostico.problemas.forEach(function(p) { %>
+            <li class="text-xs flex items-start gap-1.5 <%= p.nivel === 'erro' ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300' %>">
+              <span class="flex-shrink-0"><%= p.nivel === 'erro' ? '⛔' : '⚠️' %></span>
+              <span><%= p.mensagem %></span>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
     <!-- Canvas -->
     <% if (!temUnidade) { %>
       <div class="flex-1 flex items-center justify-center p-8">
@@ -713,7 +730,9 @@
         </div>
       </div>
 
-      <form method="POST" action="/fluxos/<%= f.id %>/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <form method="POST" action="/fluxos/<%= f.id %>
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
         <input type="hidden" name="tipo_acao" id="novoTipoValor" value="questionario">
 
         <!-- Nome — campo principal e em destaque -->
@@ -928,7 +947,7 @@
 <script>
 (function () {
   var fluxoId    = '<%= f.id %>';
-  var etapasData = <%- JSON.stringify(etapasList.map(function(e){
+  var etapasData = <%- jsonSeguro(etapasList.map(function(e){
     var cr={};try{cr=typeof e.campos_requeridos==='string'?JSON.parse(e.campos_requeridos):(e.campos_requeridos||{});}catch(_){}
     var dv=[];try{dv=typeof e.documentos_vinculados==='string'?JSON.parse(e.documentos_vinculados):(e.documentos_vinculados||[]);}catch(_){}
     return {id:e.id,nome:e.nome,codigo:e.codigo,ordem:e.ordem,eh_inicio:e.eh_inicio,eh_fim:e.eh_fim,
@@ -937,11 +956,11 @@
             prazo_em_dias:e.prazo_em_dias,exige_assinatura:e.exige_assinatura,
             campos_requeridos:cr,documentos_vinculados:dv,pos_x:e.pos_x,pos_y:e.pos_y};
   })) %>;
-  var edgesData  = <%- JSON.stringify(edgesList.map(function(e){
+  var edgesData  = <%- jsonSeguro(edgesList.map(function(e){
     return {id:e.id,etapa_origem_id:e.etapa_origem_id,etapa_destino_id:e.etapa_destino_id,label:e.label||'sempre'};
   })) %>;
-  var anexosPorEtapa = <%- JSON.stringify(typeof anexosPorEtapa!=='undefined'?anexosPorEtapa:{}) %>;
-  var gruposData = <%- JSON.stringify(gruposList.map(function(g){return {id:g.id,nome:g.nome};})) %>;
+  var anexosPorEtapa = <%- jsonSeguro(typeof anexosPorEtapa!=='undefined'?anexosPorEtapa:{}) %>;
+  var gruposData = <%- jsonSeguro(gruposList.map(function(g){return {id:g.id,nome:g.nome};})) %>;
 
   var TIPO_INFO = {
     questionario:      { label:'Questionário',       icon:'📋', color:'#3b82f6' },

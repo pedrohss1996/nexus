@@ -22,7 +22,9 @@
         </div>
       <% } %>
 
-      <form method="POST" action="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>" class="p-6 space-y-6">
+      <form method="POST" action="<%= usuario ? `/cadastros/usuarios/${usuario.id}` : '/cadastros/usuarios' %>
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="p-6 space-y-6">
 
         <!-- ── Seção 1: Dados de acesso ───────────────────────────── -->
         <div>

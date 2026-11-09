@@ -121,10 +121,14 @@ VALUES
   ('Ortopedia', 'Equipe médica de ortopedia', 2, true)
 ON CONFLICT DO NOTHING;
 
--- Vincular usuário admin aos grupos (assumindo que existe um usuário com id=1)
+-- Vincular usuário admin aos grupos.
+-- O JOIN com usuarios torna o INSERT um no-op quando o admin ainda não existe:
+-- em banco novo as migrations rodam ANTES do seed, e a versão anterior (que
+-- assumia usuario_id=1 fixo) quebrava a migration com violação de FK.
 INSERT INTO usuarios_grupos (usuario_id, grupo_id, unidade_id, is_lider)
-SELECT 1, g.id, g.unidade_id, true
+SELECT u.id, g.id, g.unidade_id, true
 FROM grupos g
+JOIN usuarios u ON u.id = 1
 WHERE g.nome = 'Administração'
 ON CONFLICT DO NOTHING;
 

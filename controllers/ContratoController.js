@@ -1,6 +1,8 @@
 const Contrato = require('../models/Contrato');
 const { query } = require('../config/database');
 const { auditLog } = require('../utils/logger');
+const { unidadeDaRequisicao, semUnidade } = require('../utils/unidadeScope');
+const { lerPaginacao, montarMeta, limitOffset } = require('../utils/paginacao');
 const path = require('path');
 const fs = require('fs');
 
@@ -11,10 +13,16 @@ class ContratoController {
   // ─── Listagem com mini-dashboard, gráfico e alertas ────────────────
   static async index(req, res) {
     try {
+      if (semUnidade(req, res)) return;
+      const unidadeId = unidadeDaRequisicao(req);
+
+      const pag = lerPaginacao(req);
       const filtros = {
         status: req.query.status, tipo: req.query.tipo,
         busca: req.query.busca, departamento: req.query.departamento,
-        mes: req.query.mes || null
+        mes: req.query.mes || null,
+        unidade_id: unidadeId,
+        pag
       };
 
       const agora = new Date();
@@ -23,15 +31,17 @@ class ContratoController {
 
       const [contratos, dash, alertas, departamentos, custoMensal] = await Promise.all([
         Contrato.listar(filtros),
-        Contrato.dashboard(),
-        Contrato.alertas(),
-        Contrato.listarDepartamentos(),
-        Contrato.custoMensalPorPeriodo(grafInicio, grafFim)
+        Contrato.dashboard(unidadeId),
+        Contrato.alertas(unidadeId),
+        Contrato.listarDepartamentos(unidadeId),
+        Contrato.custoMensalPorPeriodo(grafInicio, grafFim, unidadeId)
       ]);
       const totalAlertas = (alertas.vencendo?.length || 0) + (alertas.obrigacoesAtrasadas?.length || 0) + (alertas.slaFora?.length || 0) + (alertas.reajustes?.length || 0);
+      const { itens, meta } = montarMeta(pag, contratos, '/contratos', req.query);
+
       res.render('contratos/index', {
         title: 'Contratos - DataFlow', user: req.user,
-        contratos, dash, alertas, totalAlertas, filtros, departamentos,
+        contratos: itens, meta, dash, alertas, totalAlertas, filtros, departamentos,
         custoMensal, grafInicio, grafFim,
         TIPO_LABELS, STATUS_LABELS
       });
@@ -76,7 +86,7 @@ class ContratoController {
           editando: false, erro: 'Código, nome e tipo são obrigatórios.', TIPO_LABELS, STATUS_LABELS
         });
       }
-      dados.unidade_id = req.session?.unidadeSelecionada || null;
+      dados.unidade_id = unidadeDaRequisicao(req);
       const contrato = await Contrato.criar(dados);
       auditLog('CONTRATO_CRIADO', req.user.id, { contrato_id: contrato.id, codigo: contrato.codigo, ip: req.ip });
       await Contrato.registrarAuditoria(contrato.id, req.user.id, 'criacao', null, `Contrato ${contrato.codigo} criado`);
@@ -96,7 +106,7 @@ class ContratoController {
   static async detalhes(req, res) {
     try {
       const { id } = req.params;
-      const contrato = await Contrato.buscarPorId(id);
+      const contrato = await Contrato.buscarPorId(id, unidadeDaRequisicao(req));
       if (!contrato) return res.status(404).render('error', { title: 'Erro', message: 'Contrato não encontrado' });
 
       const [obrigacoes, pagamentos, slas, aditivos, anexos, auditoria, financeiro, slaTaxa, usuarios] = await Promise.all([
@@ -128,7 +138,7 @@ class ContratoController {
   // ─── Formulário edição ────────────────────────────────────────────
   static async formEditar(req, res) {
     try {
-      const contrato = await Contrato.buscarPorId(req.params.id);
+      const contrato = await Contrato.buscarPorId(req.params.id, unidadeDaRequisicao(req));
       if (!contrato) return res.status(404).render('error', { title: 'Erro', message: 'Contrato não encontrado' });
       const [fornecedores, usuarios] = await Promise.all([
         query('SELECT id, nome_fantasia, razao_social, cnpj FROM fornecedores WHERE ativo=true ORDER BY COALESCE(nome_fantasia,razao_social) ASC'),
@@ -149,11 +159,12 @@ class ContratoController {
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
-      const antigo = await Contrato.buscarPorId(id);
+      const unidadeId = unidadeDaRequisicao(req);
+      const antigo = await Contrato.buscarPorId(id, unidadeId);
       if (!antigo) return res.status(404).render('error', { title: 'Erro', message: 'Contrato não encontrado' });
 
       const dados = req.body;
-      const contrato = await Contrato.atualizar(id, dados);
+      const contrato = await Contrato.atualizar(id, dados, unidadeId);
 
       const campos = ['nome','tipo','descricao','empresa_contratada','departamento_responsavel','valor_total','valor_mensal','moeda','forma_pagamento','indice_reajuste','data_inicio','data_termino','prazo_meses','data_proximo_reajuste','status'];
       for (const campo of campos) {
@@ -174,7 +185,8 @@ class ContratoController {
   // ─── Excluir contrato ─────────────────────────────────────────────
   static async excluir(req, res) {
     try {
-      await Contrato.excluir(req.params.id);
+      const removido = await Contrato.excluir(req.params.id, unidadeDaRequisicao(req));
+      if (!removido) return res.status(404).json({ success: false, message: 'Contrato não encontrado' });
       auditLog('CONTRATO_EXCLUIDO', req.user.id, { contrato_id: req.params.id, ip: req.ip });
       if (req.xhr || req.headers.accept?.includes('application/json')) return res.json({ success: true });
       req.flash && req.flash('success', 'Contrato excluído.');
@@ -200,10 +212,11 @@ class ContratoController {
         ? (motivo_outro || 'Outro').trim()
         : motivo_cancelamento;
 
-      const antigo = await Contrato.buscarPorId(id);
+      const unidadeId = unidadeDaRequisicao(req);
+      const antigo = await Contrato.buscarPorId(id, unidadeId);
       if (!antigo) return res.status(404).render('error', { title: 'Erro', message: 'Contrato não encontrado' });
 
-      await Contrato.cancelar(id, motivoFinal);
+      await Contrato.cancelar(id, motivoFinal, unidadeId);
       await Contrato.registrarAuditoria(id, req.user.id, 'status', antigo.status, 'cancelado');
       await Contrato.registrarAuditoria(id, req.user.id, 'motivo_cancelamento', null, motivoFinal);
       auditLog('CONTRATO_CANCELADO', req.user.id, { contrato_id: id, motivo: motivoFinal, ip: req.ip });
@@ -308,8 +321,9 @@ class ContratoController {
       await Contrato.criarAditivo(dados);
       await Contrato.registrarAuditoria(req.params.id, req.user.id, 'aditivo_criado', null, dados.tipo);
 
-      if (dados.novo_valor) await Contrato.atualizar(req.params.id, { ...(await Contrato.buscarPorId(req.params.id)), valor_total: dados.novo_valor });
-      if (dados.nova_data_termino) await Contrato.atualizar(req.params.id, { ...(await Contrato.buscarPorId(req.params.id)), data_termino: dados.nova_data_termino });
+      const unidadeAditivo = unidadeDaRequisicao(req);
+      if (dados.novo_valor) await Contrato.atualizar(req.params.id, { ...(await Contrato.buscarPorId(req.params.id, unidadeAditivo)), valor_total: dados.novo_valor }, unidadeAditivo);
+      if (dados.nova_data_termino) await Contrato.atualizar(req.params.id, { ...(await Contrato.buscarPorId(req.params.id, unidadeAditivo)), data_termino: dados.nova_data_termino }, unidadeAditivo);
 
       req.flash && req.flash('success', 'Aditivo registrado.');
       res.redirect(`/contratos/${req.params.id}?aba=aditivos`);

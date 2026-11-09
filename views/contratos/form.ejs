@@ -22,7 +22,9 @@
       </div>
     <% } %>
 
-    <form method="POST" action="<%= editando ? '/contratos/' + c.id : '/contratos' %>" class="space-y-4" id="contratoForm">
+    <form method="POST" action="<%= editando ? '/contratos/' + c.id : '/contratos' %>
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="space-y-4" id="contratoForm">
       <!-- Seção 1: Informações Básicas -->
       <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">

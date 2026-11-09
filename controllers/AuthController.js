@@ -79,6 +79,7 @@ class AuthController {
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax', // impede envio do cookie em requisições cross-site (CSRF)
         maxAge: 24 * 60 * 60 * 1000 // 24 horas
       });
 

@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const ProcessoController = require('../controllers/ProcessoController');
+const { requireRole } = require('../middlewares/authMiddleware');
+const autorizarDecisao = require('../middlewares/autorizarDecisao');
 
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'processos');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -28,15 +30,25 @@ const uploadProcessos = multer({
   }
 });
 
+// Abrir processo é fluxo do dia a dia: liberado a qualquer usuário autenticado.
+// Aprovar, rejeitar e excluir são atos de decisão — restritos a admin/gestor.
+const podeDecidir = requireRole(['admin', 'gestor']);
+
 // Rotas de processos
 router.get('/', ProcessoController.index);
+// Caixa de tarefas — antes de /:id para nao ser capturada como id
+router.get('/tarefas', ProcessoController.minhasTarefas);
 router.get('/novo', ProcessoController.create);
 router.post('/', uploadProcessos.array('anexos', 10), ProcessoController.store);
 router.get('/:id', ProcessoController.show);
 router.get('/:id/editar', ProcessoController.edit);
 router.put('/:id', ProcessoController.update);
-router.delete('/:id', ProcessoController.destroy);
-router.post('/:id/aprovar', ProcessoController.aprovar);
-router.post('/:id/rejeitar', ProcessoController.rejeitar);
+router.delete('/:id', podeDecidir, ProcessoController.destroy);
+// Com fluxo ativo a autorização é do grupo dono da etapa (resolvida no motor);
+// sem fluxo, cai na regra de perfil. Ver middlewares/autorizarDecisao.js.
+router.post('/:id/aprovar', autorizarDecisao, ProcessoController.aprovar);
+router.post('/:id/rejeitar', autorizarDecisao, ProcessoController.rejeitar);
+// Etapas de formulário/execução: concluir sem decisão de aprovação
+router.post('/:id/concluir-etapa', autorizarDecisao, ProcessoController.concluirEtapa);
 
 module.exports = router;

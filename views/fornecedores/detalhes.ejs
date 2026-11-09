@@ -79,7 +79,8 @@
           <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Anexos</h2>
         </div>
         <div class="p-4">
-          <form action="/fornecedores/<%= f.id %>/anexos" method="POST" enctype="multipart/form-data" class="mb-4">
+          <form action="/fornecedores/<%= f.id %>/anexos?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" class="mb-4">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Enviar arquivo (PDF, DOC, XLS, imagens, ZIP — máx. 15MB)</label>
             <div class="flex gap-2">
               <input type="file" name="anexo" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.zip" required
@@ -94,6 +95,7 @@
               <li class="flex items-center justify-between gap-2 p-2 rounded-lg bg-gray-50 dark:bg-slate-700/50 text-sm">
                 <a href="/<%= a.caminho %>" target="_blank" rel="noopener" class="text-cyan-600 dark:text-cyan-400 hover:underline truncate flex-1 min-w-0" title="<%= a.nome_original %>"><%= (a.nome_original || a.nome_arquivo).slice(0, 28) %><%= (a.nome_original || a.nome_arquivo).length > 28 ? '…' : '' %></a>
                 <form action="/fornecedores/<%= f.id %>/anexos/<%= a.id %>/excluir" method="POST" class="flex-shrink-0" onsubmit="return confirm('Excluir este anexo?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button type="submit" class="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded" title="Excluir anexo">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>

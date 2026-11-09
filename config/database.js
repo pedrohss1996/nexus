@@ -1,13 +1,34 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Configuração TLS do banco.
+// rejectUnauthorized:false criptografa mas aceita qualquer certificado — não
+// protege contra MITM. Para dados de saúde, o padrão passa a ser verificar;
+// informe o CA do provedor em DB_SSL_CA. Só desligue em desenvolvimento local.
+function sslConfig() {
+  if (process.env.DB_SSL === 'false') return false;
+
+  const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+  const ca = process.env.DB_SSL_CA;
+
+  if (!rejectUnauthorized && process.env.NODE_ENV === 'production') {
+    console.warn(
+      '⚠️  DB_SSL_REJECT_UNAUTHORIZED=false em produção: a conexão com o banco ' +
+      'está criptografada mas sem verificação de certificado (risco de MITM). ' +
+      'Configure DB_SSL_CA com o certificado do provedor.'
+    );
+  }
+
+  return ca ? { ca, rejectUnauthorized } : { rejectUnauthorized };
+}
+
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'dataflow',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD,
-  ssl: { rejectUnauthorized: false }, // Obrigatório para conexões externas na Railway/Cloud
+  ssl: sslConfig(),
   max: 20, // máximo de clientes no pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 20000,
@@ -18,9 +39,11 @@ pool.on('connect', () => {
   console.log('✅ Conectado ao PostgreSQL');
 });
 
+// Erro em cliente ocioso do pool é quase sempre transitório (queda de rede,
+// restart do banco). Derrubar o processo aqui transformava isso em indisponi-
+// bilidade total: o pool descarta o cliente ruim e segue com os demais.
 pool.on('error', (err) => {
-  console.error('❌ Erro inesperado no pool do PostgreSQL:', err);
-  process.exit(-1);
+  console.error('❌ Erro inesperado no pool do PostgreSQL:', err.message);
 });
 
 const isDev = process.env.NODE_ENV !== 'production';

@@ -237,7 +237,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 (function() {
-  var rawData = <%- JSON.stringify(cm) %>;
+  var rawData = <%- jsonSeguro(cm) %>;
   var mesSel = '<%= mesSelecionado %>';
 
   if (!rawData || rawData.length === 0) {
@@ -355,5 +355,7 @@
   }
 })();
 </script>
+
+<%- include('../partials/paginacao', { meta: meta }) %>
 
 <%- include('../partials/footer') %>

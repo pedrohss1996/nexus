@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const { auditLog } = require('../utils/logger');
+const { lerPaginacao, montarMeta, limitOffset } = require('../utils/paginacao');
 const path = require('path');
 const fs = require('fs');
 
@@ -26,16 +27,25 @@ class FornecedorController {
   // Listar fornecedores (ordenar por nome fantasia/razão)
   static async index(req, res) {
     try {
+      const pag = lerPaginacao(req);
+      const { sql: limite, valores: valoresLimite } = limitOffset(1, pag);
+
       const result = await query(`
-        SELECT id, cnpj, razao_social, nome_fantasia, nome, cidade, uf, email, telefone, ativo
+        SELECT id, cnpj, razao_social, nome_fantasia, nome, cidade, uf, email, telefone, ativo,
+               COUNT(*) OVER() AS _total
         FROM fornecedores
         WHERE ativo = true
-        ORDER BY COALESCE(nome_fantasia, razao_social, nome) ASC
-      `);
+        ORDER BY COALESCE(nome_fantasia, razao_social, nome) ASC` + limite,
+        valoresLimite
+      );
+
+      const { itens, meta } = montarMeta(pag, result.rows, '/fornecedores', req.query);
+
       res.render('fornecedores/index', {
         title: 'Fornecedores - DataFlow',
         user: req.user,
-        fornecedores: result.rows
+        fornecedores: itens,
+        meta
       });
     } catch (error) {
       console.error('Erro ao listar fornecedores:', error);

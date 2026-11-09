@@ -1,0 +1,52 @@
+<%
+  // Controles de paginação. Espera `meta` vindo de utils/paginacao.js.
+  // Monta a URL preservando os filtros ativos da listagem.
+  function urlPagina(n) {
+    var params = new URLSearchParams(meta.query || {});
+    params.set('pagina', n);
+    if (meta.porPagina && meta.porPagina !== 25) params.set('por_pagina', meta.porPagina);
+    return meta.baseUrl + '?' + params.toString();
+  }
+
+  // Janela de páginas ao redor da atual, para não imprimir 800 links
+  var janela = [];
+  var inicio = Math.max(1, meta.pagina - 2);
+  var fim = Math.min(meta.totalPaginas, meta.pagina + 2);
+  for (var i = inicio; i <= fim; i++) janela.push(i);
+%>
+<% if (meta.total > 0) { %>
+<nav class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1" aria-label="Paginação">
+  <p class="text-sm text-gray-600 dark:text-gray-400">
+    Mostrando <span class="font-medium text-gray-900 dark:text-white"><%= meta.primeiroItem %></span>–<span class="font-medium text-gray-900 dark:text-white"><%= meta.ultimoItem %></span>
+    de <span class="font-medium text-gray-900 dark:text-white"><%= meta.total.toLocaleString('pt-BR') %></span>
+  </p>
+
+  <% if (meta.totalPaginas > 1) { %>
+  <div class="flex items-center gap-1">
+    <% if (meta.temAnterior) { %>
+      <a href="<%= urlPagina(1) %>" class="px-2.5 py-1.5 text-sm rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Primeira página">««</a>
+      <a href="<%= urlPagina(meta.pagina - 1) %>" class="px-2.5 py-1.5 text-sm rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">Anterior</a>
+    <% } else { %>
+      <span class="px-2.5 py-1.5 text-sm rounded-md text-gray-300 dark:text-slate-600 cursor-default">««</span>
+      <span class="px-2.5 py-1.5 text-sm rounded-md text-gray-300 dark:text-slate-600 cursor-default">Anterior</span>
+    <% } %>
+
+    <% janela.forEach(function(n) { %>
+      <% if (n === meta.pagina) { %>
+        <span aria-current="page" class="px-3 py-1.5 text-sm rounded-md bg-cyan-600 text-white font-medium"><%= n %></span>
+      <% } else { %>
+        <a href="<%= urlPagina(n) %>" class="px-3 py-1.5 text-sm rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"><%= n %></a>
+      <% } %>
+    <% }); %>
+
+    <% if (meta.temProxima) { %>
+      <a href="<%= urlPagina(meta.pagina + 1) %>" class="px-2.5 py-1.5 text-sm rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">Próxima</a>
+      <a href="<%= urlPagina(meta.totalPaginas) %>" class="px-2.5 py-1.5 text-sm rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Última página">»»</a>
+    <% } else { %>
+      <span class="px-2.5 py-1.5 text-sm rounded-md text-gray-300 dark:text-slate-600 cursor-default">Próxima</span>
+      <span class="px-2.5 py-1.5 text-sm rounded-md text-gray-300 dark:text-slate-600 cursor-default">»»</span>
+    <% } %>
+  </div>
+  <% } %>
+</nav>
+<% } %>

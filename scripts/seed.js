@@ -25,6 +25,22 @@ async function seed() {
       console.log('ℹ️  Usuário admin já existe');
     }
 
+    // Vincular o admin a um grupo/unidade.
+    // A migration 002 tenta fazer isso, mas roda ANTES do seed — em banco novo
+    // o usuário ainda não existe e o vínculo nunca é criado.
+    const vinculo = await query(
+      `INSERT INTO usuarios_grupos (usuario_id, grupo_id, unidade_id, is_lider)
+       SELECT u.id, g.id, g.unidade_id, true
+       FROM usuarios u
+       CROSS JOIN grupos g
+       WHERE u.email = 'admin@dataflow.com' AND g.nome = 'Administração'
+       ON CONFLICT DO NOTHING
+       RETURNING id`
+    );
+    console.log(vinculo.rows.length > 0
+      ? '✅ Admin vinculado ao grupo Administração'
+      : 'ℹ️  Vínculo do admin já existe (ou grupo padrão ausente)');
+
     // Criar centro de custo exemplo
     const centroExists = await query(
       'SELECT id FROM centros_custo WHERE codigo = $1',
@@ -32,9 +48,11 @@ async function seed() {
     );
 
     if (centroExists.rows.length === 0) {
+      // unidade_id é obrigatório para o centro aparecer no dashboard, que passou
+      // a filtrar por unidade — sem ele o registro fica invisível.
       await query(
-        `INSERT INTO centros_custo (nome, codigo, valor_total, valor_utilizado, ativo)
-         VALUES ($1, $2, $3, $4, true)`,
+        `INSERT INTO centros_custo (nome, codigo, valor_total, valor_utilizado, unidade_id, ativo)
+         SELECT $1, $2, $3, $4, MIN(id), true FROM unidades WHERE ativo = true`,
         ['Centro de Custos Principal', 'CC001', 330000.00, 248500.00]
       );
       console.log('✅ Centro de custo exemplo criado');

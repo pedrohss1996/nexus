@@ -292,6 +292,7 @@
   </svg>
 
   <form id="form-editor" action="<%= action %>" method="POST" style="display:contents;">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <input type="text" class="ed-title-input" name="nome" required
       value="<%= template ? template.nome : '' %>"
       placeholder="Título do documento...">
@@ -393,7 +394,7 @@
 
 <!-- Wrapper do editor -->
 <div id="jodit-wrapper">
-  <textarea id="the-editor"><%- template && template.conteudo_html ? template.conteudo_html : '' %></textarea>
+  <textarea id="the-editor"><%- template && template.conteudo_html ? htmlSeguro(template.conteudo_html) : '' %></textarea>
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->

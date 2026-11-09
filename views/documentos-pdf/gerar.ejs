@@ -120,7 +120,7 @@
 
 <script>
 (function() {
-  var rawHtml = <%- JSON.stringify(template.conteudo_html || '') %>;
+  var rawHtml = <%- jsonSeguro(template.conteudo_html || '') %>;
 
   // ── Marcadores de quebra de página ─────────────────────────────────────
   function adicionarMarcasQuebraPagina() {

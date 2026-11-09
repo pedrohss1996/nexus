@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const FornecedorController = require('../controllers/FornecedorController');
-const { authenticateToken } = require('../middlewares/authMiddleware');
+const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 const loadUnidades = require('../middlewares/loadUnidades');
 
 router.use(authenticateToken);
@@ -38,20 +38,24 @@ const uploadAnexos = multer({
   }
 });
 
+// Cadastro de fornecedores é compartilhado pelo grupo hospitalar (não é
+// escopado por unidade), então a escrita fica restrita a admin/gestor.
+const podeEscrever = requireRole(['admin', 'gestor']);
+
 // Rotas de fornecedores
 router.get('/', FornecedorController.index);
-router.get('/novo', FornecedorController.create);
-router.post('/', FornecedorController.store);
-router.get('/:id/editar', FornecedorController.edit);
+router.get('/novo', podeEscrever, FornecedorController.create);
+router.post('/', podeEscrever, FornecedorController.store);
+router.get('/:id/editar', podeEscrever, FornecedorController.edit);
 router.get('/:id', FornecedorController.show);
-router.post('/:id', FornecedorController.update);
-router.delete('/:id', FornecedorController.destroy);
+router.post('/:id', podeEscrever, FornecedorController.update);
+router.delete('/:id', requireRole(['admin']), FornecedorController.destroy);
 
 // Anexos
-router.post('/:id/anexos', uploadAnexos.single('anexo'), (req, res, next) => {
+router.post('/:id/anexos', podeEscrever, uploadAnexos.single('anexo'), (req, res, next) => {
   FornecedorController.uploadAnexo(req, res).catch(next);
 });
-router.delete('/:id/anexos/:anexoId', FornecedorController.destroyAnexo);
-router.post('/:id/anexos/:anexoId/excluir', FornecedorController.destroyAnexo);
+router.delete('/:id/anexos/:anexoId', podeEscrever, FornecedorController.destroyAnexo);
+router.post('/:id/anexos/:anexoId/excluir', podeEscrever, FornecedorController.destroyAnexo);
 
 module.exports = router;

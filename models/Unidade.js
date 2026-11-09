@@ -66,6 +66,46 @@ class Unidade {
     return resultado.rows;
   }
 
+  // Buscar as unidades às quais um usuário tem acesso.
+  // Admin enxerga todas; demais perfis apenas as unidades onde possuem vínculo
+  // de grupo (usuarios_grupos.unidade_id). É a base do isolamento multi-unidade.
+  static async buscarPorUsuario(usuarioId, perfil) {
+    if (perfil === 'admin') {
+      return this.buscarTodas();
+    }
+
+    const sql = `
+      SELECT DISTINCT u.*
+      FROM unidades u
+      INNER JOIN usuarios_grupos ug ON ug.unidade_id = u.id
+      WHERE ug.usuario_id = $1 AND u.ativo = true
+      ORDER BY u.nome ASC
+    `;
+    const resultado = await query(sql, [usuarioId]);
+    return resultado.rows;
+  }
+
+  // Verifica se um usuário pode operar sobre determinada unidade
+  static async usuarioTemAcesso(usuarioId, perfil, unidadeId) {
+    const id = parseInt(unidadeId, 10);
+    if (!id || Number.isNaN(id)) return false;
+
+    if (perfil === 'admin') {
+      const r = await query('SELECT 1 FROM unidades WHERE id = $1 AND ativo = true', [id]);
+      return r.rows.length > 0;
+    }
+
+    const sql = `
+      SELECT 1
+      FROM usuarios_grupos ug
+      INNER JOIN unidades u ON u.id = ug.unidade_id
+      WHERE ug.usuario_id = $1 AND ug.unidade_id = $2 AND u.ativo = true
+      LIMIT 1
+    `;
+    const resultado = await query(sql, [usuarioId, id]);
+    return resultado.rows.length > 0;
+  }
+
   // Buscar unidade por ID
   static async buscarPorId(id) {
     const sql = 'SELECT * FROM unidades WHERE id = $1 AND ativo = true';

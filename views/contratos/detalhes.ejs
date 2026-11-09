@@ -41,6 +41,7 @@
       </a>
       <% } %>
       <form action="/contratos/<%= c.id %>/excluir" method="POST" onsubmit="return confirm('Excluir este contrato permanentemente?');" class="inline">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="inline-flex items-center gap-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           Excluir
@@ -66,6 +67,7 @@
       </div>
     </div>
     <form action="/contratos/<%= c.id %>/cancelar" method="POST" class="space-y-3">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <p class="text-sm font-medium text-orange-800 dark:text-orange-300 mb-2">Selecione o motivo:</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <% const motivos = ['Inadimplência da contratada','Descumprimento de cláusulas contratuais','Acordo mútuo entre as partes','Conveniência da administração','Término antecipado por necessidade','Falência ou recuperação judicial da contratada']; %>
@@ -221,6 +223,7 @@
           Nova Obrigação
         </summary>
         <form action="/contratos/<%= c.id %>/obrigacoes" method="POST" class="bg-gray-50 dark:bg-slate-700/50 p-4 space-y-3">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="sm:col-span-2"><textarea name="descricao" required placeholder="Descrição da obrigação" rows="2" class="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500"></textarea></div>
             <select name="responsavel_id" class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm"><option value="">Responsável...</option><% usuarios.forEach(function(u) { %><option value="<%= u.id %>"><%= u.nome %></option><% }); %></select>
@@ -253,11 +256,13 @@
           <div class="flex items-center gap-1 flex-shrink-0">
             <% if (o.status !== 'concluido') { %>
               <form action="/contratos/<%= c.id %>/obrigacoes/<%= o.id %>" method="POST" class="inline">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="descricao" value="<%= o.descricao %>"><input type="hidden" name="responsavel_id" value="<%= o.responsavel_id %>"><input type="hidden" name="prazo" value="<%= fmtDateInput(o.prazo) %>"><input type="hidden" name="frequencia" value="<%= o.frequencia %>"><input type="hidden" name="status" value="concluido">
                 <button type="submit" class="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded" title="Marcar concluído"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button>
               </form>
             <% } %>
             <form action="/contratos/<%= c.id %>/obrigacoes/<%= o.id %>/excluir" method="POST" class="inline" onsubmit="return confirm('Excluir esta obrigação?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
             </form>
           </div>
@@ -275,6 +280,7 @@
           Registrar Pagamento
         </summary>
         <form action="/contratos/<%= c.id %>/pagamentos" method="POST" class="bg-gray-50 dark:bg-slate-700/50 p-4 space-y-3">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <input type="date" name="data_pagamento" required class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
             <input type="number" step="0.01" name="valor_pago" required placeholder="Valor pago (R$)" class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
@@ -299,7 +305,8 @@
               <td class="py-2 px-2 text-right font-medium text-gray-900 dark:text-white"><%= fmtMoney(p.valor_pago) %></td>
               <td class="py-2 px-2 text-gray-600 dark:text-gray-400"><%= p.numero_nota || '—' %></td>
               <td class="py-2 px-2 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold <%= p.status === 'pago' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : p.status === 'atrasado' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' %>"><%= p.status %></span></td>
-              <td class="py-2 px-2 text-right"><form action="/contratos/<%= c.id %>/pagamentos/<%= p.id %>/excluir" method="POST" class="inline" onsubmit="return confirm('Excluir?');"><button type="submit" class="text-red-500 hover:text-red-700 text-xs">Excluir</button></form></td>
+              <td class="py-2 px-2 text-right"><form action="/contratos/<%= c.id %>/pagamentos/<%= p.id %>/excluir" method="POST" class="inline" onsubmit="return confirm('Excluir?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="text-red-500 hover:text-red-700 text-xs">Excluir</button></form></td>
             </tr>
             <% }); %>
           </tbody>
@@ -320,6 +327,7 @@
           Nova Medição de SLA
         </summary>
         <form action="/contratos/<%= c.id %>/slas" method="POST" class="bg-gray-50 dark:bg-slate-700/50 p-4 space-y-3">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <input type="text" name="nome_indicador" required placeholder="Nome do indicador" class="sm:col-span-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
             <input type="number" step="0.01" name="meta" placeholder="Meta" class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
@@ -346,7 +354,8 @@
               <td class="py-2 px-2 text-right text-gray-900 dark:text-white font-medium"><%= s.valor_medido != null ? s.valor_medido : '—' %></td>
               <td class="py-2 px-2 text-center text-gray-600 dark:text-gray-400"><%= fmtDate(s.data_medicao) %></td>
               <td class="py-2 px-2 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold <%= s.status === 'dentro' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' %>"><%= s.status === 'dentro' ? 'Dentro' : 'Fora' %></span></td>
-              <td class="py-2 px-2 text-right"><form action="/contratos/<%= c.id %>/slas/<%= s.id %>/excluir" method="POST" class="inline" onsubmit="return confirm('Excluir?');"><button type="submit" class="text-red-500 hover:text-red-700 text-xs">Excluir</button></form></td>
+              <td class="py-2 px-2 text-right"><form action="/contratos/<%= c.id %>/slas/<%= s.id %>/excluir" method="POST" class="inline" onsubmit="return confirm('Excluir?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="text-red-500 hover:text-red-700 text-xs">Excluir</button></form></td>
             </tr>
             <% }); %>
           </tbody>
@@ -363,6 +372,7 @@
           Novo Aditivo
         </summary>
         <form action="/contratos/<%= c.id %>/aditivos" method="POST" class="bg-gray-50 dark:bg-slate-700/50 p-4 space-y-3">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <select name="tipo" required class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm"><option value="">Tipo...</option><option value="prorrogacao">Prorrogação</option><option value="alteracao_valor">Alteração de Valor</option><option value="alteracao_escopo">Alteração de Escopo</option></select>
             <input type="date" name="data_aditivo" required class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white px-3 py-2 text-sm">
@@ -386,7 +396,8 @@
             <% if (a.nova_data_termino) { %><span class="ml-2 text-xs text-gray-600 dark:text-gray-300">Novo término: <strong><%= fmtDate(a.nova_data_termino) %></strong></span><% } %>
             <% if (a.descricao) { %><p class="text-sm text-gray-700 dark:text-gray-300 mt-1"><%= a.descricao %></p><% } %>
           </div>
-          <form action="/contratos/<%= c.id %>/aditivos/<%= a.id %>/excluir" method="POST" class="flex-shrink-0" onsubmit="return confirm('Excluir?');"><button type="submit" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
+          <form action="/contratos/<%= c.id %>/aditivos/<%= a.id %>/excluir" method="POST" class="flex-shrink-0" onsubmit="return confirm('Excluir?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
         </div>
         <% }); %>
       </div>
@@ -398,7 +409,8 @@
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Documentos e Anexos</h3>
       </div>
-      <form action="/contratos/<%= c.id %>/anexos" method="POST" enctype="multipart/form-data" class="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
+      <form action="/contratos/<%= c.id %>/anexos?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" class="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Enviar arquivo (PDF, DOC, XLS, imagens, ZIP — até 25 MB)</label>
         <div class="flex gap-2">
           <input type="file" name="anexo" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.zip" required class="block w-full text-sm text-gray-600 dark:text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-cyan-50 file:text-cyan-700 dark:file:bg-cyan-900/30 dark:file:text-cyan-300 file:text-sm file:font-medium">
@@ -418,7 +430,8 @@
           <div class="flex items-center gap-2 flex-shrink-0 text-xs text-gray-500 dark:text-gray-400">
             <% if (a.criador_nome) { %><span><%= a.criador_nome %></span><% } %>
             <span><%= fmtDate(a.criado_em) %></span>
-            <form action="/contratos/<%= c.id %>/anexos/<%= a.id %>/excluir" method="POST" onsubmit="return confirm('Excluir este anexo?');"><button type="submit" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
+            <form action="/contratos/<%= c.id %>/anexos/<%= a.id %>/excluir" method="POST" onsubmit="return confirm('Excluir este anexo?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
           </div>
         </li>
         <% }); %>
@@ -470,6 +483,7 @@
     </div>
 
     <form action="/contratos/<%= c.id %>/cancelar" method="POST" id="formCancelar">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">Selecione o motivo do cancelamento:</p>
       <div class="space-y-2">
         <label class="flex items-start gap-2 p-2.5 rounded-lg border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors">

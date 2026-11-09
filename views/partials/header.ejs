@@ -16,6 +16,47 @@
   <% if (typeof useQuill !== 'undefined' && useQuill) { %>
     <link href="/libs/quill/quill.snow.css" rel="stylesheet">
   <% } %>
+  <!-- CSRF: injeta o token em toda requisição mutante feita por fetch/XHR.
+       Feito num ponto só para não depender de cada chamada lembrar do header —
+       inclusive as que forem escritas depois. -->
+  <script>
+  (function () {
+    var TOKEN = '<%= csrfToken %>';
+    var MUTANTES = { POST: 1, PUT: 1, PATCH: 1, DELETE: 1 };
+
+    function mesmaOrigem(url) {
+      try { return new URL(url, location.href).origin === location.origin; }
+      catch (e) { return false; }
+    }
+
+    var fetchOriginal = window.fetch;
+    if (fetchOriginal) {
+      window.fetch = function (entrada, opcoes) {
+        opcoes = opcoes || {};
+        var metodo = (opcoes.method || (entrada && entrada.method) || 'GET').toUpperCase();
+        var url = (typeof entrada === 'string') ? entrada : (entrada && entrada.url) || '';
+        if (MUTANTES[metodo] && mesmaOrigem(url)) {
+          var h = new Headers(opcoes.headers || (entrada && entrada.headers) || {});
+          if (!h.has('X-CSRF-Token')) h.set('X-CSRF-Token', TOKEN);
+          opcoes = Object.assign({}, opcoes, { headers: h });
+        }
+        return fetchOriginal.call(this, entrada, opcoes);
+      };
+    }
+
+    var abrirOriginal = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (metodo, url) {
+      this.__csrfPrecisa = MUTANTES[(metodo || '').toUpperCase()] && mesmaOrigem(url);
+      return abrirOriginal.apply(this, arguments);
+    };
+    var enviarOriginal = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function () {
+      if (this.__csrfPrecisa) this.setRequestHeader('X-CSRF-Token', TOKEN);
+      return enviarOriginal.apply(this, arguments);
+    };
+  })();
+  </script>
+
   <!-- Estado ativo da navegação (primary #2860AB) -->
   <style>
     .nav-link-active { background-color: #2860AB !important; color: white !important; }
@@ -40,6 +81,7 @@
           <!-- Seletor de Unidade -->
           <div class="hidden md:flex items-center space-x-4">
             <form action="/api/selecionar-unidade" method="POST" id="formUnidade">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <select name="unidade_id" id="seletorUnidade" class="border border-gray-300 dark:border-slate-600 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-100 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all cursor-pointer min-w-[400px] w-72">
                 <% if (typeof unidades !== 'undefined' && unidades.length > 0) { %>
                   <% unidades.forEach(unidade => { %>
@@ -172,6 +214,12 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
             </svg>
             Processos
+          </a>
+          <a href="/processos/tarefas" data-nav="tarefas" class="nav-link px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            Minhas Tarefas
           </a>
           
           <!-- Documentos (criação de documentos PDF) -->
