@@ -37,4 +37,4 @@ dependsOn = ["install"]
 cmds = ["npm run build:css"]
 
 [start]
-cmd = "NODE_ENV=production node server.js"
+cmd = "npm run migrate && NODE_ENV=production node server.js"
