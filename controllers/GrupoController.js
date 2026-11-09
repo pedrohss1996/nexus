@@ -13,7 +13,14 @@ class GrupoController {
       const { unidade_id, busca } = req.query;
       const filtros = {};
       // Primeira carga (sem unidade_id na URL): mostra só grupos da unidade selecionada; senão respeita o filtro (incluindo "Todas")
-      const unidadeFiltro = unidade_id === undefined ? res.locals.unidadeSelecionada : (unidade_id || null);
+      // Se a unidade selecionada é a administradora (acesso_total), a primeira
+      // carga mostra os grupos de todas as unidades.
+      let padrao = res.locals.unidadeSelecionada;
+      if (unidade_id === undefined && padrao) {
+        const atual = await Unidade.buscarPorId(padrao);
+        if (atual && atual.acesso_total) padrao = null;
+      }
+      const unidadeFiltro = unidade_id === undefined ? padrao : (unidade_id || null);
       if (unidadeFiltro) filtros.unidade_id = unidadeFiltro;
       if (busca) filtros.busca = busca;
 
@@ -25,7 +32,7 @@ class GrupoController {
         user: req.user,
         grupos,
         unidades,
-        filtros: { unidade_id: unidade_id === undefined ? res.locals.unidadeSelecionada : (unidade_id || ''), busca: filtros.busca || '' }
+        filtros: { unidade_id: unidadeFiltro || '', busca: filtros.busca || '' }
       });
     } catch (error) {
       console.error('Erro ao listar grupos:', error);
