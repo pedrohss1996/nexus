@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 const { unidadeDaRequisicao } = require('../utils/unidadeScope');
 const { lerPaginacao, montarMeta, limitOffset } = require('../utils/paginacao');
 
@@ -95,7 +95,9 @@ class ProtocoloController {
       // Gerar número de protocolo
       const numeroResult = await client.query('SELECT gerar_numero_protocolo() as numero');
       const numero_protocolo = numeroResult.rows[0].numero;
-      const ano = new Date().getFullYear();
+      // O ano sai do próprio número (fuso de Brasília, calculado no banco) —
+      // new Date() aqui usaria o fuso do servidor e podia divergir na virada.
+      const ano = parseInt(numero_protocolo.split('/')[1], 10);
 
       // Inserir protocolo
       const result = await client.query(`

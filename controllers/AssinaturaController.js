@@ -25,7 +25,7 @@ class AssinaturaController {
         [documentoId]
       );
       if (!docResult.rows.length) {
-        return res.status(404).render('404', { user: req.user });
+        return res.status(404).render('error', { title: 'Erro - DataFlow', message: 'Documento não encontrado', user: req.user });
       }
       const documento = docResult.rows[0];
 
@@ -55,7 +55,7 @@ class AssinaturaController {
       });
     } catch (err) {
       console.error('AssinaturaController.index:', err);
-      res.status(500).render('500', { user: req.user });
+      res.status(500).render('error', { title: 'Erro - DataFlow', message: 'Erro ao carregar assinaturas', user: req.user });
     }
   }
 

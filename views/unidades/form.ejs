@@ -15,9 +15,8 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Preencha os dados institucionais, fiscais e de endereço.</p>
       </div>
 
-      <form method="POST" action="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>
+      <form method="POST" action="<%= unidade ? `/unidades/${unidade.id}` : '/unidades' %>" class="p-6 space-y-6">
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="p-6 space-y-6">
 
         <!-- ── Seção 1: Identificação ─────────────────────────────── -->
         <div>

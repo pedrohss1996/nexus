@@ -730,9 +730,8 @@
         </div>
       </div>
 
-      <form method="POST" action="/fluxos/<%= f.id %>
+      <form method="POST" action="/fluxos/<%= f.id %>/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">/etapas" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
         <input type="hidden" name="tipo_acao" id="novoTipoValor" value="questionario">
 
         <!-- Nome — campo principal e em destaque -->

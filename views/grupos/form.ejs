@@ -22,9 +22,8 @@
         </div>
       <% } %>
 
-      <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>
+      <form method="POST" action="<%= grupo ? `/grupos/${grupo.id}` : '/grupos' %>" class="p-6 space-y-5">
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="p-6 space-y-5">
         <div>
           <label for="nome" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Nome do Grupo <span class="text-red-500">*</span>

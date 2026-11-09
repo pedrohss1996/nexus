@@ -153,6 +153,7 @@
                 var decide = fluxo.tipo_acao === 'aprovacao' || fluxo.tipo_acao === 'parecer_tecnico';
               %>
               <form method="POST" action="/processos/<%= processo.id %>/<%= decide ? 'aprovar' : 'concluir-etapa' %>" class="space-y-3">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <label class="block">
                   <span class="text-sm text-gray-700 dark:text-gray-300">Observação</span>
                   <textarea name="observacao" rows="3" class="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500" placeholder="Opcional"></textarea>
@@ -164,6 +165,7 @@
 
               <% if (decide) { %>
                 <form method="POST" action="/processos/<%= processo.id %>/rejeitar" class="mt-2" onsubmit="return confirm('Reprovar esta etapa?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <input type="hidden" name="observacao" value="">
                   <button type="submit" class="w-full inline-flex items-center justify-center gap-2 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors">
                     Reprovar

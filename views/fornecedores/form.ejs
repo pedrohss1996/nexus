@@ -13,9 +13,8 @@
       <h1 class="text-xl font-bold text-gray-900 dark:text-white"><%= isEdit ? 'Editar Fornecedor' : 'Novo Fornecedor' %></h1>
     </div>
 
-    <form method="POST" action="<%= isEdit ? `/fornecedores/${f.id}` : '/fornecedores' %>
+    <form method="POST" action="<%= isEdit ? `/fornecedores/${f.id}` : '/fornecedores' %>" class="p-6 space-y-8">
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">" class="p-6 space-y-8">
       <!-- Identificação -->
       <section>
         <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">

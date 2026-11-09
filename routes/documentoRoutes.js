@@ -7,7 +7,9 @@ const { requireRole } = require('../middlewares/authMiddleware');
 const podeExcluir = requireRole(['admin', 'gestor']);
 
 // Rotas de documentos
-router.get('/', DocumentoController.index);
+// A tela de documentos é o módulo /documentos-pdf; a view documentos/index
+// nunca existiu e o GET dava 500. Links antigos para /documentos caem lá.
+router.get('/', (req, res) => res.redirect('/documentos-pdf'));
 router.post('/upload', DocumentoController.upload);
 router.get('/:id', DocumentoController.show);
 router.put('/:id', DocumentoController.update);

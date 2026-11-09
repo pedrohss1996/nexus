@@ -17,7 +17,12 @@ function parseBody(body) {
   CAMPOS.forEach(campo => {
     const v = body[campo];
     if (v === '' || v === undefined) o[campo] = null;
-    else if (campo === 'conta_contabil_id' || campo === 'latitude' || campo === 'longitude') o[campo] = v ? Number(v) : null;
+    else if (campo === 'conta_contabil_id' || campo === 'latitude' || campo === 'longitude') {
+      // Number('abc') é NaN, e o Postgres aceita NaN em NUMERIC — o valor
+      // inválido era gravado e exibido como "NaN". Aceita vírgula decimal.
+      const n = Number(String(v).trim().replace(',', '.'));
+      o[campo] = Number.isFinite(n) ? n : null;
+    }
     else o[campo] = String(v).trim();
   });
   return o;

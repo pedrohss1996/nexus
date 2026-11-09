@@ -10,6 +10,32 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const express = require('express');
+
+// Express 4 não encaminha ao errorHandler a rejeição de um handler async:
+// ela vira unhandledRejection e o Node encerra o processo — um único erro numa
+// rota (ex.: criar protocolo) derrubava o sistema inteiro para todos. Aqui a
+// promise devolvida pelo handler tem o erro repassado a next(err). (Express 5
+// faz isso nativamente; remover este bloco ao migrar.)
+{
+  const Layer = require('express/lib/router/layer');
+  Layer.prototype.handle_request = function handle(req, res, next) {
+    const fn = this.handle;
+    if (fn.length > 3) return next();
+    try {
+      const r = fn(req, res, next);
+      if (r && typeof r.catch === 'function') r.catch(next);
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+// Rede de segurança para promises fora do ciclo de requisição (sockets,
+// agendador): registra em vez de derrubar o servidor.
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Promise rejeitada sem tratamento:', err);
+});
+
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');

@@ -33,9 +33,8 @@
       </div>
     <% } %>
 
-    <form method="POST" action="/grupos/<%= grupo.id %>
+    <form method="POST" action="/grupos/<%= grupo.id %>/membros" class="space-y-6">
 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-<input type="hidden" name="_csrf" value="<%= csrfToken %>">/membros" class="space-y-6">
       <!-- Usuário -->
       <div>
         <label for="usuario_id" class="block text-sm font-medium text-gray-700 mb-2">
