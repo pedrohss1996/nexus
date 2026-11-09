@@ -33,35 +33,32 @@ class AuthController {
         [email]
       );
 
+      // Falhas respondem 401 (não 200): o loginLimiter usa
+      // skipSuccessfulRequests, que trata qualquer status < 400 como sucesso —
+      // com 200 nenhuma tentativa errada era contada e o brute-force ficava livre.
+      const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
+      const falhar = (error) => res.status(401).render('auth/login', {
+        title: 'Login - DataFlow',
+        error,
+        loginImage
+      });
+
       if (result.rows.length === 0) {
-        return res.render('auth/login', {
-          title: 'Login - DataFlow',
-          error: 'Email ou senha inválidos'
-        });
+        return falhar('Email ou senha inválidos');
       }
 
       const user = result.rows[0];
 
-      // Verificar se usuário está ativo
-      if (!user.ativo) {
-        const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
-        return res.render('auth/login', {
-          title: 'Login - DataFlow',
-          error: 'Usuário inativo. Entre em contato com o administrador.',
-          loginImage
-        });
-      }
-
-      // Verificar senha
-      const senhaValida = await bcrypt.compare(senha, user.senha);
+      // Senha antes do status "ativo": checar ativo primeiro revelava, sem
+      // senha, quais e-mails existem no sistema.
+      const senhaValida = await bcrypt.compare(senha || '', user.senha);
       if (!senhaValida) {
         auditLog('TENTATIVA_LOGIN_INVALIDA', null, { email, ip: req.ip });
-        const loginImage = process.env.LOGIN_IMAGE_PATH || '/imgs/login-banner.jpg';
-        return res.render('auth/login', {
-          title: 'Login - DataFlow',
-          error: 'Email ou senha inválidos',
-          loginImage
-        });
+        return falhar('Email ou senha inválidos');
+      }
+
+      if (!user.ativo) {
+        return falhar('Usuário inativo. Entre em contato com o administrador.');
       }
 
       // Gerar token JWT
@@ -106,63 +103,6 @@ class AuthController {
     }
     res.clearCookie('token');
     res.redirect('/auth/login');
-  }
-
-  // Mostrar página de registro (apenas para desenvolvimento)
-  static showRegister(req, res) {
-    res.render('auth/register', { 
-      title: 'Registro - DataFlow',
-      error: null 
-    });
-  }
-
-  // Processar registro
-  static async register(req, res) {
-    try {
-      const { nome, email, senha, perfil = 'usuario' } = req.body;
-
-      // Validar entrada
-      if (!nome || !email || !senha) {
-        return res.render('auth/register', {
-          title: 'Registro - DataFlow',
-          error: 'Todos os campos são obrigatórios'
-        });
-      }
-
-      // Verificar se email já existe
-      const existingUser = await query(
-        'SELECT id FROM usuarios WHERE email = $1',
-        [email]
-      );
-
-      if (existingUser.rows.length > 0) {
-        return res.render('auth/register', {
-          title: 'Registro - DataFlow',
-          error: 'Email já cadastrado'
-        });
-      }
-
-      // Hash da senha
-      const senhaHash = await bcrypt.hash(senha, 10);
-
-      // Criar usuário
-      const result = await query(
-        `INSERT INTO usuarios (nome, email, senha, perfil, ativo, criado_em)
-         VALUES ($1, $2, $3, $4, true, NOW())
-         RETURNING id, nome, email, perfil`,
-        [nome, email, senhaHash, perfil]
-      );
-
-      auditLog('USUARIO_CRIADO', result.rows[0].id, { email, perfil, ip: req.ip });
-
-      res.redirect('/auth/login');
-    } catch (error) {
-      console.error('Erro no registro:', error);
-      res.render('auth/register', {
-        title: 'Registro - DataFlow',
-        error: 'Erro ao criar conta. Tente novamente.'
-      });
-    }
   }
 }
 

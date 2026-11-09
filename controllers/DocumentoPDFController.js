@@ -406,15 +406,36 @@ class DocumentoPDFController {
   // Download do PDF gerado
   static async download(req, res) {
     try {
-      const { nomeArquivo } = req.params;
-      const filePath = path.join(__dirname, '..', 'uploads', 'documentos-gerados', nomeArquivo);
+      if (semUnidade(req, res)) return;
+      const unidadeId = unidadeDaRequisicao(req);
 
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).render('error', {
-          title: 'Erro - DataFlow',
-          message: 'Arquivo não encontrado',
-          user: req.user
-        });
+      const naoEncontrado = () => res.status(404).render('error', {
+        title: 'Erro - DataFlow',
+        message: 'Arquivo não encontrado',
+        user: req.user
+      });
+
+      // O parâmetro vinha direto para path.join: "..%2F..%2F.env" é decodificado
+      // pelo Express e entregava o .env (JWT_SECRET, senha do banco). Agora:
+      // 1) só aceita um nome simples, sem separadores;
+      // 2) o arquivo precisa estar registrado em documentos_gerados na unidade
+      //    do usuário (antes qualquer unidade baixava PDF de outra pelo nome);
+      // 3) o caminho resolvido precisa continuar dentro do diretório base.
+      const { nomeArquivo } = req.params;
+      if (!nomeArquivo || nomeArquivo !== path.basename(nomeArquivo) || !/^[\w.-]+\.pdf$/i.test(nomeArquivo)) {
+        return naoEncontrado();
+      }
+
+      const registro = await query(
+        'SELECT 1 FROM documentos_gerados WHERE nome_arquivo = $1 AND unidade_id = $2 LIMIT 1',
+        [nomeArquivo, unidadeId]
+      );
+      if (registro.rows.length === 0) return naoEncontrado();
+
+      const baseDir = path.resolve(__dirname, '..', 'uploads', 'documentos-gerados');
+      const filePath = path.resolve(baseDir, nomeArquivo);
+      if (!filePath.startsWith(baseDir + path.sep) || !fs.existsSync(filePath)) {
+        return naoEncontrado();
       }
 
       res.download(filePath);
